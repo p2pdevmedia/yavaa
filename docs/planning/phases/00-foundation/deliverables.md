@@ -6,6 +6,7 @@
 - OpenAPI generation/publishing baseline.
 - Playwright + Vitest running in CI.
 - Tailwind + shadcn/ui baseline and shared UI primitives.
+- Documented design system plan for tokens, layout primitives, and state patterns.
 - Seed system and environment setup docs.
 
 ## Completion criteria

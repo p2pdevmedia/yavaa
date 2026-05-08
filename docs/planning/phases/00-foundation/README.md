@@ -24,3 +24,5 @@ Create the technical foundation for Yavaa.
 - tests.md
 - playwright.md
 - edge-cases.md
+- [Design planning](../../../design/README.md)
+- [Design checklist](../../../design/checklist.md)
