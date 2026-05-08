@@ -81,6 +81,8 @@ SUPPORT-DISPUTE-001
 | Request reschedule | CLIENT-BOOKING-005 |
 | View booking status | CLIENT-BOOKING-006 |
 | View booking history | CLIENT-BOOKING-007 |
+| Directly pay contractor outside Yavaa | CLIENT-PAYMENT-001 |
+| Dispute contractor payment confirmation | CLIENT-PAYMENT-002 |
 
 ## Chat
 
@@ -173,6 +175,10 @@ SUPPORT-DISPUTE-001
 | Mark as on the way | CONTRACTOR-BOOKING-006 |
 | Mark as started | CONTRACTOR-BOOKING-007 |
 | Mark as completed | CONTRACTOR-BOOKING-008 |
+| Confirm direct payment received | CONTRACTOR-PAYMENT-001 |
+| Confirm payment amount received | CONTRACTOR-PAYMENT-002 |
+| Cannot confirm payment for unrelated booking | CONTRACTOR-PAYMENT-003 |
+| Payment confirmation generates commission debt | CONTRACTOR-PAYMENT-004 |
 | Report client no-show | CONTRACTOR-DISPUTE-001 |
 
 ## Emergencies
@@ -302,6 +308,14 @@ SUPPORT-DISPUTE-001
 | Reject proof | ADMIN-PAYMENT-PROOF-003 |
 | Add admin comment | ADMIN-PAYMENT-PROOF-004 |
 | Allocate payment to debts | ADMIN-PAYMENT-PROOF-005 |
+
+## Service payment disputes
+
+| Action | Required tests |
+|---|---|
+| Admin does not validate normal direct service payment | ADMIN-PAYMENT-001 |
+| Admin can review service payment only when disputed | ADMIN-PAYMENT-002 |
+| Admin can mark payment dispute resolved | ADMIN-PAYMENT-003 |
 
 ## Disputes
 
