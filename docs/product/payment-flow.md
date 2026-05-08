@@ -6,6 +6,10 @@ The client pays the contractor directly.
 
 The contractor must confirm inside Yavaa that the payment was received.
 
+The admin does not validate the direct client-to-contractor service payment.
+
+Admin only intervenes if there is a conflict, dispute, fraud report, or manual review need.
+
 ---
 
 # Main flow
@@ -19,7 +23,7 @@ The contractor must confirm inside Yavaa that the payment was received.
 7. Yavaa generates or confirms the platform commission debt.
 8. The responsible user pays the commission later.
 9. User uploads payment proof for the commission.
-10. Admin validates the commission payment proof.
+10. Commission payment proof follows its own review process.
 
 ---
 
@@ -34,6 +38,22 @@ The contractor must explicitly confirm:
 - date/time of confirmation
 
 This action should be stored as part of the booking timeline.
+
+This confirmation is enough to mark the direct service payment as received unless the client opens a dispute.
+
+---
+
+# Admin role
+
+Admin does not approve normal direct service payments.
+
+Admin enters only when:
+
+- client disputes contractor payment confirmation
+- contractor claims payment was not received
+- client claims service was not completed
+- suspicious behavior is detected
+- a manual support case is opened
 
 ---
 
@@ -66,7 +86,7 @@ The database is the source of truth.
 
 Chat messages, agent actions, or external payment screenshots are not enough by themselves.
 
-The contractor payment confirmation is the key event that marks the service payment as received.
+The contractor payment confirmation is the key event that marks the direct service payment as received.
 
 ---
 
@@ -81,3 +101,5 @@ The debt can belong to:
 - both
 
 depending on admin configuration.
+
+Commission debt payment is separate from the direct service payment.
