@@ -17,10 +17,47 @@ The goal is to keep the first version simple, reliable, and scalable enough to g
 
 ## Database
 
-- PostgreSQL
+- Supabase Postgres
 - Prisma ORM
 
+Supabase will provide the PostgreSQL database.
+
+Prisma will be used as the main ORM and schema/migration layer for the application code.
+
+## Authentication
+
+- Supabase Auth
+
+Required auth features:
+
+- email login
+- phone verification eventually
+- role-based access
+- active profile mode
+- admin protection
+- blocked user handling
+
+## Realtime
+
+- Supabase Realtime
+
+Realtime is important for:
+
+- chat
+- emergency requests
+- booking status updates
+- contractor acceptance
+- notifications inside the app
+
+Supabase Realtime should be used for realtime database-driven events.
+
+Important rule:
+
+The database remains the source of truth. Realtime events notify clients, but durable state must always be saved in Postgres.
+
 ## File storage
+
+Primary decision:
 
 - Vercel Blob for uploaded images and files
 
@@ -33,56 +70,49 @@ Use cases:
 - payment proof uploads
 - review evidence
 
+Alternative later:
+
+- Supabase Storage
+
+For now, keep Vercel Blob as the selected storage layer unless the project decides to consolidate everything inside Supabase.
+
+---
+
+# Mandatory architecture decisions
+
+## OpenAPI is mandatory
+
+Yavaa must expose and maintain an OpenAPI contract.
+
+Reason:
+
+- web, iOS, and Android must consume the same API contract
+- agents and developers need a stable source of truth
+- tests can validate API behavior against the same contract
+- future integrations become easier
+
+The OpenAPI spec should be treated as part of the product contract.
+
+## Playwright is mandatory
+
+Yavaa must use Playwright for end-to-end and black-box acceptance testing.
+
+Playwright tests should cover:
+
+- client booking flows
+- contractor flows
+- admin flows
+- role switching
+- debt blocking
+- emergency matching
+- payment proof upload
+- chat visibility and permissions
+
+Playwright tests must follow the user action test matrix.
+
 ---
 
 # Recommended additions
-
-## Authentication
-
-Recommended options:
-
-1. Clerk
-2. Auth.js
-3. Supabase Auth
-4. Custom JWT auth
-
-For the MVP, Clerk is the fastest option.
-
-If the project needs full control and lower long-term dependency, use Auth.js or custom JWT.
-
-Required auth features:
-
-- email login
-- phone verification eventually
-- role-based access
-- active profile mode
-- admin protection
-- blocked user handling
-
----
-
-## Realtime
-
-Realtime is important for:
-
-- chat
-- emergency requests
-- booking status updates
-- contractor acceptance
-- notifications
-
-Recommended options:
-
-1. Pusher
-2. Ably
-3. Supabase Realtime
-4. Socket.IO with a dedicated server
-
-For the MVP, Pusher or Ably is recommended because they are simple and reliable.
-
-Avoid depending only on serverless functions for persistent WebSocket connections.
-
----
 
 ## Notifications
 
@@ -182,6 +212,7 @@ Admin should be web-only.
 Recommended stack:
 
 - Next.js protected routes
+- Supabase Auth
 - Prisma
 - Tailwind
 - shadcn/ui
@@ -253,10 +284,14 @@ Use cases:
 
 ## Testing
 
+Mandatory:
+
+- Playwright for end-to-end and black-box acceptance tests
+- OpenAPI contract validation
+
 Recommended:
 
 - Vitest for unit tests
-- Playwright for end-to-end tests
 - Testing Library for component tests
 - Prisma seed scripts for deterministic test data
 
@@ -313,6 +348,7 @@ Use a database table such as AuditLog.
 - SwiftUI
 - native push notifications
 - shared API client generated from OpenAPI if possible
+- Supabase Auth session integration
 
 ### Android
 
@@ -320,21 +356,7 @@ Use a database table such as AuditLog.
 - Jetpack Compose
 - Firebase Cloud Messaging
 - shared API client generated from OpenAPI if possible
-
----
-
-## API documentation
-
-Recommended:
-
-- OpenAPI spec
-
-Benefits:
-
-- web, iOS, and Android consume the same contract
-- easier testing
-- easier agent implementation
-- easier future integrations
+- Supabase Auth session integration
 
 ---
 
@@ -344,11 +366,11 @@ Benefits:
 - TypeScript
 - Tailwind CSS
 - shadcn/ui
-- PostgreSQL
+- Supabase Postgres
+- Supabase Auth
+- Supabase Realtime
 - Prisma
 - Vercel Blob
-- Clerk or Auth.js
-- Pusher or Ably
 - Resend
 - Zod
 - React Hook Form
@@ -356,6 +378,7 @@ Benefits:
 - TanStack Table
 - Vitest
 - Playwright
+- OpenAPI
 - Sentry
 - Vercel Analytics
 
@@ -363,14 +386,16 @@ Benefits:
 
 # Recommendation
 
-Start with the simplest reliable stack:
+Start with this stack:
 
 - Next.js web app first
-- PostgreSQL + Prisma
+- Supabase Postgres
+- Prisma
+- Supabase Auth
+- Supabase Realtime
 - Vercel Blob
-- Clerk or Auth.js
-- Pusher or Ably for realtime
 - Resend for email
+- OpenAPI as the API contract
 - Playwright for acceptance tests
 
 Native mobile apps should come after the core web experience is validated.
