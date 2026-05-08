@@ -1,278 +1,284 @@
-# Development Phases
+# Yavaa — Recommended Development Phases
 
-Yavaa is built in independent phases that later connect together.
+This document defines the recommended implementation order for Yavaa.
 
-The goal is:
-
-- avoid chaos
-- reduce coupling
-- make testing easier
-- allow multiple developers and agents to work in parallel
-- allow future scalability
-
----
-
-# Engineering philosophy
-
-The recommended order is:
+The sequence follows the project philosophy:
 
 ```txt
 Data
-↓
 Permissions
-↓
 Business rules
-↓
 Tests
-↓
 UI
-↓
 Realtime
-↓
 Mobile
-↓
-AI/Agent orchestration
-```
-
-Do not overbuild realtime, AI, or mobile too early.
-
-The first priority is always:
-
-- correct data
-- correct permissions
-- deterministic tests
-- reliable business rules
-
----
-
-# Recommended phase order
-
-1. foundation
-2. identity and profiles
-3. categories and services
-4. availability
-5. bookings
-6. matching
-7. realtime
-8. chat
-9. payments and debt
-10. ratings and reputation
-11. admin
-12. agent layer
-13. native apps
-14. scaling
-
----
-
-# Recommended structure
-
-```txt
-docs/planning/phases/
-
-00-foundation/
-01-identity-profiles/
-02-categories-services/
-03-availability/
-04-bookings/
-05-matching/
-06-realtime/
-07-chat/
-08-payments-debt/
-09-ratings-reputation/
-10-admin/
-11-agent-layer/
-12-native-apps/
-13-scaling/
+AI orchestration
 ```
 
 ---
 
-# Recommended files inside every phase
+## Phase 00 — Foundation / Infrastructure
 
-Each phase should eventually contain:
+### Goal
+Build the technical foundation before product features.
 
-```txt
-README.md
-goals.md
-deliverables.md
-database.md
-api.md
-tests.md
-playwright.md
-edge-cases.md
-checklist.md
-```
+### Includes
+- Next.js
+- Supabase
+- Prisma
+- Auth
+- OpenAPI
+- Playwright
+- CI/CD
+- Tailwind
+- shadcn/ui
+- logging
+- audit base
+- seed system
+- monorepo structure
 
----
-
-# What each file means
-
-## README.md
-
-High-level overview of the phase.
-
----
-
-## goals.md
-
-Defines:
-
-- what problems the phase solves
-- why the phase exists
-- expected product outcomes
+### Result
+Stable project foundation ready to scale.
 
 ---
 
-## deliverables.md
+## Phase 01 — Identity & Profiles
 
-Defines:
+### Goal
+Allow real users and contractors to exist.
 
-- what must exist
-- what features are included
-- what functionality is expected
+### Includes
+- signup/login
+- roles
+- profile switching
+- contractor onboarding
+- DNI uploads
+- contractor approval
+- contractor public profiles
+- blocked/suspended users
 
-The phase is not complete without all deliverables.
-
----
-
-## database.md
-
-Defines:
-
-- Prisma models
-- database relationships
-- constraints
-- indexes
-- migrations
-- audit requirements
+### Result
+Real users and contractors working correctly.
 
 ---
 
-## api.md
+## Phase 02 — Categories & Services
 
-Defines:
+### Goal
+Allow contractors to offer services.
 
-- API endpoints
-- OpenAPI contracts
-- request schemas
-- response schemas
-- permission requirements
-- realtime events if applicable
+### Includes
+- categories
+- category proposals
+- admin approval
+- services CRUD
+- pricing types
+- emergency pricing
+- portfolios
+- contractor offerings
 
----
-
-## tests.md
-
-Defines:
-
-- unit tests
-- integration tests
-- permission tests
-- deterministic test datasets
-
-All important business rules must have tests.
+### Result
+Searchable service marketplace.
 
 ---
 
-## playwright.md
+## Phase 03 — Availability System
 
-Defines:
+### Goal
+Build a reliable scheduling engine.
 
-- end-to-end scenarios
-- black-box acceptance tests
-- critical user flows
-- realtime interaction tests
+### Includes
+- weekly schedules
+- blocked times
+- emergency availability
+- overlap prevention
+- timezone handling
+- slot validation
 
-Playwright is mandatory.
-
----
-
-## edge-cases.md
-
-Defines dangerous or complex situations.
-
-Examples:
-
-- double booking
-- contractor suspended during booking
-- expired emergency requests
-- realtime race conditions
-- debt limit reached
-- duplicate payment confirmations
-- timezone problems
+### Result
+Reliable availability system.
 
 ---
 
-## checklist.md
+## Phase 04 — Booking Engine
 
-Defines implementation checklists.
+### Goal
+Enable real work requests and bookings.
 
-Example:
+### Includes
+- emergency now
+- today
+- scheduled bookings
+- booking states
+- booking timelines
+- cancellations
+- reschedules
+- expirations
 
-```txt
-[ ] contractor can create service
-[ ] contractor can pause service
-[ ] category approval works
-[ ] tests pass
-[ ] OpenAPI updated
-[ ] Playwright tests pass
-```
-
----
-
-# Important project rules
-
-## OpenAPI is mandatory
-
-Yavaa must be API-first.
-
-The web app, mobile apps, Playwright tests, and future AI agents should use the same product contract.
+### Result
+Operational booking lifecycle.
 
 ---
 
-## Playwright is mandatory
+## Phase 05 — Matching Engine
 
-All critical user flows must have end-to-end Playwright coverage.
+### Goal
+Find compatible contractors.
 
----
+### Includes
+- category matching
+- location filtering
+- urgency filtering
+- availability filtering
+- retry logic
+- contractor targeting
 
-## Database is the source of truth
-
-Realtime systems, chats, notifications, and agents do not replace durable database state.
-
----
-
-## Permissions must exist in backend
-
-Never trust only frontend permissions.
-
-All critical actions must validate:
-
-- user role
-- ownership
-- booking relationship
-- debt status
-- suspension state
+### Result
+Smart contractor matching.
 
 ---
 
-## Every important action requires tests
+## Phase 06 — Realtime Infrastructure
 
-Every important action should eventually map to:
+### Goal
+Make Yavaa feel live and reactive.
 
-- permission tests
-- invalid-state tests
-- edge-case tests
-- Playwright tests
+### Includes
+- Supabase Realtime
+- realtime bookings
+- realtime notifications
+- realtime contractor responses
+- realtime event subscriptions
+
+### Result
+Realtime user experience.
 
 ---
 
-# Long-term vision
+## Phase 07 — Internal Chat
 
-Yavaa should become:
+### Goal
+Provide controlled communication.
 
-- a service marketplace
-- a realtime coordination platform
-- an agent-friendly platform
-- a trusted service network
-- infrastructure for human and AI collaboration
+### Includes
+- booking chats
+- image attachments
+- unread states
+- moderation hooks
+- attachment handling
+
+### Result
+Reliable communication inside Yavaa.
+
+---
+
+## Phase 08 — Payments & Debt
+
+### Goal
+Implement the financial model.
+
+### Includes
+- contractor payment confirmation
+- debt engine
+- commission rules
+- payment proofs
+- debt limits
+- debt blocking
+- disputes
+
+### Result
+Operational commission and debt system.
+
+---
+
+## Phase 09 — Ratings & Reputation
+
+### Goal
+Build trust and quality signals.
+
+### Includes
+- reviews
+- ratings
+- no-show tracking
+- contractor reputation
+- moderation
+- reputation metrics
+
+### Result
+Reliable reputation system.
+
+---
+
+## Phase 10 — Admin System
+
+### Goal
+Create operational control tools.
+
+### Includes
+- dashboards
+- moderation
+- disputes
+- debt management
+- approvals
+- emergency monitoring
+- audit logs
+
+### Result
+Production-ready admin operations.
+
+---
+
+## Phase 11 — Agent Layer
+
+### Goal
+Prepare Yavaa for AI agents.
+
+### Includes
+- OpenAPI stabilization
+- structured responses
+- orchestration workflows
+- agent-safe confirmations
+- automation flows
+
+### Result
+Yavaa becomes agent-friendly.
+
+---
+
+## Phase 12 — Native Apps
+
+### iOS
+- SwiftUI
+
+### Android
+- Kotlin + Jetpack Compose
+
+### Includes
+- push notifications
+- realtime sync
+- authentication
+- contractor/client modes
+
+### Result
+Complete mobile ecosystem.
+
+---
+
+## Phase 13 — Scaling & Expansion
+
+### Goal
+Expand across cities and countries.
+
+### Includes
+- multiple cities
+- multiple countries
+- analytics
+- fraud detection
+- advanced ranking
+- deliveries
+- subscriptions
+- video calls
+- advanced agent orchestration
+
+### Result
+Scalable regional platform.
