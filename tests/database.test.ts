@@ -31,11 +31,13 @@ suite('database foundation', () => {
           'emergency_requests',
           'markets',
           'categories',
+          'commission_debts',
           'addresses',
           'work_zones',
           'contractor_profiles',
           'contractor_categories',
-          'contractor_work_zones'
+          'contractor_work_zones',
+          'user_debt_limits'
         )
       ORDER BY table_name ASC
     `;
@@ -47,6 +49,7 @@ suite('database foundation', () => {
       'booking_messages',
       'bookings',
       'categories',
+      'commission_debts',
       'contractor_categories',
       'contractor_profiles',
       'contractor_work_zones',
@@ -56,6 +59,7 @@ suite('database foundation', () => {
       'notifications',
       'profiles',
       'roles',
+      'user_debt_limits',
       'user_roles',
       'users',
       'work_zones'

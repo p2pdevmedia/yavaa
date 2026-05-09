@@ -76,6 +76,17 @@ enum NotificationType {
   BOOKING_FILE_UPLOADED
 }
 
+enum CommissionDebtStatus {
+  OPEN
+  PAID
+  CANCELLED
+}
+
+enum CommissionDebtSourceType {
+  ADMIN_ADJUSTMENT
+  BOOKING_COMMISSION
+}
+
 model User {
   id             String     @id @default(uuid()) @db.Uuid
   email          String     @unique
@@ -97,6 +108,10 @@ model User {
   emergencyRequestsAsClient   EmergencyRequest[] @relation("EmergencyClient")
   auditLogs                  AuditLog[] @relation("AuditActor")
   reviewedContractorProfiles  ContractorProfile[] @relation("ContractorReviewActor")
+  commissionDebts             CommissionDebt[] @relation("DebtUser")
+  commissionDebtsCreated      CommissionDebt[] @relation("DebtCreator")
+  debtLimit                   UserDebtLimit?   @relation("DebtLimitUser")
+  debtLimitsSet               UserDebtLimit[]  @relation("DebtLimitSetter")
 
   @@map("users")
 }
@@ -158,6 +173,45 @@ model AuditLog {
   @@index([createdAt])
   @@index([actorUserId])
   @@map("audit_logs")
+}
+
+model CommissionDebt {
+  id              String                   @id @default(uuid()) @db.Uuid
+  userId          String                   @map("user_id") @db.Uuid
+  sourceType      CommissionDebtSourceType @default(ADMIN_ADJUSTMENT) @map("source_type")
+  sourceId        String?                  @map("source_id")
+  amountCents     Int                      @map("amount_cents")
+  currency        String                   @default("ARS")
+  status          CommissionDebtStatus     @default(OPEN)
+  reason          String
+  createdByUserId String?                  @map("created_by_user_id") @db.Uuid
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+
+  user          User  @relation("DebtUser", fields: [userId], references: [id], onDelete: Cascade)
+  createdByUser User? @relation("DebtCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([createdByUserId])
+  @@index([sourceType, sourceId])
+  @@index([createdAt])
+  @@map("commission_debts")
+}
+
+model UserDebtLimit {
+  userId      String   @id @map("user_id") @db.Uuid
+  limitCents  Int      @map("limit_cents")
+  currency    String   @default("ARS")
+  setByUserId String   @map("set_by_user_id") @db.Uuid
+  reason      String
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user      User @relation("DebtLimitUser", fields: [userId], references: [id], onDelete: Cascade)
+  setByUser User @relation("DebtLimitSetter", fields: [setByUserId], references: [id], onDelete: Restrict)
+
+  @@index([setByUserId])
+  @@map("user_debt_limits")
 }
 
 model Market {
