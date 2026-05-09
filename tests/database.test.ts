@@ -14,19 +14,39 @@ suite('database foundation', () => {
   it('connects and exposes the seeded base tables', async () => {
     prisma = getPrismaClient();
     const rows = await prisma.$queryRaw<Array<{ table_name: string }>>`
-      SELECT table_name
+      SELECT table_name::text AS table_name
       FROM information_schema.tables
       WHERE table_schema = 'public'
-        AND table_name IN ('users', 'profiles', 'roles', 'user_roles', 'audit_logs')
+        AND table_name IN (
+          'users',
+          'profiles',
+          'roles',
+          'user_roles',
+          'audit_logs',
+          'markets',
+          'categories',
+          'addresses',
+          'work_zones',
+          'contractor_profiles',
+          'contractor_categories',
+          'contractor_work_zones'
+        )
       ORDER BY table_name ASC
     `;
 
     expect(rows.map((row) => row.table_name)).toEqual([
+      'addresses',
       'audit_logs',
+      'categories',
+      'contractor_categories',
+      'contractor_profiles',
+      'contractor_work_zones',
+      'markets',
       'profiles',
       'roles',
       'user_roles',
-      'users'
+      'users',
+      'work_zones'
     ]);
   });
 });

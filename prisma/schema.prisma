@@ -20,17 +20,34 @@ enum CategoryStatus {
   PENDING_REVIEW
 }
 
-model User {
-  id          String     @id @default(uuid()) @db.Uuid
-  email       String     @unique
-  displayName String?    @map("display_name")
-  status      UserStatus @default(ACTIVE)
-  createdAt   DateTime   @default(now()) @map("created_at")
-  updatedAt   DateTime   @updatedAt @map("updated_at")
+enum ContractorApprovalStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
 
-  profile    Profile?
-  roles      UserRole[]
-  auditLogs  AuditLog[]  @relation("AuditActor")
+enum AddressType {
+  HOME
+  WORK
+  OTHER
+}
+
+model User {
+  id             String     @id @default(uuid()) @db.Uuid
+  email          String     @unique
+  supabaseAuthId  String?    @unique @map("supabase_auth_id")
+  displayName    String?    @map("display_name")
+  status         UserStatus @default(ACTIVE)
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
+
+  profile                    Profile?
+  contractorProfile          ContractorProfile?
+  addresses                  Address[]
+  roles                      UserRole[]
+  auditLogs                  AuditLog[] @relation("AuditActor")
+  reviewedContractorProfiles  ContractorProfile[] @relation("ContractorReviewActor")
 
   @@map("users")
 }
@@ -104,6 +121,9 @@ model Market {
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
+  addresses  Address[]
+  workZones  WorkZone[]
+
   @@map("markets")
 }
 
@@ -117,7 +137,108 @@ model Category {
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
+  contractorCategories ContractorCategory[]
+
   @@index([status])
   @@index([group])
   @@map("categories")
+}
+
+model Address {
+  id         String      @id @default(uuid()) @db.Uuid
+  userId     String      @map("user_id") @db.Uuid
+  marketId   String?     @map("market_id") @db.Uuid
+  label      String
+  line1      String      @map("line_1")
+  line2      String?     @map("line_2")
+  city       String
+  province   String
+  postalCode String?     @map("postal_code")
+  notes      String?
+  type       AddressType @default(HOME) @map("address_type")
+  isDefault  Boolean     @default(false) @map("is_default")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  market Market? @relation(fields: [marketId], references: [id], onDelete: SetNull)
+
+  contractorProfile ContractorProfile?
+
+  @@index([userId])
+  @@index([marketId])
+  @@map("addresses")
+}
+
+model WorkZone {
+  id          String   @id @default(uuid()) @db.Uuid
+  marketId    String   @map("market_id") @db.Uuid
+  slug        String
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  market Market @relation(fields: [marketId], references: [id], onDelete: Cascade)
+
+  contractorLinks ContractorWorkZone[]
+
+  @@unique([marketId, slug])
+  @@index([marketId])
+  @@map("work_zones")
+}
+
+model ContractorProfile {
+  id               String                   @id @default(uuid()) @db.Uuid
+  userId           String                   @unique @map("user_id") @db.Uuid
+  addressId        String?                  @unique @map("address_id") @db.Uuid
+  approvalStatus   ContractorApprovalStatus @default(DRAFT) @map("approval_status")
+  dniNumber        String?                  @unique @map("dni_number")
+  dniFrontUrl      String?                  @map("dni_front_url")
+  dniBackUrl       String?                  @map("dni_back_url")
+  profilePhotoUrl  String?                  @map("profile_photo_url")
+  reviewNotes      String?                  @map("review_notes")
+  submittedAt      DateTime?                @map("submitted_at")
+  reviewedAt       DateTime?                @map("reviewed_at")
+  reviewedByUserId  String?                  @map("reviewed_by_user_id") @db.Uuid
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
+
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address    Address? @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  reviewedBy User?   @relation("ContractorReviewActor", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+
+  categories ContractorCategory[]
+  workZones  ContractorWorkZone[]
+
+  @@index([approvalStatus])
+  @@index([reviewedByUserId])
+  @@map("contractor_profiles")
+}
+
+model ContractorCategory {
+  contractorProfileId String   @map("contractor_profile_id") @db.Uuid
+  categoryId          String   @map("category_id") @db.Uuid
+  isPrimary           Boolean  @default(false) @map("is_primary")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  contractorProfile ContractorProfile @relation(fields: [contractorProfileId], references: [id], onDelete: Cascade)
+  category          Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@id([contractorProfileId, categoryId])
+  @@index([categoryId])
+  @@map("contractor_categories")
+}
+
+model ContractorWorkZone {
+  contractorProfileId String   @map("contractor_profile_id") @db.Uuid
+  workZoneId          String   @map("work_zone_id") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  contractorProfile ContractorProfile @relation(fields: [contractorProfileId], references: [id], onDelete: Cascade)
+  workZone          WorkZone          @relation(fields: [workZoneId], references: [id], onDelete: Restrict)
+
+  @@id([contractorProfileId, workZoneId])
+  @@index([workZoneId])
+  @@map("contractor_work_zones")
 }

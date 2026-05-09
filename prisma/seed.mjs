@@ -1,5 +1,10 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient, UserStatus } from '@prisma/client';
+import {
+  AddressType,
+  ContractorApprovalStatus,
+  PrismaClient,
+  UserStatus
+} from '@prisma/client';
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -28,6 +33,14 @@ const seedMarket = {
   isPrimary: true
 };
 
+const seedWorkZones = [
+  {
+    slug: 'central',
+    name: 'Centro',
+    description: 'Zona central de San Martin de los Andes'
+  }
+];
+
 const seedCategories = [
   { slug: 'construction', name: 'Construction', group: 'construction' },
   { slug: 'home-services', name: 'Home Services', group: 'home services' },
@@ -51,6 +64,37 @@ async function main() {
     },
     create: seedMarket
   });
+
+  const market = await prisma.market.findUnique({
+    where: { slug: seedMarket.slug }
+  });
+
+  if (!market) {
+    throw new Error('Seed market could not be loaded.');
+  }
+
+  await Promise.all(
+    seedWorkZones.map((workZone) =>
+      prisma.workZone.upsert({
+        where: {
+          marketId_slug: {
+            marketId: market.id,
+            slug: workZone.slug
+          }
+        },
+        update: {
+          name: workZone.name,
+          description: workZone.description
+        },
+        create: {
+          marketId: market.id,
+          slug: workZone.slug,
+          name: workZone.name,
+          description: workZone.description
+        }
+      })
+    )
+  );
 
   await Promise.all(
     seedCategories.map((category) =>
@@ -118,6 +162,36 @@ async function main() {
     }
   });
 
+  const foundationContractor = await prisma.user.upsert({
+    where: { email: 'foundation-contractor@yavaa.test' },
+    update: {
+      displayName: 'Foundation Contractor',
+      status: UserStatus.ACTIVE
+    },
+    create: {
+      email: 'foundation-contractor@yavaa.test',
+      displayName: 'Foundation Contractor',
+      status: UserStatus.ACTIVE
+    }
+  });
+
+  await prisma.profile.upsert({
+    where: { userId: foundationContractor.id },
+    update: {
+      firstName: 'Carlos',
+      lastName: 'Perez',
+      phone: '+54 9 2972 555000',
+      bio: 'Deterministic seed contractor account for stage 2 validation.'
+    },
+    create: {
+      userId: foundationContractor.id,
+      firstName: 'Carlos',
+      lastName: 'Perez',
+      phone: '+54 9 2972 555000',
+      bio: 'Deterministic seed contractor account for stage 2 validation.'
+    }
+  });
+
   const adminRole = roles.find((role) => role.slug === 'admin');
   if (adminRole) {
     await prisma.userRole.upsert({
@@ -131,6 +205,128 @@ async function main() {
       create: {
         userId: foundationAdmin.id,
         roleId: adminRole.id
+      }
+    });
+  }
+
+  const contractorRole = roles.find((role) => role.slug === 'contractor');
+  if (contractorRole) {
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: foundationContractor.id,
+          roleId: contractorRole.id
+        }
+      },
+      update: {},
+      create: {
+        userId: foundationContractor.id,
+        roleId: contractorRole.id
+      }
+    });
+  }
+
+  const contractorAddress = await prisma.address.upsert({
+    where: {
+      id: '11111111-1111-1111-1111-111111111111'
+    },
+    update: {
+      label: 'Main workshop',
+      line1: 'Av. San Martin 123',
+      city: market.city,
+      province: market.province,
+      postalCode: '8370',
+      notes: 'Primary contractor address used for stage 2 validation.',
+      type: AddressType.WORK,
+      isDefault: true,
+      marketId: market.id
+    },
+    create: {
+      id: '11111111-1111-1111-1111-111111111111',
+      userId: foundationContractor.id,
+      marketId: market.id,
+      label: 'Main workshop',
+      line1: 'Av. San Martin 123',
+      city: market.city,
+      province: market.province,
+      postalCode: '8370',
+      notes: 'Primary contractor address used for stage 2 validation.',
+      type: AddressType.WORK,
+      isDefault: true
+    }
+  });
+
+  const contractorProfile = await prisma.contractorProfile.upsert({
+    where: { userId: foundationContractor.id },
+    update: {
+      addressId: contractorAddress.id,
+      approvalStatus: ContractorApprovalStatus.PENDING_REVIEW,
+      dniNumber: '12345678',
+      dniFrontUrl: 'https://example.com/seeds/dni-front.jpg',
+      dniBackUrl: 'https://example.com/seeds/dni-back.jpg',
+      profilePhotoUrl: 'https://example.com/seeds/profile-photo.jpg',
+      reviewNotes: 'Pending review in deterministic seed dataset.',
+      submittedAt: new Date('2026-01-01T12:00:00.000Z'),
+      reviewedAt: null,
+      reviewedByUserId: null
+    },
+    create: {
+      userId: foundationContractor.id,
+      addressId: contractorAddress.id,
+      approvalStatus: ContractorApprovalStatus.PENDING_REVIEW,
+      dniNumber: '12345678',
+      dniFrontUrl: 'https://example.com/seeds/dni-front.jpg',
+      dniBackUrl: 'https://example.com/seeds/dni-back.jpg',
+      profilePhotoUrl: 'https://example.com/seeds/profile-photo.jpg',
+      reviewNotes: 'Pending review in deterministic seed dataset.',
+      submittedAt: new Date('2026-01-01T12:00:00.000Z')
+    }
+  });
+
+  const homeServicesCategory = await prisma.category.findUnique({
+    where: { slug: 'home-services' }
+  });
+
+  if (homeServicesCategory) {
+    await prisma.contractorCategory.upsert({
+      where: {
+        contractorProfileId_categoryId: {
+          contractorProfileId: contractorProfile.id,
+          categoryId: homeServicesCategory.id
+        }
+      },
+      update: {
+        isPrimary: true
+      },
+      create: {
+        contractorProfileId: contractorProfile.id,
+        categoryId: homeServicesCategory.id,
+        isPrimary: true
+      }
+    });
+  }
+
+  const workZone = await prisma.workZone.findUnique({
+    where: {
+      marketId_slug: {
+        marketId: market.id,
+        slug: 'central'
+      }
+    }
+  });
+
+  if (workZone) {
+    await prisma.contractorWorkZone.upsert({
+      where: {
+        contractorProfileId_workZoneId: {
+          contractorProfileId: contractorProfile.id,
+          workZoneId: workZone.id
+        }
+      },
+      update: {},
+      create: {
+        contractorProfileId: contractorProfile.id,
+        workZoneId: workZone.id
       }
     });
   }

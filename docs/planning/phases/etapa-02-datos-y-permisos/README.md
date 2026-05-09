@@ -26,3 +26,23 @@ Esta etapa construye la base de datos funcional y la capa de permisos que proteg
 
 El sistema puede guardar y proteger la informacion esencial sin confiar en el frontend para decidir permisos.
 
+---
+
+## Primer corte de trabajo
+
+Esta fase arranca con un baseline minimo pero utilizable:
+
+- ampliar el esquema Prisma para perfiles de contractor, direcciones y zonas de trabajo
+- modelar el estado de aprobacion del contractor
+- dejar helpers de permisos server-side basados en rol y propiedad
+- sembrar datos deterministicos para usuario admin y contractor de prueba
+- cubrir la base de datos y las reglas de permiso con tests
+
+## Criterio de salida inicial
+
+La fase 02 queda lista cuando:
+
+- las entidades base existen en Prisma y migracion
+- los datos sensibles se relacionan con su propietario
+- las acciones sensibles pueden evaluarse en servidor
+- los tests de permisos y base de datos pasan
