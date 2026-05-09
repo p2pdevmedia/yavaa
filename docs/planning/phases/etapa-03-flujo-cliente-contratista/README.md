@@ -1,5 +1,14 @@
 # Etapa 03 - Flujo Cliente y Contratista
 
+## Estado
+
+Cerrada por cortes funcionales.
+
+## Cortes completados
+
+1. Flujo publico de discovery.
+2. Booking programado con listado y transiciones basicas.
+
 ## Descripcion
 
 Esta etapa implementa el recorrido principal del producto: descubrir un servicio, pedir ayuda, y coordinar la respuesta entre cliente y contractor.
@@ -26,7 +35,7 @@ Esta etapa implementa el recorrido principal del producto: descubrir un servicio
 
 Un cliente puede encontrar un contractor y cerrar un pedido simple de punta a punta.
 
-## Primer corte
+## Corte 1
 
 La primera ejecucion de esta etapa cubre el flujo publico:
 
@@ -35,4 +44,15 @@ La primera ejecucion de esta etapa cubre el flujo publico:
 - perfiles publicos limitados
 - entrada desde la landing page
 
-El siguiente corte de la misma etapa agrega creacion de bookings, solicitudes urgentes y transiciones de estado.
+## Corte 2
+
+La segunda ejecucion de la misma etapa agrega:
+
+- creacion de bookings programados
+- listado y detalle de bookings
+- aceptacion, rechazo y cancelacion basica
+- contrato OpenAPI y tests asociados
+
+## Pendiente
+
+El flujo de solicitudes urgentes y el resto de estados de booking siguen pendientes para una iteracion posterior.
