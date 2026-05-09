@@ -31,6 +31,7 @@ class DiscoveryViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(DiscoveryUiState())
     val state: StateFlow<DiscoveryUiState> = _state.asStateFlow()
+    private var providerReloadRequestVersion = 0
 
     fun load() {
         viewModelScope.launch {
@@ -49,7 +50,7 @@ class DiscoveryViewModel(
                         selectedMarket = selectedMarket
                     )
                 }
-                reloadProvidersInternal()
+                reloadProvidersInternal(nextProviderReloadRequestVersion())
             }.onFailure {
                 _state.update {
                     it.copy(
@@ -63,6 +64,7 @@ class DiscoveryViewModel(
     }
 
     fun selectCategory(slug: String?) {
+        val requestVersion = nextProviderReloadRequestVersion()
         viewModelScope.launch {
             _state.update {
                 it.copy(
@@ -70,11 +72,12 @@ class DiscoveryViewModel(
                     errorMessage = null
                 )
             }
-            reloadProvidersInternal()
+            reloadProvidersInternal(requestVersion)
         }
     }
 
     fun selectMarket(slug: String?) {
+        val requestVersion = nextProviderReloadRequestVersion()
         viewModelScope.launch {
             _state.update {
                 it.copy(
@@ -82,7 +85,7 @@ class DiscoveryViewModel(
                     errorMessage = null
                 )
             }
-            reloadProvidersInternal()
+            reloadProvidersInternal(requestVersion)
         }
     }
 
@@ -91,12 +94,25 @@ class DiscoveryViewModel(
     }
 
     fun reloadProviders() {
+        val requestVersion = nextProviderReloadRequestVersion()
         viewModelScope.launch {
-            reloadProvidersInternal()
+            reloadProvidersInternal(requestVersion)
         }
     }
 
-    private suspend fun reloadProvidersInternal() {
+    private fun nextProviderReloadRequestVersion(): Int {
+        providerReloadRequestVersion += 1
+        return providerReloadRequestVersion
+    }
+
+    private fun isCurrentProviderReload(requestVersion: Int): Boolean {
+        return requestVersion == providerReloadRequestVersion
+    }
+
+    private suspend fun reloadProvidersInternal(requestVersion: Int) {
+        if (!isCurrentProviderReload(requestVersion)) {
+            return
+        }
         _state.update { it.copy(loading = true, errorMessage = null) }
         val current = _state.value
 
@@ -106,20 +122,24 @@ class DiscoveryViewModel(
                 market = current.selectedMarket
             ).items
         }.onSuccess { providers ->
-            _state.update {
-                it.copy(
-                    loading = false,
-                    providers = providers,
-                    errorMessage = null
-                )
+            if (isCurrentProviderReload(requestVersion)) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        providers = providers,
+                        errorMessage = null
+                    )
+                }
             }
         }.onFailure {
-            _state.update {
-                it.copy(
-                    loading = false,
-                    providers = emptyList(),
-                    errorMessage = DISCOVERY_ERROR_MESSAGE
-                )
+            if (isCurrentProviderReload(requestVersion)) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        providers = emptyList(),
+                        errorMessage = DISCOVERY_ERROR_MESSAGE
+                    )
+                }
             }
         }
     }

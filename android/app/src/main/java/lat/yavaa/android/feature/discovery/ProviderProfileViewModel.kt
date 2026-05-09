@@ -24,9 +24,14 @@ class ProviderProfileViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProviderProfileUiState())
     val state: StateFlow<ProviderProfileUiState> = _state.asStateFlow()
+    private var profileRequestVersion = 0
 
     fun load() {
+        val requestVersion = nextProfileRequestVersion()
         viewModelScope.launch {
+            if (!isCurrentProfileRequest(requestVersion)) {
+                return@launch
+            }
             _state.update {
                 it.copy(
                     loading = true,
@@ -38,22 +43,26 @@ class ProviderProfileViewModel(
             runCatching {
                 discoveryApi.getPublicProviderProfile(contractorProfileId).provider
             }.onSuccess { provider ->
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        provider = provider,
-                        notFound = provider == null,
-                        errorMessage = null
-                    )
+                if (isCurrentProfileRequest(requestVersion)) {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            provider = provider,
+                            notFound = provider == null,
+                            errorMessage = null
+                        )
+                    }
                 }
             }.onFailure {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        provider = null,
-                        notFound = false,
-                        errorMessage = PROFILE_ERROR_MESSAGE
-                    )
+                if (isCurrentProfileRequest(requestVersion)) {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            provider = null,
+                            notFound = false,
+                            errorMessage = PROFILE_ERROR_MESSAGE
+                        )
+                    }
                 }
             }
         }
@@ -61,6 +70,15 @@ class ProviderProfileViewModel(
 
     fun retry() {
         load()
+    }
+
+    private fun nextProfileRequestVersion(): Int {
+        profileRequestVersion += 1
+        return profileRequestVersion
+    }
+
+    private fun isCurrentProfileRequest(requestVersion: Int): Boolean {
+        return requestVersion == profileRequestVersion
     }
 
     private companion object {
