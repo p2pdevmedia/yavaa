@@ -155,19 +155,26 @@ test('signs up through the UI and provisions the database records', async ({ pag
       'Te enviamos un correo para confirmar tu cuenta. Después podés ingresar.'
     );
     const dashboardHeading = page.getByRole('heading', { name: /Bookings y chat/i });
+    const authError = page.getByTestId('auth-error');
 
-    const outcome = await Promise.any([
+    const outcome = await Promise.race([
       confirmationMessage
-        .waitFor({ state: 'visible', timeout: 15_000 })
+        .waitFor({ state: 'visible' })
         .then(() => 'confirmation' as const),
-      page.waitForURL(/\/dashboard$/, { timeout: 15_000 }).then(() => 'dashboard' as const)
+      page.waitForURL(/\/dashboard$/).then(() => 'dashboard' as const),
+      authError.waitFor({ state: 'visible' }).then(() => 'auth-error' as const),
+      page.waitForTimeout(15_000).then(() => 'timeout' as const)
     ]);
 
     if (outcome === 'dashboard') {
       await expect(page).toHaveURL(/\/dashboard$/);
       await expect(dashboardHeading).toBeVisible();
-    } else {
+    } else if (outcome === 'confirmation') {
       await expect(confirmationMessage).toBeVisible();
+    } else if (outcome === 'auth-error') {
+      throw new Error(`Signup failed before provisioning: ${await authError.innerText()}`);
+    } else {
+      throw new Error(`Signup did not reach a terminal UI state. Current page text: ${await page.locator('body').innerText()}`);
     }
 
     const appUser = await waitForProvisionedUser(email);
