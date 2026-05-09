@@ -1,5 +1,73 @@
 # Plan de Desarrollo Android
 
+## Estado actual
+
+La carpeta `android/` ya contiene el primer scaffold nativo de Yavaa:
+
+- Kotlin
+- Gradle Kotlin DSL
+- Jetpack Compose Material 3
+- Supabase Auth
+- cliente HTTP Ktor para el backend Yavaa
+- prueba inicial contra `/api/me`
+
+El paquete Android base es `lat.yavaa.android`.
+
+## Puesta en marcha local
+
+Requisitos:
+
+- Android Studio actual
+- JDK 17
+- Android SDK con API 36
+- Gradle compatible con Android Gradle Plugin 9.2.0
+
+Crear la configuracion local:
+
+```bash
+cp android/local.properties.example android/local.properties
+```
+
+Editar `android/local.properties`:
+
+```properties
+yavaa.supabaseUrl=https://your-project.supabase.co
+yavaa.supabasePublishableKey=sb_publishable_your_key
+yavaa.backendBaseUrl=http://10.0.2.2:3000
+```
+
+Notas:
+
+- `10.0.2.2` apunta al host local desde el emulador Android.
+- En un dispositivo fisico, usar una URL accesible desde el telefono.
+- Nunca poner `SUPABASE_SERVICE_ROLE_KEY` ni ningun secreto backend en Android.
+
+Comandos desde `android/` con Gradle instalado o desde el panel de Gradle de Android Studio:
+
+```bash
+gradle testDebugUnitTest
+gradle assembleDebug
+```
+
+Si Android Studio abre el proyecto, usar `android/` como raiz del proyecto Android.
+
+## Contrato API
+
+Android debe consumir el mismo contrato que web e iOS. La fuente actual es:
+
+```txt
+public/openapi.json
+```
+
+El primer scaffold implementa manualmente el cliente minimo para:
+
+```txt
+GET /api/me
+Authorization: Bearer <supabase-access-token>
+```
+
+Cuando el contrato movil se estabilice, el siguiente paso es agregar generacion automatica del cliente Android desde OpenAPI.
+
 ## Objetivo
 
 Construir la app nativa de Android de Yavaa con el mismo alcance funcional que la app de iPhone y con contrato API compartido.
@@ -178,4 +246,3 @@ La administracion operativa sigue siendo web-only.
 - dependencia de cambios en API
 - permisos inconsistentes entre cliente y servidor
 - manejo de push incompleto
-

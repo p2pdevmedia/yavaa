@@ -9,3 +9,6 @@ test-results
 *.log
 tsconfig.tsbuildinfo
 .github/
+android/.gradle/
+android/local.properties
+android/**/build/
