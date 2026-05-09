@@ -132,12 +132,11 @@ class DiscoveryViewModel(
         _state.update { it.copy(loading = true, errorMessage = null) }
         val current = _state.value
 
-        runCatching {
-            discoveryApi.listPublicProviders(
+        try {
+            val providers = discoveryApi.listPublicProviders(
                 category = current.selectedCategory,
                 market = current.selectedMarket
             ).items
-        }.onSuccess { providers ->
             if (isCurrentProviderReload(requestVersion)) {
                 _state.update {
                     it.copy(
@@ -147,7 +146,9 @@ class DiscoveryViewModel(
                     )
                 }
             }
-        }.onFailure {
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Throwable) {
             if (isCurrentProviderReload(requestVersion)) {
                 _state.update {
                     it.copy(

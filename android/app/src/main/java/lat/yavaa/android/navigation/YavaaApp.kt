@@ -1,10 +1,14 @@
 package lat.yavaa.android.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -77,23 +81,45 @@ private fun ReadyYavaaApp(container: YavaaContainer.Ready) {
         }
 
         YavaaRoute.Account -> {
-            if (authenticated) {
-                val homeViewModel: HomeViewModel = viewModel(
-                    factory = HomeViewModelFactory(
-                        authRepository = container.authRepository,
-                        apiClient = container.apiClient
-                    )
-                )
-                HomeScreen(viewModel = homeViewModel)
-            } else {
-                val authViewModel: AuthViewModel = viewModel(
-                    factory = AuthViewModelFactory(authRepository = container.authRepository)
-                )
-                AuthScreen(viewModel = authViewModel)
+            BackHandler {
+                route = YavaaRoute.Discovery
+            }
+            Column(modifier = Modifier.fillMaxSize()) {
+                OutlinedButton(
+                    onClick = {
+                        route = YavaaRoute.Discovery
+                    },
+                    modifier = Modifier.padding(start = 20.dp, top = 20.dp)
+                ) {
+                    Text("Volver a discovery")
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    if (authenticated) {
+                        val homeViewModel: HomeViewModel = viewModel(
+                            factory = HomeViewModelFactory(
+                                authRepository = container.authRepository,
+                                apiClient = container.apiClient
+                            )
+                        )
+                        HomeScreen(viewModel = homeViewModel)
+                    } else {
+                        val authViewModel: AuthViewModel = viewModel(
+                            factory = AuthViewModelFactory(authRepository = container.authRepository)
+                        )
+                        AuthScreen(viewModel = authViewModel)
+                    }
+                }
             }
         }
 
         is YavaaRoute.ProviderProfile -> {
+            BackHandler {
+                route = YavaaRoute.Discovery
+            }
             val providerProfileViewModel: ProviderProfileViewModel = viewModel(
                 key = "provider-profile-${currentRoute.contractorProfileId}",
                 factory = ProviderProfileViewModelFactory(

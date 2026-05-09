@@ -114,7 +114,7 @@ data class PermissionContext(
 
 @Serializable
 data class PublicCatalogCategoriesResponse(
-    val categories: List<PublicCatalogCategory> = emptyList()
+    val categories: List<PublicCatalogCategory>
 )
 
 @Serializable
@@ -122,13 +122,13 @@ data class PublicCatalogCategory(
     val id: String,
     val slug: String,
     val name: String,
-    val group: String? = null,
-    val isInitial: Boolean = false
+    val group: String?,
+    val isInitial: Boolean
 )
 
 @Serializable
 data class PublicCatalogMarketsResponse(
-    val markets: List<PublicCatalogMarket> = emptyList()
+    val markets: List<PublicCatalogMarket>
 )
 
 @Serializable
@@ -138,59 +138,66 @@ data class PublicCatalogMarket(
     val country: String,
     val city: String,
     val province: String,
-    val isPrimary: Boolean = false,
-    val workZones: List<PublicWorkZone> = emptyList()
+    val isPrimary: Boolean,
+    val workZones: List<PublicCatalogWorkZone>
 )
 
 @Serializable
-data class PublicWorkZone(
-    val id: String? = null,
+data class PublicCatalogWorkZone(
+    val id: String,
     val slug: String,
     val name: String,
-    val description: String? = null
+    val description: String?
 )
 
 @Serializable
 data class PublicProvidersResponse(
-    val items: List<PublicProviderCard> = emptyList()
+    val items: List<PublicProviderCard>
 )
 
 @Serializable
 data class PublicProviderCard(
     val contractorProfileId: String,
     val displayName: String,
-    val bio: String? = null,
-    val profilePhotoUrl: String? = null,
-    val acceptsEmergencies: Boolean = false,
-    val marketSlug: String? = null,
-    val marketCity: String? = null,
-    val marketProvince: String? = null,
-    val categories: List<PublicProviderCategory> = emptyList()
+    val bio: String?,
+    val profilePhotoUrl: String?,
+    val acceptsEmergencies: Boolean,
+    val marketSlug: String?,
+    val marketCity: String?,
+    val marketProvince: String?,
+    val categories: List<PublicProviderCategory>
 )
 
 @Serializable
 data class PublicProviderCategory(
     val slug: String,
     val name: String,
-    val group: String? = null,
-    val isPrimary: Boolean = false
+    val group: String?,
+    val isPrimary: Boolean
 )
 
 @Serializable
 data class PublicProviderProfileResponse(
-    val provider: PublicProviderProfile? = null
+    val provider: PublicProviderProfile?
 )
 
 @Serializable
 data class PublicProviderProfile(
     val contractorProfileId: String,
     val displayName: String,
-    val bio: String? = null,
-    val profilePhotoUrl: String? = null,
-    val acceptsEmergencies: Boolean = false,
-    val marketSlug: String? = null,
-    val marketCity: String? = null,
-    val marketProvince: String? = null,
-    val categories: List<PublicProviderCategory> = emptyList(),
-    val workZones: List<PublicWorkZone> = emptyList()
+    val bio: String?,
+    val profilePhotoUrl: String?,
+    val acceptsEmergencies: Boolean,
+    val marketSlug: String?,
+    val marketCity: String?,
+    val marketProvince: String?,
+    val categories: List<PublicProviderCategory>,
+    val workZones: List<PublicProviderWorkZone>
+)
+
+@Serializable
+data class PublicProviderWorkZone(
+    val slug: String,
+    val name: String,
+    val description: String?
 )

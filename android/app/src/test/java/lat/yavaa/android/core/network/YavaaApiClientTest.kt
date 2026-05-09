@@ -5,12 +5,16 @@ import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import lat.yavaa.android.core.config.YavaaConfig
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.fail
 import org.junit.Test
 
 class YavaaApiClientTest {
@@ -102,8 +106,10 @@ class YavaaApiClientTest {
 
     @Test
     fun `getPublicProviderProfile reads provider detail`() = runTest {
+        var authorizationHeader: String? = "unset"
         var requestedUrl: String? = null
         val engine = MockEngine { request ->
+            authorizationHeader = request.headers[HttpHeaders.Authorization]
             requestedUrl = request.url.toString()
             respond(
                 content = """{"provider":{"contractorProfileId":"cp_1","displayName":"Carlos Perez","bio":"Plomero","profilePhotoUrl":null,"acceptsEmergencies":true,"marketSlug":"san-martin-de-los-andes","marketCity":"San Martin de los Andes","marketProvince":"Neuquen","categories":[{"slug":"home-services","name":"Home Services","group":"home services","isPrimary":true}],"workZones":[{"slug":"central","name":"Centro","description":"Zona central"}]}}""",
@@ -114,8 +120,25 @@ class YavaaApiClientTest {
 
         val response = client.getPublicProviderProfile("cp_1")
 
+        assertEquals(null, authorizationHeader)
         assertEquals("https://api.yavaa.lat/api/providers/cp_1", requestedUrl)
         assertEquals("Centro", response.provider?.workZones?.single()?.name)
+    }
+
+    @Test
+    fun `getPublicProviderProfile parses null provider body as not found`() = runTest {
+        val engine = MockEngine {
+            respond(
+                content = """{"provider":null}""",
+                status = HttpStatusCode.NotFound,
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        val client = YavaaApiClient(testConfig(), testHttpClient(engine))
+
+        val response = client.getPublicProviderProfile("cp_missing")
+
+        assertNull(response.provider)
     }
 
     @Test
@@ -135,6 +158,46 @@ class YavaaApiClientTest {
         assertEquals("https://api.yavaa.lat/api/providers/cp%2F1%3F%23", requestedUrl)
     }
 
+    @Test
+    fun `missing items in public providers response fails JSON parsing`() {
+        assertFailsSerialization {
+            strictJson.decodeFromString(
+                PublicProvidersResponse.serializer(),
+                """{}"""
+            )
+        }
+    }
+
+    @Test
+    fun `missing contractorProfileId in provider card fails JSON parsing`() {
+        assertFailsSerialization {
+            strictJson.decodeFromString(
+                PublicProvidersResponse.serializer(),
+                """{"items":[{"displayName":"Carlos Perez","bio":null,"profilePhotoUrl":null,"acceptsEmergencies":true,"marketSlug":"san-martin-de-los-andes","marketCity":"San Martin de los Andes","marketProvince":"Neuquen","categories":[]}]}"""
+            )
+        }
+    }
+
+    @Test
+    fun `missing provider in public provider profile response fails JSON parsing`() {
+        assertFailsSerialization {
+            strictJson.decodeFromString(
+                PublicProviderProfileResponse.serializer(),
+                """{}"""
+            )
+        }
+    }
+
+    @Test
+    fun `missing id in catalog market work zone fails JSON parsing`() {
+        assertFailsSerialization {
+            strictJson.decodeFromString(
+                PublicCatalogMarketsResponse.serializer(),
+                """{"markets":[{"id":"market_1","slug":"san-martin-de-los-andes","country":"AR","city":"San Martin de los Andes","province":"Neuquen","isPrimary":true,"workZones":[{"slug":"central","name":"Centro","description":"Zona central"}]}]}"""
+            )
+        }
+    }
+
     private fun testConfig(): YavaaConfig {
         return YavaaConfig.from(
             supabaseUrl = "https://project.supabase.co",
@@ -149,5 +212,17 @@ class YavaaApiClientTest {
                 json(Json { ignoreUnknownKeys = true })
             }
         }
+    }
+
+    private fun assertFailsSerialization(block: () -> Unit) {
+        try {
+            block()
+            fail("Expected SerializationException")
+        } catch (_: SerializationException) {
+        }
+    }
+
+    private companion object {
+        val strictJson = Json { ignoreUnknownKeys = true }
     }
 }

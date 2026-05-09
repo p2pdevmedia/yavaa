@@ -95,7 +95,13 @@ fun DiscoveryScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     CategoryChip(
-                        category = PublicCatalogCategory(id = "all", slug = "", name = "Todas"),
+                        category = PublicCatalogCategory(
+                            id = "all",
+                            slug = "",
+                            name = "Todas",
+                            group = null,
+                            isInitial = false
+                        ),
                         selected = state.selectedCategory == null,
                         onClick = { viewModel.selectCategory(null) }
                     )

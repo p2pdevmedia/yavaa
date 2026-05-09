@@ -3,6 +3,7 @@ package lat.yavaa.android.feature.discovery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -40,9 +41,8 @@ class ProviderProfileViewModel(
                 )
             }
 
-            runCatching {
-                discoveryApi.getPublicProviderProfile(contractorProfileId).provider
-            }.onSuccess { provider ->
+            try {
+                val provider = discoveryApi.getPublicProviderProfile(contractorProfileId).provider
                 if (isCurrentProfileRequest(requestVersion)) {
                     _state.update {
                         it.copy(
@@ -53,7 +53,9 @@ class ProviderProfileViewModel(
                         )
                     }
                 }
-            }.onFailure {
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Throwable) {
                 if (isCurrentProfileRequest(requestVersion)) {
                     _state.update {
                         it.copy(

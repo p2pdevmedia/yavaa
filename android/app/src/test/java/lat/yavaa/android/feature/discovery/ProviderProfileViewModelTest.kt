@@ -3,6 +3,7 @@ package lat.yavaa.android.feature.discovery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -76,6 +77,18 @@ class ProviderProfileViewModelTest {
     }
 
     @Test
+    fun `profile API cancellation is not converted to error message`() = runTest(dispatcher) {
+        val api = CancellationProfileDiscoveryApi()
+        val viewModel = ProviderProfileViewModel(api, contractorProfileId = "cp_1")
+
+        viewModel.load()
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.errorMessage)
+        assertTrue(viewModel.state.value.loading)
+    }
+
+    @Test
     fun `repeated load ignores stale older result`() = runTest(dispatcher) {
         val firstResponse = CompletableDeferred<PublicProviderProfileResponse>()
         val secondResponse = CompletableDeferred<PublicProviderProfileResponse>()
@@ -118,6 +131,15 @@ private class FailingProfileDiscoveryApi : FakeDiscoveryApi() {
     }
 }
 
+private class CancellationProfileDiscoveryApi : FakeDiscoveryApi() {
+    override suspend fun getPublicProviderProfile(
+        contractorProfileId: String
+    ): PublicProviderProfileResponse {
+        calls += "profile:$contractorProfileId"
+        throw CancellationException("profile cancelled")
+    }
+}
+
 private class DeferredProfileDiscoveryApi(
     private val responses: List<CompletableDeferred<PublicProviderProfileResponse>>
 ) : FakeDiscoveryApi() {
@@ -136,9 +158,12 @@ private fun providerProfile(contractorProfileId: String): PublicProviderProfile 
         contractorProfileId = contractorProfileId,
         displayName = "Carlos Perez",
         bio = "Plomero",
+        profilePhotoUrl = null,
         acceptsEmergencies = true,
         marketSlug = "san-martin-de-los-andes",
         marketCity = "San Martin de los Andes",
-        marketProvince = "Neuquen"
+        marketProvince = "Neuquen",
+        categories = emptyList(),
+        workZones = emptyList()
     )
 }

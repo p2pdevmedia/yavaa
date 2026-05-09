@@ -3,6 +3,7 @@ package lat.yavaa.android.feature.discovery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -151,7 +152,7 @@ class DiscoveryViewModelTest {
         advanceUntilIdle()
         marketResponse.complete(PublicProvidersResponse(listOf(providerCard("cp_new"))))
         advanceUntilIdle()
-        categoriesResponse.complete(PublicCatalogCategoriesResponse())
+        categoriesResponse.complete(PublicCatalogCategoriesResponse(categories = emptyList()))
         marketsResponse.complete(
             PublicCatalogMarketsResponse(
                 markets = listOf(
@@ -161,7 +162,8 @@ class DiscoveryViewModelTest {
                         country = "AR",
                         city = "San Martin de los Andes",
                         province = "Neuquen",
-                        isPrimary = true
+                        isPrimary = true,
+                        workZones = emptyList()
                     )
                 )
             )
@@ -186,6 +188,18 @@ class DiscoveryViewModelTest {
         assertEquals("No se pudo cargar discovery", viewModel.state.value.errorMessage)
         assertEquals(emptyList<PublicProviderCard>(), viewModel.state.value.providers)
         assertFalse(viewModel.state.value.loading)
+    }
+
+    @Test
+    fun `provider fetch cancellation is not converted to discovery error message`() = runTest(dispatcher) {
+        val api = CancellationProvidersDiscoveryApi()
+        val viewModel = DiscoveryViewModel(api)
+
+        viewModel.reloadProviders()
+        advanceUntilIdle()
+
+        assertNull(viewModel.state.value.errorMessage)
+        assertTrue(viewModel.state.value.loading)
     }
 
     @Test
@@ -218,7 +232,8 @@ open class FakeDiscoveryApi(
             country = "AR",
             city = "San Martin de los Andes",
             province = "Neuquen",
-            isPrimary = true
+            isPrimary = true,
+            workZones = emptyList()
         )
     ),
     private val providers: List<PublicProviderCard> = listOf(
@@ -258,6 +273,16 @@ open class FakeDiscoveryApi(
     ): PublicProviderProfileResponse {
         calls += "profile:$contractorProfileId"
         return PublicProviderProfileResponse(provider = null)
+    }
+}
+
+private class CancellationProvidersDiscoveryApi : FakeDiscoveryApi() {
+    override suspend fun listPublicProviders(
+        category: String?,
+        market: String?
+    ): PublicProvidersResponse {
+        calls += "providers:${category ?: "null"}:${market ?: "null"}"
+        throw CancellationException("providers cancelled")
     }
 }
 
@@ -306,9 +331,11 @@ fun providerCard(contractorProfileId: String): PublicProviderCard {
         contractorProfileId = contractorProfileId,
         displayName = "Carlos Perez",
         bio = "Plomero",
+        profilePhotoUrl = null,
         acceptsEmergencies = true,
         marketSlug = "san-martin-de-los-andes",
         marketCity = "San Martin de los Andes",
-        marketProvince = "Neuquen"
+        marketProvince = "Neuquen",
+        categories = emptyList()
     )
 }
