@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export function middleware(request: NextRequest) {
+import { updateSession } from '@/utils/supabase/middleware';
+
+export async function middleware(request: NextRequest) {
+  const response = await updateSession(request);
+
   if (!request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.next();
+    return response;
   }
 
   const hasSupabaseSessionCookie = request.cookies
@@ -10,16 +14,21 @@ export function middleware(request: NextRequest) {
     .some((cookie) => cookie.name.startsWith('sb-'));
 
   if (hasSupabaseSessionCookie) {
-    return NextResponse.next();
+    return response;
   }
 
   const redirectUrl = request.nextUrl.clone();
   redirectUrl.pathname = '/';
   redirectUrl.searchParams.set('next', request.nextUrl.pathname);
 
-  return NextResponse.redirect(redirectUrl);
+  const redirectResponse = NextResponse.redirect(redirectUrl);
+  response.cookies.getAll().forEach((cookie) => {
+    redirectResponse.cookies.set(cookie);
+  });
+
+  return redirectResponse;
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*']
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
 };

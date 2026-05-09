@@ -1,6 +1,6 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-import { getEnv, hasSupabaseEnv } from '@/lib/env';
+import { getSupabasePublishableKey, getSupabaseUrl, getEnv, hasSupabaseEnv } from '@/lib/env';
 
 export type SupabaseDatabase = {
   public: {
@@ -13,24 +13,6 @@ export type SupabaseDatabase = {
 let anonClient: SupabaseClient<SupabaseDatabase> | null = null;
 let serviceClient: SupabaseClient<SupabaseDatabase> | null = null;
 
-function getSupabaseUrl(): string {
-  const env = getEnv();
-  if (!env.NEXT_PUBLIC_SUPABASE_URL) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured.');
-  }
-
-  return env.NEXT_PUBLIC_SUPABASE_URL;
-}
-
-function getSupabaseAnonKey(): string {
-  const env = getEnv();
-  if (!env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured.');
-  }
-
-  return env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-}
-
 function getSupabaseServiceRoleKey(): string {
   const env = getEnv();
   if (!env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -42,7 +24,7 @@ function getSupabaseServiceRoleKey(): string {
 
 export function getSupabaseAnonClient(): SupabaseClient<SupabaseDatabase> {
   if (!anonClient) {
-    anonClient = createClient<SupabaseDatabase>(getSupabaseUrl(), getSupabaseAnonKey(), {
+    anonClient = createClient<SupabaseDatabase>(getSupabaseUrl(), getSupabasePublishableKey(), {
       auth: {
         autoRefreshToken: false,
         persistSession: false

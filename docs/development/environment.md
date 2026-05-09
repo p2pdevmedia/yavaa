@@ -3,7 +3,8 @@
 ## Required variables
 - `DATABASE_URL`: PostgreSQL connection string for Prisma.
 - `NEXT_PUBLIC_SUPABASE_URL`: Supabase project URL.
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Supabase anon key for browser and session bootstrap calls.
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: Supabase publishable key for browser and session bootstrap calls.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Legacy alias accepted by the helpers if present.
 - `SUPABASE_SERVICE_ROLE_KEY`: Reserved for server-only operations that need elevated access.
 
 ## Optional variables
