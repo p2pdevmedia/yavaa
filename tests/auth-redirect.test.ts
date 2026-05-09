@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildAuthCallbackRedirectTo,
   buildAuthEmailRedirectTo,
   buildPasswordResetRedirectTo,
   getAuthRedirectBaseUrl
@@ -43,6 +44,12 @@ describe('auth redirect helpers', () => {
   it('builds signup confirmation redirects through the auth callback', () => {
     expect(buildAuthEmailRedirectTo('/dashboard?tab=bookings', 'http://127.0.0.1:3000')).toBe(
       'http://127.0.0.1:3000/auth/callback?next=%2Fdashboard%3Ftab%3Dbookings'
+    );
+  });
+
+  it('builds OAuth redirects through the auth callback', () => {
+    expect(buildAuthCallbackRedirectTo('/providers', 'http://127.0.0.1:3000')).toBe(
+      'http://127.0.0.1:3000/auth/callback?next=%2Fproviders'
     );
   });
 });

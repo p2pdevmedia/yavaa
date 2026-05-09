@@ -9,6 +9,7 @@ import { resolveAppUser } from '@/lib/app-user';
 import { listBookingsForActor } from '@/lib/bookings';
 import { listNotificationsForUser } from '@/lib/notifications';
 import { serializeNotificationsForDashboard } from '@/lib/dashboard-notifications';
+import { getDashboardAdminData } from '@/lib/dashboard-admin';
 import { serializeBookingsForDashboard } from '@/lib/dashboard-workspace';
 import { getPrismaClient } from '@/lib/prisma';
 import { listPublicCatalogCategories } from '@/lib/public-catalog';
@@ -50,6 +51,9 @@ export default async function DashboardPage() {
   const notifications = appUser.user
     ? await listNotificationsForUser(prisma, appUser.user.id, 5)
     : [];
+  const adminData = appUser.permissionContext
+    ? await getDashboardAdminData(prisma, appUser.permissionContext)
+    : null;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl items-start px-4 py-8 sm:px-6 lg:px-8">
@@ -60,6 +64,7 @@ export default async function DashboardPage() {
         categories={categories}
         bookings={serializeBookingsForDashboard(bookings)}
         notifications={serializeNotificationsForDashboard(notifications)}
+        adminData={adminData}
       />
     </main>
   );

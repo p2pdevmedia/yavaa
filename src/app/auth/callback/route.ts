@@ -18,13 +18,14 @@ export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const nextPath = normalizeNextPath(requestUrl.searchParams.get('next'));
+  const providerError = requestUrl.searchParams.get('error') ?? requestUrl.searchParams.get('error_description');
 
   if (!hasSupabaseEnv()) {
     redirect(appendErrorParam(nextPath, 'Supabase no está configurado en este entorno.') as Route);
   }
 
-  if (!code) {
-    redirect(appendErrorParam(nextPath, 'El enlace de recuperación no es válido o expiró.') as Route);
+  if (providerError || !code) {
+    redirect(appendErrorParam(nextPath, 'No pudimos completar la autenticación con Supabase.') as Route);
   }
 
   const cookieStore = await cookies();
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
   const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
-    redirect(appendErrorParam(nextPath, 'El enlace de recuperación no es válido o expiró.') as Route);
+    redirect(appendErrorParam(nextPath, 'No pudimos completar la autenticación con Supabase.') as Route);
   }
 
   redirect(nextPath as Route);

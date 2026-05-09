@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
+import { AdminPanel } from '@/components/dashboard/admin-panel';
 import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import type { DashboardNotification } from '@/lib/dashboard-notifications';
+import type { DashboardAdminData } from '@/lib/dashboard-admin';
 import type { DashboardBooking } from '@/lib/dashboard-workspace';
 
 type DashboardUserStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
@@ -109,6 +111,7 @@ type DashboardPanelProps = {
   categories: DashboardCategory[];
   bookings: DashboardBooking[];
   notifications: DashboardNotification[];
+  adminData: DashboardAdminData | null;
 };
 
 type ProfileDraft = {
@@ -192,7 +195,8 @@ export function DashboardPanel({
   configured,
   categories,
   bookings,
-  notifications
+  notifications,
+  adminData
 }: DashboardPanelProps) {
   const [user, setUser] = useState(initialUser);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
@@ -442,6 +446,8 @@ export function DashboardPanel({
           {configured ? <SignOutButton /> : null}
         </div>
       </div>
+
+      {adminData ? <AdminPanel initialData={adminData} /> : null}
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
         <Card className="border-border/70 bg-card/90 shadow-soft">

@@ -32,7 +32,13 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/admin/emergencies/{emergencyRequestId}/reassign']).toBeDefined();
     expect(document.paths['/api/admin/users']).toBeDefined();
     expect(document.paths['/api/admin/users/{userId}']).toBeDefined();
+    expect(document.paths['/api/admin/bookings/{bookingId}/correction']).toBeDefined();
     expect(document.paths['/api/admin/categories']).toBeDefined();
+    expect(
+      (document.paths['/api/admin/categories']?.post?.requestBody as
+        | { content?: Record<string, unknown> }
+        | undefined)?.content?.['application/json']
+    ).toBeDefined();
     expect(document.paths['/api/admin/contractors']).toBeDefined();
     expect(document.paths['/api/admin/contractors/{contractorProfileId}']).toBeDefined();
     expect(document.components?.securitySchemes?.bearerAuth).toBeDefined();

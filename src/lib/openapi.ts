@@ -353,6 +353,47 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const adminCategorySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'slug', 'name', 'group', 'status', 'isInitial'],
+    properties: {
+      id: { type: 'string' },
+      slug: { type: 'string' },
+      name: { type: 'string' },
+      group: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'PENDING_REVIEW'] },
+      isInitial: { type: 'boolean' }
+    }
+  } as const;
+
+  const adminCategoryInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['slug', 'name'],
+    properties: {
+      slug: {
+        type: 'string',
+        minLength: 2,
+        maxLength: 120,
+        pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+      },
+      name: { type: 'string', minLength: 2, maxLength: 120 },
+      group: { anyOf: [{ type: 'string', maxLength: 120 }, { type: 'null' }] },
+      status: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'PENDING_REVIEW'] }
+    }
+  } as const;
+
+  const adminBookingCorrectionInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['action', 'reason'],
+    properties: {
+      action: { type: 'string', enum: ['cancel'] },
+      reason: { type: 'string', minLength: 8, maxLength: 1000 }
+    }
+  } as const;
+
   const adminContractorProfileUserSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1614,14 +1655,86 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           }
         }
       },
+      '/api/admin/bookings/{bookingId}/correction': {
+        patch: {
+          operationId: 'adminCorrectBooking',
+          summary: 'Apply an admin correction to a conflicted booking',
+          tags: ['admin', 'bookings'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'bookingId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: adminBookingCorrectionInputSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Corrected booking.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['booking'],
+                    properties: {
+                      booking: bookingRecordSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid booking correction payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can correct bookings.' },
+            '404': { description: 'Booking not found.' },
+            '422': { description: 'The requested booking correction is not allowed.' }
+          }
+        }
+      },
       '/api/admin/categories': {
         get: {
           operationId: 'adminListCategories',
           summary: 'List categories for admin management',
           tags: ['admin'],
           security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'status',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', enum: ['ACTIVE', 'INACTIVE', 'PENDING_REVIEW'] }
+            }
+          ],
           responses: {
-            '200': { description: 'All categories for admin review.' },
+            '200': {
+              description: 'All categories for admin review.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['categories'],
+                    properties: {
+                      categories: {
+                        type: 'array',
+                        items: adminCategorySchema
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid category filters.' },
             '401': { description: 'Missing or invalid session token.' },
             '403': { description: 'Only active admins can manage categories.' }
           }
@@ -1631,11 +1744,34 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           summary: 'Create or update category',
           tags: ['admin'],
           security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: adminCategoryInputSchema
+              }
+            }
+          },
           responses: {
-            '200': { description: 'Category created or updated.' },
+            '200': {
+              description: 'Category created or updated.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['category'],
+                    properties: {
+                      category: adminCategorySchema
+                    }
+                  }
+                }
+              }
+            },
             '400': { description: 'Invalid category payload.' },
             '401': { description: 'Missing or invalid session token.' },
-            '403': { description: 'Only active admins can manage categories.' }
+            '403': { description: 'Only active admins can manage categories.' },
+            '422': { description: 'Initial categories cannot be paused.' }
           }
         }
       },

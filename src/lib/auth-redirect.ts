@@ -26,7 +26,7 @@ export function getAuthRedirectBaseUrl({
   return normalizeBaseUrl(windowOrigin);
 }
 
-export function buildAuthEmailRedirectTo(nextPath: string, windowOrigin: string): string {
+export function buildAuthCallbackRedirectTo(nextPath: string, windowOrigin: string): string {
   const baseUrl = getAuthRedirectBaseUrl({
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
     windowOrigin
@@ -35,11 +35,10 @@ export function buildAuthEmailRedirectTo(nextPath: string, windowOrigin: string)
   return `${baseUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`;
 }
 
-export function buildPasswordResetRedirectTo(windowOrigin: string): string {
-  const baseUrl = getAuthRedirectBaseUrl({
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-    windowOrigin
-  });
+export function buildAuthEmailRedirectTo(nextPath: string, windowOrigin: string): string {
+  return buildAuthCallbackRedirectTo(nextPath, windowOrigin);
+}
 
-  return `${baseUrl}/auth/callback?next=${encodeURIComponent('/reset-password')}`;
+export function buildPasswordResetRedirectTo(windowOrigin: string): string {
+  return buildAuthCallbackRedirectTo('/reset-password', windowOrigin);
 }
