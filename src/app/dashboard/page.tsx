@@ -14,14 +14,16 @@ export default async function DashboardPage() {
     <main className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-4 py-8 sm:px-6 lg:px-8">
       <Card className="w-full">
         <CardHeader>
-          <CardTitle className="font-display text-3xl">Protected area</CardTitle>
+          <CardTitle className="font-display text-3xl">Área protegida</CardTitle>
           <CardDescription>
-            This route is reserved for authenticated users and will expand in later phases.
+            Esta ruta está reservada para usuarios autenticados y crecerá en fases posteriores.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
-          <p>Phase 00 only scaffolds the guardrail. Later phases will add role-aware access.</p>
-          <p className="font-mono text-foreground">If you reached this screen, the auth gate let you through.</p>
+          <p>La fase 00 solo deja montada la protección inicial. Después agregaremos acceso según rol.</p>
+          <p className="font-mono text-foreground">
+            Si llegaste a esta pantalla, la validación de autenticación te dejó pasar.
+          </p>
         </CardContent>
       </Card>
     </main>
