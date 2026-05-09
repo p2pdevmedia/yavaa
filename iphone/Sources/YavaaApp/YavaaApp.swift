@@ -13,6 +13,8 @@ public final class AppContainer: ObservableObject {
 
     private let apiClient: APIClient
     private let sessionController: SessionController
+    private var modeSelectionRevision = 0
+    private var latestPickerRequestedMode: AppMode?
 
     public init(
         apiEnvironment: APIEnvironment = .localWebsite,
@@ -26,12 +28,15 @@ public final class AppContainer: ObservableObject {
         self.sessionController = SessionController(
             apiClient: apiClient,
             tokenStore: tokenStore,
-            preferredModeStore: InMemoryPreferredModeStore(),
+            preferredModeStore: UserDefaultsPreferredModeStore(
+                key: "lat.yavaa.iphone.preferred-mode"
+            ),
             authService: authService
         )
     }
 
     public func bootstrap() async {
+        modeSelectionRevision += 1
         isBootstrapping = true
         defer {
             isBootstrapping = false
@@ -48,19 +53,64 @@ public final class AppContainer: ObservableObject {
     }
 
     public func signIn(email: String, password: String) async throws {
+        modeSelectionRevision += 1
         sessionState = try await sessionController.signIn(email: email, password: password)
     }
 
     public func signUp(email: String, password: String) async throws {
+        modeSelectionRevision += 1
         sessionState = try await sessionController.signUp(email: email, password: password)
     }
 
     public func signOut() async {
+        modeSelectionRevision += 1
         do {
             sessionState = try await sessionController.signOut()
         } catch {
             sessionState = .signedOut
         }
+    }
+
+    public func selectMode(_ mode: AppMode) async {
+        if let latestPickerRequestedMode,
+           latestPickerRequestedMode != mode {
+            return
+        }
+
+        modeSelectionRevision += 1
+        let revision = modeSelectionRevision
+
+        do {
+            let nextState = try await sessionController.selectMode(mode, currentSession: sessionState)
+            guard isCurrentModeSelection(revision: revision, mode: mode) else {
+                return
+            }
+            sessionState = nextState
+        } catch {
+            let refreshedState = await sessionController.refreshSession()
+            guard isCurrentModeSelection(revision: revision, mode: mode) else {
+                return
+            }
+            sessionState = refreshedState
+        }
+    }
+
+    fileprivate func updateSelectedModeForPicker(_ mode: AppMode?) {
+        guard let mode else {
+            return
+        }
+
+        do {
+            modeSelectionRevision += 1
+            latestPickerRequestedMode = mode
+            sessionState = try sessionState.selectingMode(mode)
+        } catch {
+        }
+    }
+
+    private func isCurrentModeSelection(revision: Int, mode: AppMode) -> Bool {
+        revision == modeSelectionRevision
+            && (latestPickerRequestedMode == nil || latestPickerRequestedMode == mode)
     }
 }
 
@@ -144,6 +194,24 @@ public struct YavaaRootView: View {
                     .font(.headline)
                 Text("Autenticada")
                     .foregroundStyle(.secondary)
+            }
+
+            if let account = container.sessionState.account,
+               account.availableModes.count > 1 {
+                ModePickerView(
+                    modes: account.availableModes,
+                    selectedMode: Binding(
+                        get: {
+                            container.sessionState.mode
+                        },
+                        set: { mode in
+                            container.updateSelectedModeForPicker(mode)
+                        }
+                    ),
+                    onSelect: { mode in
+                        await container.selectMode(mode)
+                    }
+                )
             }
 
             Spacer()

@@ -141,4 +141,27 @@ final class SessionControllerTests: XCTestCase {
 
         XCTAssertEqual(try await store.loadPreferredMode(), .contractor)
     }
+
+    func testUserDefaultsPreferredModeStorePersistsAndClearsMode() async throws {
+        let suiteName = "lat.yavaa.tests.preferred-mode.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defaults.removePersistentDomain(forName: suiteName)
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+        }
+
+        let key = "preferred-mode"
+        let store = UserDefaultsPreferredModeStore(userDefaults: defaults, key: key)
+
+        XCTAssertNil(try await store.loadPreferredMode())
+
+        try await store.savePreferredMode(.contractor)
+
+        let secondStore = UserDefaultsPreferredModeStore(userDefaults: defaults, key: key)
+        XCTAssertEqual(try await secondStore.loadPreferredMode(), .contractor)
+
+        try await secondStore.clearPreferredMode()
+
+        XCTAssertNil(try await store.loadPreferredMode())
+    }
 }

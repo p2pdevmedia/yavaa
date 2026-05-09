@@ -212,6 +212,35 @@ public actor InMemoryPreferredModeStore: PreferredModeStore {
     }
 }
 
+public actor UserDefaultsPreferredModeStore: PreferredModeStore {
+    private let userDefaults: UserDefaults
+    private let key: String
+
+    public init(
+        userDefaults: UserDefaults = .standard,
+        key: String = "lat.yavaa.iphone.preferred-mode"
+    ) {
+        self.userDefaults = userDefaults
+        self.key = key
+    }
+
+    public func loadPreferredMode() async throws -> AppMode? {
+        guard let rawValue = userDefaults.string(forKey: key) else {
+            return nil
+        }
+
+        return AppMode(rawValue: rawValue)
+    }
+
+    public func savePreferredMode(_ mode: AppMode) async throws {
+        userDefaults.set(mode.rawValue, forKey: key)
+    }
+
+    public func clearPreferredMode() async throws {
+        userDefaults.removeObject(forKey: key)
+    }
+}
+
 public enum AuthServiceError: Error, Equatable, Sendable {
     case missingAccessToken
     case confirmationRequired
