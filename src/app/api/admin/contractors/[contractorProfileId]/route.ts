@@ -1,23 +1,68 @@
-import { ContractorApprovalStatus } from '@prisma/client';
 import { type NextRequest } from 'next/server';
-import { z } from 'zod';
+import { ZodError } from 'zod';
 
-import { recordAuditLog } from '@/lib/audit';
+import { contractorReviewSchema, reviewContractorProfileForAdmin } from '@/lib/admin-contractors';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
-import { canReviewContractorApplication } from '@/lib/permissions';
 import { resolveRequestAuth } from '@/lib/request-auth';
-
-const contractorReviewSchema = z.object({
-  approvalStatus: z.enum(['APPROVED', 'REJECTED']),
-  reviewNotes: z.string().trim().max(1000).nullable().optional()
-});
 
 type RouteParams = {
   params: Promise<{
     contractorProfileId: string;
   }>;
 };
+
+function mapAdminContractorReviewError(error: unknown): { status: number; body: { error: string; message: string } } {
+  if (error instanceof ZodError) {
+    return {
+      status: 400,
+      body: {
+        error: 'invalid-request',
+        message: 'Contractor review payload is invalid.'
+      }
+    };
+  }
+
+  if (error instanceof Error) {
+    if (error.message === 'forbidden') {
+      return {
+        status: 403,
+        body: {
+          error: 'forbidden',
+          message: 'Only active admins can review contractor profiles.'
+        }
+      };
+    }
+
+    if (error.message === 'contractor-profile-not-found') {
+      return {
+        status: 404,
+        body: {
+          error: 'not-found',
+          message: 'Contractor profile not found.'
+        }
+      };
+    }
+
+    if (error.message === 'invalid-state') {
+      return {
+        status: 422,
+        body: {
+          error: 'invalid-state',
+          message: 'Only contractor profiles pending review can be approved or rejected.'
+        }
+      };
+    }
+  }
+
+  return {
+    status: 500,
+    body: {
+      error: 'internal-error',
+      message: 'We could not review the contractor profile.'
+    }
+  };
+}
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const auth = await resolveRequestAuth(request);
@@ -26,7 +71,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     return jsonResponse(auth, { status: 401 });
   }
 
-  if (!auth.permissionContext || !canReviewContractorApplication(auth.permissionContext)) {
+  if (!auth.permissionContext) {
     return jsonResponse(
       {
         error: 'forbidden',
@@ -37,82 +82,37 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   }
 
   const { contractorProfileId } = await params;
-  const parsedBody = contractorReviewSchema.safeParse(await request.json());
-
-  if (!parsedBody.success) {
-    return jsonResponse(
-      {
-        error: 'invalid-request',
-        issues: parsedBody.error.flatten()
-      },
-      { status: 400 }
-    );
-  }
-
   const prisma = getPrismaClient();
-  const data = parsedBody.data;
 
-  const contractorProfile = await prisma.contractorProfile.findUnique({
-    where: {
-      id: contractorProfileId
-    },
-    select: {
-      id: true,
-      userId: true
+  try {
+    const parsedBody = contractorReviewSchema.safeParse(await request.json());
+
+    if (!parsedBody.success) {
+      return jsonResponse(
+        {
+          error: 'invalid-request',
+          issues: parsedBody.error.flatten()
+        },
+        { status: 400 }
+      );
     }
-  });
 
-  if (!contractorProfile) {
+    const contractorProfile = await reviewContractorProfileForAdmin(
+      prisma,
+      auth.permissionContext,
+      contractorProfileId,
+      parsedBody.data
+    );
+
     return jsonResponse(
       {
-        error: 'not-found',
-        message: 'Contractor profile not found.'
+        contractorProfile
       },
-      { status: 404 }
+      { status: 200 }
     );
+  } catch (error) {
+    const mapped = mapAdminContractorReviewError(error);
+
+    return jsonResponse(mapped.body, { status: mapped.status });
   }
-
-  const updatedProfile = await prisma.contractorProfile.update({
-    where: {
-      id: contractorProfileId
-    },
-    data: {
-      approvalStatus:
-        data.approvalStatus === 'APPROVED'
-          ? ContractorApprovalStatus.APPROVED
-          : ContractorApprovalStatus.REJECTED,
-      reviewNotes: data.reviewNotes ?? null,
-      reviewedByUserId: auth.permissionContext?.userId ?? null,
-      reviewedAt: new Date()
-    },
-    select: {
-      id: true,
-      approvalStatus: true,
-      reviewNotes: true,
-      reviewedAt: true,
-      reviewedByUserId: true
-    }
-  });
-
-  await recordAuditLog({
-    actorUserId: auth.permissionContext?.userId ?? null,
-    action:
-      updatedProfile.approvalStatus === ContractorApprovalStatus.APPROVED
-        ? 'contractor_profile.approved'
-        : 'contractor_profile.rejected',
-    entityType: 'contractor_profile',
-    entityId: contractorProfileId,
-      metadata: {
-      reviewedByUserId: auth.permissionContext?.userId ?? null,
-      approvalStatus: updatedProfile.approvalStatus,
-      reviewNotes: updatedProfile.reviewNotes
-    }
-  });
-
-  return jsonResponse(
-    {
-      contractorProfile: updatedProfile
-    },
-    { status: 200 }
-  );
 }
