@@ -83,6 +83,19 @@ class DiscoveryViewModelTest {
     }
 
     @Test
+    fun `reloadProviders can be called directly`() = runTest(dispatcher) {
+        val api = FakeDiscoveryApi()
+        val viewModel = DiscoveryViewModel(api)
+
+        viewModel.reloadProviders()
+        advanceUntilIdle()
+
+        assertEquals(listOf("providers:null:null"), api.calls)
+        assertEquals(listOf("cp_1"), viewModel.state.value.providers.map { it.contractorProfileId })
+        assertFalse(viewModel.state.value.loading)
+    }
+
+    @Test
     fun `empty provider response sets empty true`() = runTest(dispatcher) {
         val api = FakeDiscoveryApi(providers = emptyList())
         val viewModel = DiscoveryViewModel(api)

@@ -49,7 +49,7 @@ class DiscoveryViewModel(
                         selectedMarket = selectedMarket
                     )
                 }
-                reloadProviders()
+                reloadProvidersInternal()
             }.onFailure {
                 _state.update {
                     it.copy(
@@ -70,7 +70,7 @@ class DiscoveryViewModel(
                     errorMessage = null
                 )
             }
-            reloadProviders()
+            reloadProvidersInternal()
         }
     }
 
@@ -82,7 +82,7 @@ class DiscoveryViewModel(
                     errorMessage = null
                 )
             }
-            reloadProviders()
+            reloadProvidersInternal()
         }
     }
 
@@ -90,7 +90,13 @@ class DiscoveryViewModel(
         load()
     }
 
-    private suspend fun reloadProviders() {
+    fun reloadProviders() {
+        viewModelScope.launch {
+            reloadProvidersInternal()
+        }
+    }
+
+    private suspend fun reloadProvidersInternal() {
         _state.update { it.copy(loading = true, errorMessage = null) }
         val current = _state.value
 
