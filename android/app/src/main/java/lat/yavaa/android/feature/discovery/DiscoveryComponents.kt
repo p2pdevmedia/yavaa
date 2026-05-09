@@ -226,9 +226,18 @@ fun DiscoveryBottomBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         TextButton(onClick = onHomeClick) { Text("Inicio") }
-        TextButton(onClick = {}) { Text("Buscar") }
-        TextButton(onClick = {}) { Text("Reservas") }
-        TextButton(onClick = {}) { Text("Mensajes") }
+        InactiveBottomBarLabel("Buscar")
+        InactiveBottomBarLabel("Reservas")
+        InactiveBottomBarLabel("Mensajes")
         TextButton(onClick = onAccountClick) { Text("Tu") }
     }
+}
+
+@Composable
+private fun InactiveBottomBarLabel(label: String) {
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
