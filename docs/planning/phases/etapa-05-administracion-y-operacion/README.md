@@ -147,4 +147,5 @@ Criterio de salida:
 
 - Etapa iniciada.
 - Etapa 05.1 implementada a nivel API, permisos, audit log, OpenAPI y tests unitarios.
-- Proximo corte recomendado: Etapa 05.2.
+- Etapa 05.2 implementada a nivel API, filtros por estado, permisos, audit log, OpenAPI y tests unitarios.
+- Proximo corte recomendado: Etapa 05.3.

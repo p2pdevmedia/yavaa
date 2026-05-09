@@ -353,6 +353,135 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const adminContractorProfileUserSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'email', 'displayName', 'status', 'profile'],
+    properties: {
+      id: { type: 'string' },
+      email: { type: 'string' },
+      displayName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      status: { type: 'string', enum: ['ACTIVE', 'SUSPENDED', 'BLOCKED'] },
+      profile: {
+        anyOf: [
+          adminUserProfileSchema,
+          { type: 'null' }
+        ]
+      }
+    }
+  } as const;
+
+  const adminContractorProfileSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+      'id',
+      'approvalStatus',
+      'acceptsEmergencies',
+      'dniNumber',
+      'dniFrontUrl',
+      'dniBackUrl',
+      'profilePhotoUrl',
+      'reviewNotes',
+      'submittedAt',
+      'reviewedAt',
+      'reviewedByUserId',
+      'createdAt',
+      'updatedAt',
+      'user',
+      'address',
+      'categories',
+      'workZones'
+    ],
+    properties: {
+      id: { type: 'string' },
+      approvalStatus: { type: 'string', enum: ['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'] },
+      acceptsEmergencies: { type: 'boolean' },
+      dniNumber: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      dniFrontUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      dniBackUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      profilePhotoUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      reviewNotes: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      submittedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      reviewedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      reviewedByUserId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+      user: adminContractorProfileUserSchema,
+      address: {
+        anyOf: [
+          {
+            type: 'object',
+            additionalProperties: false,
+            required: ['id', 'label', 'city', 'province', 'marketSlug', 'marketCity', 'marketProvince'],
+            properties: {
+              id: { type: 'string' },
+              label: { type: 'string' },
+              city: { type: 'string' },
+              province: { type: 'string' },
+              marketSlug: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              marketCity: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              marketProvince: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+            }
+          },
+          { type: 'null' }
+        ]
+      },
+      categories: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['id', 'slug', 'name', 'group', 'isPrimary'],
+          properties: {
+            id: { type: 'string' },
+            slug: { type: 'string' },
+            name: { type: 'string' },
+            group: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+            isPrimary: { type: 'boolean' }
+          }
+        }
+      },
+      workZones: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['id', 'slug', 'name', 'marketSlug'],
+          properties: {
+            id: { type: 'string' },
+            slug: { type: 'string' },
+            name: { type: 'string' },
+            marketSlug: { type: 'string' }
+          }
+        }
+      }
+    }
+  } as const;
+
+  const adminContractorReviewResultSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'approvalStatus', 'reviewNotes', 'reviewedAt', 'reviewedByUserId'],
+    properties: {
+      id: { type: 'string' },
+      approvalStatus: { type: 'string', enum: ['APPROVED', 'REJECTED'] },
+      reviewNotes: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      reviewedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      reviewedByUserId: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+    }
+  } as const;
+
+  const adminContractorReviewInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['approvalStatus'],
+    properties: {
+      approvalStatus: { type: 'string', enum: ['APPROVED', 'REJECTED'] },
+      reviewNotes: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] }
+    }
+  } as const;
+
   const emergencyCandidateSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1510,6 +1639,45 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           }
         }
       },
+      '/api/admin/contractors': {
+        get: {
+          operationId: 'adminListContractorProfiles',
+          summary: 'List contractor profiles for admin review',
+          tags: ['admin'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'approvalStatus',
+              in: 'query',
+              required: false,
+              schema: { type: 'string', enum: ['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'] }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Contractor profiles available for admin review.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['contractorProfiles'],
+                    properties: {
+                      contractorProfiles: {
+                        type: 'array',
+                        items: adminContractorProfileSchema
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid contractor list filters.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can review contractor profiles.' }
+          }
+        }
+      },
       '/api/admin/contractors/{contractorProfileId}': {
         patch: {
           operationId: 'reviewContractorProfile',
@@ -1524,12 +1692,35 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
               schema: { type: 'string' }
             }
           ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: adminContractorReviewInputSchema
+              }
+            }
+          },
           responses: {
-            '200': { description: 'Updated contractor review state.' },
+            '200': {
+              description: 'Updated contractor review state.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['contractorProfile'],
+                    properties: {
+                      contractorProfile: adminContractorReviewResultSchema
+                    }
+                  }
+                }
+              }
+            },
             '400': { description: 'Invalid review payload.' },
             '401': { description: 'Missing or invalid session token.' },
             '403': { description: 'Only active admins can review contractor profiles.' },
-            '404': { description: 'Contractor profile not found.' }
+            '404': { description: 'Contractor profile not found.' },
+            '422': { description: 'Only pending contractor profiles can be reviewed.' }
           }
         }
       }

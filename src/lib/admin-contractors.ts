@@ -192,11 +192,7 @@ const adminContractorProfileSelect = {
           group: true
         }
       }
-    },
-    orderBy: [
-      { isPrimary: 'desc' },
-      { category: { name: 'asc' } }
-    ]
+    }
   },
   workZones: {
     select: {
@@ -211,11 +207,6 @@ const adminContractorProfileSelect = {
             }
           }
         }
-      }
-    },
-    orderBy: {
-      workZone: {
-        name: 'asc'
       }
     }
   }
@@ -325,7 +316,7 @@ export async function reviewContractorProfileForAdmin(
   assertCanReviewContractors(actor);
 
   const parsed = contractorReviewSchema.parse(input);
-  const nextStatus = parsed.approvalStatus as ContractorApprovalStatus.APPROVED | ContractorApprovalStatus.REJECTED;
+  const nextStatus = parsed.approvalStatus as ContractorApprovalStatus;
 
   const currentProfile = await prisma.contractorProfile.findUnique({
     where: {
