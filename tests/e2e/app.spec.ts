@@ -25,10 +25,12 @@ test('unauthorized access to the protected route redirects to sign in', async ({
 test('auth pages render', async ({ page }) => {
   await page.goto('/sign-in');
   await expect(page.getByRole('heading', { name: /Iniciar sesión/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Continuar con Google/i })).toBeVisible();
   await expect(page.getByRole('link', { name: /Olvidé mi contraseña/i })).toBeVisible();
 
   await page.goto('/sign-up');
   await expect(page.getByRole('heading', { name: /Crear cuenta/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Continuar con Google/i })).toBeVisible();
 });
 
 test('password reset pages render', async ({ page }) => {

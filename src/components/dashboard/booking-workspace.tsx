@@ -65,21 +65,10 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
     () => bookings.find((booking) => booking.id === selectedBookingId) ?? bookings[0] ?? null,
     [bookings, selectedBookingId]
   );
+  const activeBookingId = selectedBooking?.id ?? '';
 
   useEffect(() => {
-    if (!selectedBookingId && bookings[0]?.id) {
-      setSelectedBookingId(bookings[0].id);
-      return;
-    }
-
-    if (selectedBookingId && !bookings.some((booking) => booking.id === selectedBookingId)) {
-      setSelectedBookingId(bookings[0]?.id ?? '');
-    }
-  }, [bookings, selectedBookingId]);
-
-  useEffect(() => {
-    if (!selectedBookingId) {
-      setConversation({ messages: [], files: [] });
+    if (!activeBookingId) {
       return;
     }
 
@@ -92,8 +81,8 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
 
       try {
         const [messagesResponse, filesResponse] = await Promise.all([
-          fetch(`/api/bookings/${selectedBookingId}/messages`, { signal: controller.signal }),
-          fetch(`/api/bookings/${selectedBookingId}/files`, { signal: controller.signal })
+          fetch(`/api/bookings/${activeBookingId}/messages`, { signal: controller.signal }),
+          fetch(`/api/bookings/${activeBookingId}/files`, { signal: controller.signal })
         ]);
 
         if (!messagesResponse.ok || !filesResponse.ok) {
@@ -131,7 +120,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
       isMounted = false;
       controller.abort();
     };
-  }, [selectedBookingId]);
+  }, [activeBookingId]);
 
   async function reloadConversation(bookingId: string) {
     const [messagesResponse, filesResponse] = await Promise.all([
@@ -157,7 +146,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
   async function handleSendMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!selectedBookingId || messageDraft.trim().length === 0) {
+    if (!activeBookingId || messageDraft.trim().length === 0) {
       return;
     }
 
@@ -166,7 +155,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
     setSendStatus(null);
 
     try {
-      const response = await fetch(`/api/bookings/${selectedBookingId}/messages`, {
+      const response = await fetch(`/api/bookings/${activeBookingId}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -181,7 +170,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
       }
 
       setMessageDraft('');
-      await reloadConversation(selectedBookingId);
+      await reloadConversation(activeBookingId);
       setSendStatus('Mensaje enviado.');
     } catch {
       setSendError('No pudimos enviar el mensaje.');
@@ -193,7 +182,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
   async function handleUploadFile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!selectedBookingId || !selectedUploadFile) {
+    if (!activeBookingId || !selectedUploadFile) {
       return;
     }
 
@@ -206,7 +195,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
       formData.append('file', selectedUploadFile);
       formData.append('purpose', uploadPurpose);
 
-      const response = await fetch(`/api/bookings/${selectedBookingId}/files`, {
+      const response = await fetch(`/api/bookings/${activeBookingId}/files`, {
         method: 'POST',
         body: formData
       });
@@ -217,7 +206,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
 
       setSelectedUploadFile(null);
       setUploadInputKey((current) => current + 1);
-      await reloadConversation(selectedBookingId);
+      await reloadConversation(activeBookingId);
       setUploadStatus('Archivo subido.');
     } catch {
       setUploadError('No pudimos subir el archivo.');
@@ -250,7 +239,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
         <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
           <div className="space-y-3">
             {bookings.map((booking) => {
-              const selected = booking.id === selectedBookingId;
+              const selected = booking.id === activeBookingId;
 
               return (
                 <button

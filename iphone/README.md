@@ -1,5 +1,107 @@
 # Plan de Desarrollo iPhone
 
+## Estado actual
+
+Se inicio un scaffold SwiftUI modular en esta carpeta.
+
+La base mobile queda preparada para conectarse a la API web de Yavaa:
+
+- entorno local por defecto: `http://localhost:3000`
+- entorno productivo previsto: `https://app.yavaa.lat`
+- endpoints iniciales:
+  - `GET /api/me`
+  - `GET /api/openapi`
+- autenticacion preparada para `Authorization: Bearer <token>`
+
+La primera integracion real debe conectar Supabase Auth/Keychain para entregar el token al `APIClient`.
+
+## Estructura inicial
+
+```txt
+iphone/
+  Package.swift
+  Sources/
+    YavaaApp/
+    YavaaAPI/
+    YavaaAuth/
+    YavaaCore/
+    YavaaDesign/
+  Tests/
+    YavaaAPITests/
+    YavaaCoreTests/
+  Docs/
+```
+
+## Modulos
+
+### YavaaApp
+
+Capa SwiftUI inicial.
+
+Incluye:
+
+- `YavaaRootView`
+- `AppContainer`
+- bootstrap de sesion
+- verificacion basica de contrato OpenAPI contra el website
+
+### YavaaAPI
+
+Cliente HTTP para consumir la API del website.
+
+Reglas:
+
+- solo acepta paths bajo `/api/`
+- agrega `Accept: application/json`
+- agrega `Content-Type: application/json`
+- agrega bearer token cuando hay sesion
+- decodifica respuestas `Decodable`
+
+### YavaaAuth
+
+Capa de sesion inicial.
+
+Incluye:
+
+- protocolo para store de tokens
+- store en memoria para desarrollo
+- proveedor de token inyectable
+- controlador de sesion basado en `GET /api/me`
+
+Pendiente:
+
+- Keychain
+- Supabase Auth SDK
+- refresh real de sesion
+
+### YavaaCore
+
+Tipos compartidos:
+
+- modo activo
+- roles
+- identidad
+- estado de sesion
+
+### YavaaDesign
+
+Design system minimo SwiftUI:
+
+- colores base
+- spacing
+- boton primario
+
+## Comandos
+
+Desde `iphone/`:
+
+```sh
+swift build
+swift test
+```
+
+Nota: en esta maquina `swift build` compila correctamente. `swift test` queda bloqueado por el toolchain local porque no expone `XCTest`; debe correrse desde un entorno Xcode completo o ajustarse cuando se cree el proyecto `.xcodeproj`.
+
 ## Objetivo
 
 Construir la app nativa de iPhone de Yavaa con el mismo alcance funcional que la app de Android y con contrato API compartido.
@@ -177,4 +279,3 @@ La administracion operativa sigue siendo web-only.
 - dependencia de cambios en API
 - permisos inconsistentes entre cliente y servidor
 - manejo de push incompleto
-

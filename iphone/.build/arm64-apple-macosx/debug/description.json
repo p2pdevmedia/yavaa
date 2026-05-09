@@ -1,0 +1,1390 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.xctest/Contents/MacOS/YavaaIPhonePackageTests",
+      "packagePath" : "/Users/p2pmac/Projects/yavaa/iphone",
+      "productName" : "YavaaIPhonePackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.YavaaAPI-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/sources",
+      "importPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaAPI/YavaaAPI.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "YavaaAPI",
+      "moduleOutputPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAPI.swiftmodule",
+      "objects" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/YavaaAPI.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/include/YavaaAPI-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "iphone"
+      ],
+      "outputFileMapPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/YavaaAPI.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAPI.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaAPI/YavaaAPI.swift"
+      ],
+      "tempsPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.YavaaAPITests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build/sources",
+      "importPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Tests/YavaaAPITests/APIClientTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAPI.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "YavaaAPITests",
+      "moduleOutputPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAPITests.swiftmodule",
+      "objects" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build/APIClientTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "iphone"
+      ],
+      "outputFileMapPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build/APIClientTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAPITests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/Tests/YavaaAPITests/APIClientTests.swift"
+      ],
+      "tempsPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.YavaaApp-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/sources",
+      "importPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaApp/YavaaApp.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAPI.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAuth.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaDesign.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "YavaaApp",
+      "moduleOutputPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaApp.swiftmodule",
+      "objects" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/YavaaApp.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/include/YavaaApp-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "iphone"
+      ],
+      "outputFileMapPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/YavaaApp.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaApp.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaApp/YavaaApp.swift"
+      ],
+      "tempsPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.YavaaAuth-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/sources",
+      "importPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaAuth/YavaaAuth.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAPI.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "YavaaAuth",
+      "moduleOutputPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAuth.swiftmodule",
+      "objects" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/YavaaAuth.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/include/YavaaAuth-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "iphone"
+      ],
+      "outputFileMapPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/YavaaAuth.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAuth.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaAuth/YavaaAuth.swift"
+      ],
+      "tempsPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.YavaaCore-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/sources",
+      "importPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaCore/YavaaCore.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "YavaaCore",
+      "moduleOutputPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaCore.swiftmodule",
+      "objects" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/YavaaCore.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/include/YavaaCore-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "iphone"
+      ],
+      "outputFileMapPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/YavaaCore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaCore.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaCore/YavaaCore.swift"
+      ],
+      "tempsPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.YavaaCoreTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build/sources",
+      "importPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Tests/YavaaCoreTests/AppModeTests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaCore.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "YavaaCoreTests",
+      "moduleOutputPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaCoreTests.swiftmodule",
+      "objects" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build/AppModeTests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "iphone"
+      ],
+      "outputFileMapPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build/AppModeTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaCoreTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/Tests/YavaaCoreTests/AppModeTests.swift"
+      ],
+      "tempsPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.YavaaDesign-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/sources",
+      "importPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaDesign/YavaaDesign.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "YavaaDesign",
+      "moduleOutputPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaDesign.swiftmodule",
+      "objects" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/YavaaDesign.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/include/YavaaDesign-Swift.h",
+        "-swift-version",
+        "6",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "iphone"
+      ],
+      "outputFileMapPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/YavaaDesign.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaDesign.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaDesign/YavaaDesign.swift"
+      ],
+      "tempsPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.YavaaIPhonePackageTests-arm64-apple-macosx-debug.module" : {
+      "executable" : "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "fileList" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/sources",
+      "importPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaCoreTests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaAPITests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "YavaaIPhonePackageTests",
+      "moduleOutputPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaIPhonePackageTests.swiftmodule",
+      "objects" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "arm64-apple-macosx14.0",
+        "-incremental",
+        "-enable-batch-mode",
+        "-serialize-diagnostics",
+        "-index-store-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+        "-module-cache-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/include/YavaaIPhonePackageTests-Swift.h",
+        "-I",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-L",
+        "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+        "-plugin-path",
+        "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+        "-sdk",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-g",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "iphone"
+      ],
+      "outputFileMapPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules/YavaaIPhonePackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "YavaaAPI" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "YavaaAPI",
+      "-package-name",
+      "iphone",
+      "-c",
+      "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaAPI/YavaaAPI.swift",
+      "-I",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/include/YavaaAPI-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "iphone",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "YavaaAPITests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "YavaaAPITests",
+      "-package-name",
+      "iphone",
+      "-c",
+      "/Users/p2pmac/Projects/yavaa/iphone/Tests/YavaaAPITests/APIClientTests.swift",
+      "-I",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "iphone",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "YavaaApp" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "YavaaApp",
+      "-package-name",
+      "iphone",
+      "-c",
+      "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaApp/YavaaApp.swift",
+      "-I",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/include/YavaaApp-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "iphone",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "YavaaAuth" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "YavaaAuth",
+      "-package-name",
+      "iphone",
+      "-c",
+      "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaAuth/YavaaAuth.swift",
+      "-I",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/include/YavaaAuth-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "iphone",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "YavaaCore" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "YavaaCore",
+      "-package-name",
+      "iphone",
+      "-c",
+      "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaCore/YavaaCore.swift",
+      "-I",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/include/YavaaCore-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "iphone",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "YavaaCoreTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "YavaaCoreTests",
+      "-package-name",
+      "iphone",
+      "-c",
+      "/Users/p2pmac/Projects/yavaa/iphone/Tests/YavaaCoreTests/AppModeTests.swift",
+      "-I",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "iphone",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "YavaaDesign" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "YavaaDesign",
+      "-package-name",
+      "iphone",
+      "-c",
+      "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaDesign/YavaaDesign.swift",
+      "-I",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/include/YavaaDesign-Swift.h",
+      "-swift-version",
+      "6",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "iphone",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ],
+    "YavaaIPhonePackageTests" : [
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc",
+      "-module-name",
+      "YavaaIPhonePackageTests",
+      "-package-name",
+      "iphone",
+      "-c",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.derived/runner.swift",
+      "-I",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/Modules",
+      "-target",
+      "arm64-apple-macosx14.0",
+      "-incremental",
+      "-enable-batch-mode",
+      "-serialize-diagnostics",
+      "-index-store-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE",
+      "-module-cache-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/include/YavaaIPhonePackageTests-Swift.h",
+      "-I",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-L",
+      "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
+      "-plugin-path",
+      "/Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing",
+      "-sdk",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-g",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "iphone",
+      "-driver-use-frontend-path",
+      "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "YavaaAPI" : [
+
+    ],
+    "YavaaAPITests" : [
+      "YavaaAPI"
+    ],
+    "YavaaApp" : [
+      "YavaaDesign",
+      "YavaaAuth",
+      "YavaaCore",
+      "YavaaAPI"
+    ],
+    "YavaaAuth" : [
+      "YavaaCore",
+      "YavaaAPI"
+    ],
+    "YavaaCore" : [
+
+    ],
+    "YavaaCoreTests" : [
+      "YavaaCore"
+    ],
+    "YavaaDesign" : [
+
+    ],
+    "YavaaIPhonePackageTests" : [
+      "YavaaAPITests",
+      "YavaaAPI",
+      "YavaaCoreTests",
+      "YavaaCore"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.derived/runner.swift" : {
+      "inputs" : [
+
+      ],
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.derived/runner.swift"
+        }
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "default" : {
+
+    }
+  },
+  "writeCommands" : {
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaAPI/YavaaAPI.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/sources"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Tests/YavaaAPITests/APIClientTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build/sources"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaApp/YavaaApp.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaApp.build/sources"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaAuth/YavaaAuth.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAuth.build/sources"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaCore/YavaaCore.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/sources"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Tests/YavaaCoreTests/AppModeTests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build/sources"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/Sources/YavaaDesign/YavaaDesign.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaDesign.build/sources"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/sources"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPI.build/YavaaAPI.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaAPITests.build/APIClientTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCore.build/YavaaCore.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaCoreTests.build/AppModeTests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/runner.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Library/Developer/CommandLineTools/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/swift-version--1AB21518FC5DEDBE.txt"
+    }
+  }
+}

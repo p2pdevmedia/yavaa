@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { buildAuthEmailRedirectTo } from '@/lib/auth-redirect';
+import { buildAuthCallbackRedirectTo, buildAuthEmailRedirectTo } from '@/lib/auth-redirect';
 import { createClient } from '@/utils/supabase/client';
 
 type AuthMode = 'sign-in' | 'sign-up';
@@ -60,9 +60,39 @@ export function AuthForm({ mode, nextPath, configured }: AuthFormProps) {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isOAuthSubmitting, setIsOAuthSubmitting] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const copy = copyByMode[mode];
+
+  async function handleGoogleAuth() {
+    if (isSubmitting || isOAuthSubmitting) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setStatusMessage(null);
+
+    if (!configured) {
+      setErrorMessage('Supabase no está configurado en este entorno.');
+      return;
+    }
+
+    setIsOAuthSubmitting(true);
+
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: buildAuthCallbackRedirectTo(nextPath, window.location.origin)
+      }
+    });
+
+    if (error) {
+      setErrorMessage(getAuthErrorMessage(error));
+      setIsOAuthSubmitting(false);
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -143,6 +173,32 @@ export function AuthForm({ mode, nextPath, configured }: AuthFormProps) {
           formulario queda activo sin cambios de código.
         </p>
       ) : null}
+
+      <div className="space-y-4">
+        <Button
+          className="w-full"
+          type="button"
+          variant="outline"
+          disabled={!configured || isSubmitting || isOAuthSubmitting || isPending}
+          onClick={handleGoogleAuth}
+        >
+          <span
+            aria-hidden="true"
+            className="flex h-5 w-5 items-center justify-center rounded-full border border-border bg-background text-xs font-semibold text-foreground"
+          >
+            G
+          </span>
+          {isOAuthSubmitting ? 'Conectando...' : 'Continuar con Google'}
+        </Button>
+
+        <div className="flex items-center gap-3" aria-hidden="true">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+            o
+          </span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+      </div>
 
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="space-y-2">

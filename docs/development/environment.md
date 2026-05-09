@@ -34,6 +34,27 @@ To send auth emails from `@yavaa.lat`:
 
 Recommended providers for the project's MVP email flow include Resend, Postmark, or SendGrid.
 
+## Supabase Auth Google provider
+
+Google login and signup use Supabase OAuth and the same `/auth/callback` route as email auth.
+Do not commit Google client secrets to the repository.
+
+In Supabase Dashboard > Authentication > Providers > Google:
+
+- enable Google
+- paste the Google OAuth Client ID and Client Secret from the local Google client JSON
+- keep the provider redirect URL shown by Supabase available for the Google Cloud OAuth client
+
+In Google Cloud Console > APIs & Services > Credentials > OAuth client:
+
+- add the Supabase provider callback as an authorized redirect URI, for example `https://<project-ref>.supabase.co/auth/v1/callback`
+- keep the deployed app origin, for example `https://yavaa.lat`, as an authorized JavaScript origin when Google requires it
+
+In Supabase Dashboard > Authentication > URL Configuration:
+
+- keep the app callback URL allow-listed, for example `https://www.yavaa.lat/auth/callback`
+- keep local development callbacks allow-listed, for example `http://localhost:3000/**` and `http://127.0.0.1:3000/**`
+
 ## Local workflow
 1. Copy `.env.example` to `.env.local`.
 2. Point `DATABASE_URL` at a local Postgres instance or a Supabase database.
