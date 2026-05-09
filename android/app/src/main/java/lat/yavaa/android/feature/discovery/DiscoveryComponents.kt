@@ -216,6 +216,7 @@ fun providerLocation(marketCity: String?, marketProvince: String?): String {
 
 @Composable
 fun DiscoveryBottomBar(
+    accountLabel: String,
     onHomeClick: () -> Unit,
     onAccountClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -229,7 +230,7 @@ fun DiscoveryBottomBar(
         InactiveBottomBarLabel("Buscar")
         InactiveBottomBarLabel("Reservas")
         InactiveBottomBarLabel("Mensajes")
-        TextButton(onClick = onAccountClick) { Text("Tu") }
+        TextButton(onClick = onAccountClick) { Text(accountLabel) }
     }
 }
 

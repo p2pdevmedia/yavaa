@@ -41,6 +41,10 @@ private sealed interface YavaaRoute {
     data class ProviderProfile(val contractorProfileId: String) : YavaaRoute
 }
 
+internal fun accountActionLabel(authenticated: Boolean): String {
+    return if (authenticated) "Tu cuenta" else "Ingresar"
+}
+
 @Composable
 fun YavaaApp(container: YavaaContainer) {
     when (container) {
@@ -71,6 +75,7 @@ private fun ReadyYavaaApp(container: YavaaContainer.Ready) {
             )
             DiscoveryScreen(
                 viewModel = discoveryViewModel,
+                accountActionLabel = accountActionLabel(authenticated),
                 onProviderClick = { contractorProfileId ->
                     route = YavaaRoute.ProviderProfile(contractorProfileId)
                 },
