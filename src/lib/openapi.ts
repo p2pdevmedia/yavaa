@@ -623,7 +623,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
                   schema: {
                     type: 'object',
                     additionalProperties: false,
-                    required: ['status', 'app', 'version', 'configured'],
+                    required: ['status', 'app', 'version', 'configured', 'diagnostics'],
                     properties: {
                       status: { type: 'string', enum: ['ok'] },
                       app: { type: 'string' },
@@ -635,6 +635,40 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
                         properties: {
                           database: { type: 'boolean' },
                           supabase: { type: 'boolean' }
+                        }
+                      },
+                      diagnostics: {
+                        type: 'object',
+                        additionalProperties: false,
+                        required: ['database', 'deployment'],
+                        properties: {
+                          database: {
+                            type: 'object',
+                            additionalProperties: false,
+                            required: ['configured', 'host', 'port', 'database', 'provider'],
+                            properties: {
+                              configured: { type: 'boolean' },
+                              host: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                              port: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                              database: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                              provider: {
+                                type: 'string',
+                                enum: ['missing', 'invalid', 'local', 'supabase-direct', 'supabase-pooler', 'other']
+                              }
+                            }
+                          },
+                          deployment: {
+                            type: 'object',
+                            additionalProperties: false,
+                            required: ['environment', 'url', 'commitSha', 'commitRef', 'nodeEnv'],
+                            properties: {
+                              environment: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                              url: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                              commitSha: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                              commitRef: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                              nodeEnv: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+                            }
+                          }
                         }
                       }
                     }

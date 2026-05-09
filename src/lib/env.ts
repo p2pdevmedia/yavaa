@@ -15,6 +15,14 @@ const envSchema = z
 
 export type AppEnv = z.infer<typeof envSchema>;
 
+export type DatabaseEnvDiagnostics = {
+  configured: boolean;
+  host: string | null;
+  port: string | null;
+  database: string | null;
+  provider: 'missing' | 'invalid' | 'local' | 'supabase-direct' | 'supabase-pooler' | 'other';
+};
+
 let cachedEnv: AppEnv | null = null;
 
 export function getEnv(): AppEnv {
@@ -27,6 +35,56 @@ export function getEnv(): AppEnv {
 
 export function hasDatabaseEnv(): boolean {
   return Boolean(getEnv().DATABASE_URL);
+}
+
+function classifyDatabaseHost(host: string): DatabaseEnvDiagnostics['provider'] {
+  if (host === 'localhost' || host === '127.0.0.1' || host === '::1') {
+    return 'local';
+  }
+
+  if (/^db\.[a-z0-9]+\.supabase\.co$/.test(host)) {
+    return 'supabase-direct';
+  }
+
+  if (host.endsWith('.pooler.supabase.com')) {
+    return 'supabase-pooler';
+  }
+
+  return 'other';
+}
+
+export function getDatabaseEnvDiagnostics(): DatabaseEnvDiagnostics {
+  const databaseUrl = getEnv().DATABASE_URL;
+
+  if (!databaseUrl) {
+    return {
+      configured: false,
+      host: null,
+      port: null,
+      database: null,
+      provider: 'missing'
+    };
+  }
+
+  try {
+    const parsed = new URL(databaseUrl);
+
+    return {
+      configured: true,
+      host: parsed.hostname,
+      port: parsed.port || null,
+      database: parsed.pathname.replace(/^\//, '') || null,
+      provider: classifyDatabaseHost(parsed.hostname)
+    };
+  } catch {
+    return {
+      configured: true,
+      host: null,
+      port: null,
+      database: null,
+      provider: 'invalid'
+    };
+  }
 }
 
 export function hasSupabaseEnv(): boolean {
