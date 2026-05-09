@@ -13,7 +13,8 @@ La idea es mantener cada fase separada para que podamos agregar después:
 Estado actual:
 
 - Etapa 00 cerrada.
-- Etapa 01 activa.
+- Etapa 01 cerrada.
+- Etapa 02 en progreso.
 
 Orden recomendado:
 

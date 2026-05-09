@@ -46,3 +46,19 @@ La fase 02 queda lista cuando:
 - los datos sensibles se relacionan con su propietario
 - las acciones sensibles pueden evaluarse en servidor
 - los tests de permisos y base de datos pasan
+
+## Avance actual
+
+Ya quedaron conectados en esta etapa:
+
+- `GET /api/me`
+- `PATCH /api/me/profile`
+- `GET /api/me/addresses`
+- `POST /api/me/addresses`
+- `GET /api/me/contractor-profile`
+- `PATCH /api/me/contractor-profile`
+- `GET /api/catalog/categories`
+- `GET /api/catalog/markets`
+- `GET /api/admin/categories`
+- `POST /api/admin/categories`
+- `PATCH /api/admin/contractors/[contractorProfileId]`
