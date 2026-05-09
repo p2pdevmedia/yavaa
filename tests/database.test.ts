@@ -65,4 +65,51 @@ suite('database foundation', () => {
       'work_zones'
     ]);
   });
+
+  it('exposes debt ledger timestamp defaults and indexes', async () => {
+    prisma = getPrismaClient();
+
+    const columns = await prisma.$queryRaw<
+      Array<{ table_name: string; column_name: string; column_default: string | null }>
+    >`
+      SELECT table_name::text AS table_name,
+        column_name::text AS column_name,
+        column_default::text AS column_default
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name IN ('commission_debts', 'user_debt_limits')
+        AND column_name = 'updated_at'
+      ORDER BY table_name ASC
+    `;
+
+    const updatedAtDefaults = new Map(
+      columns.map((column) => [column.table_name, column.column_default?.toLowerCase() ?? ''])
+    );
+
+    expect(updatedAtDefaults.get('commission_debts')).toContain('current_timestamp');
+    expect(updatedAtDefaults.get('user_debt_limits')).toContain('current_timestamp');
+
+    const indexes = await prisma.$queryRaw<Array<{ indexname: string }>>`
+      SELECT indexname::text AS indexname
+      FROM pg_indexes
+      WHERE schemaname = 'public'
+        AND tablename IN ('commission_debts', 'user_debt_limits')
+        AND indexname IN (
+          'commission_debts_user_id_status_idx',
+          'commission_debts_created_by_user_id_idx',
+          'commission_debts_source_type_source_id_idx',
+          'commission_debts_created_at_idx',
+          'user_debt_limits_set_by_user_id_idx'
+        )
+      ORDER BY indexname ASC
+    `;
+
+    expect(indexes.map((index) => index.indexname)).toEqual([
+      'commission_debts_created_at_idx',
+      'commission_debts_created_by_user_id_idx',
+      'commission_debts_source_type_source_id_idx',
+      'commission_debts_user_id_status_idx',
+      'user_debt_limits_set_by_user_id_idx'
+    ]);
+  });
 });

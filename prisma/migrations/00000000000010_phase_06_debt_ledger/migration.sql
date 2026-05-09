@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS "commission_debts" (
   "reason" text NOT NULL,
   "created_by_user_id" uuid,
   "created_at" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp(3) NOT NULL,
+  "updated_at" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "commission_debts_pkey" PRIMARY KEY ("id")
 );
 
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS "user_debt_limits" (
   "set_by_user_id" uuid NOT NULL,
   "reason" text NOT NULL,
   "created_at" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updated_at" timestamp(3) NOT NULL,
+  "updated_at" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "user_debt_limits_pkey" PRIMARY KEY ("user_id")
 );
 
