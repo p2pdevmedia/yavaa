@@ -214,6 +214,18 @@ public struct YavaaRootView: View {
                 )
             }
 
+            if container.sessionState.account != nil {
+                ActionListView(
+                    actions: MobileActionMap.actions(for: container.sessionState)
+                ) { action in
+                    if action == .signOut {
+                        Task {
+                            await container.signOut()
+                        }
+                    }
+                }
+            }
+
             Spacer()
 
             PrimaryActionButton("Reintentar conexion") {

@@ -35,6 +35,7 @@ let package = Package(
         .target(name: "YavaaCore"),
         .target(name: "YavaaDesign"),
         .testTarget(name: "YavaaAPITests", dependencies: ["YavaaAPI"]),
+        .testTarget(name: "YavaaAppTests", dependencies: ["YavaaApp", "YavaaCore"]),
         .testTarget(name: "YavaaAuthTests", dependencies: ["YavaaAuth", "YavaaAPI", "YavaaCore"]),
         .testTarget(name: "YavaaCoreTests", dependencies: ["YavaaCore"])
     ]
