@@ -4,7 +4,7 @@ Yavaa is a service marketplace and realtime coordination platform for humans and
 
 ## Current status
 
-Phase 00 foundation is scaffolded in this repository:
+Etapa 01 de base tecnica y autenticacion es la fase activa en este repositorio:
 
 - Next.js App Router + TypeScript strict mode
 - Prisma + PostgreSQL schema and migration baseline
@@ -23,9 +23,11 @@ Phase 00 foundation is scaffolded in this repository:
 5. Seed deterministic baseline data with `npm run db:seed`.
 6. Start the app with `npm run dev`.
 
-## Foundation routes
+## Etapa 01 routes
 
-- `/` landing page and foundation status
+- `/` landing page and etapa 01 status
+- `/sign-in` email and password login
+- `/sign-up` email and password registration
 - `/dashboard` protected shell for later phases
 - `/api/health` health and configuration check
 - `/api/session` auth bootstrap endpoint

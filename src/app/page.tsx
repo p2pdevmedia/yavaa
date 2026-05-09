@@ -1,10 +1,13 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { APP_DESCRIPTION, APP_NAME, APP_VERSION } from '@/lib/app-metadata';
+import { getAuthSessionState } from '@/lib/auth';
 
 const foundationChecks = [
   { label: 'Next.js App Router', value: 'Activado' },
@@ -14,19 +17,22 @@ const foundationChecks = [
   { label: 'Vitest + Playwright', value: 'Conectado' }
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const cookieStore = await cookies();
+  const authState = await getAuthSessionState(cookieStore);
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col px-4 py-8 sm:px-6 lg:px-8">
       <section className="grid flex-1 items-center gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:gap-12">
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
-            <Badge variant="secondary">Fase de base</Badge>
+            <Badge variant="secondary">Etapa 01</Badge>
             <Badge variant="outline">v{APP_VERSION}</Badge>
           </div>
 
           <div className="space-y-4">
             <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance text-foreground sm:text-5xl lg:text-6xl font-display">
-              {APP_NAME} está listo para las primeras fases reales del producto.
+              {APP_NAME} está listo para la Etapa 01 de base tecnica y autenticacion.
             </h1>
             <p className="max-w-2xl text-lg leading-8 text-muted-foreground">
               {APP_DESCRIPTION} Esta base nos deja un punto de partida con TypeScript estricto,
@@ -36,16 +42,44 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <Button asChild>
-              <Link href="/api/health">Ver estado</Link>
-            </Button>
-            <Button variant="secondary" asChild>
-              <Link href="/api/openapi">Contrato OpenAPI</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/dashboard">Área protegida</Link>
-            </Button>
+            {authState.authenticated ? (
+              <>
+                <Button asChild>
+                  <Link href="/dashboard">Ir al dashboard</Link>
+                </Button>
+                <Button variant="secondary" asChild>
+                  <Link href="/api/openapi">Contrato OpenAPI</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button asChild>
+                  <Link href={{ pathname: '/sign-in', query: { next: '/dashboard' } }}>
+                    Iniciar sesión
+                  </Link>
+                </Button>
+                <Button variant="secondary" asChild>
+                  <Link href={{ pathname: '/sign-up', query: { next: '/dashboard' } }}>
+                    Crear cuenta
+                  </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href="/api/health">Ver estado</Link>
+                </Button>
+              </>
+            )}
           </div>
+
+          {authState.authenticated ? (
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+              <span>Sesión activa{authState.user?.email ? ` como ${authState.user.email}` : ''}.</span>
+              {authState.configured ? (
+                <SignOutButton />
+              ) : (
+                <span className="text-xs uppercase tracking-[0.2em]">Supabase no configurado</span>
+              )}
+            </div>
+          ) : null}
         </div>
 
         <Card className="border-border/70 bg-card/90 shadow-soft backdrop-blur">

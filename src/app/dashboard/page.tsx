@@ -1,13 +1,17 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { Route } from 'next';
+
+import { SignOutButton } from '@/components/auth/sign-out-button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { buildSignInPath, getAuthSessionState } from '@/lib/auth';
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  const hasSessionCookie = cookieStore.getAll().some((cookie) => cookie.name.startsWith('sb-'));
+  const authState = await getAuthSessionState(cookieStore);
 
-  if (!hasSessionCookie) {
-    redirect('/?next=%2Fdashboard');
+  if (!authState.authenticated) {
+    redirect(buildSignInPath('/dashboard') as Route);
   }
 
   return (
@@ -20,10 +24,17 @@ export default async function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
-          <p>La fase 00 solo deja montada la protección inicial. Después agregaremos acceso según rol.</p>
-          <p className="font-mono text-foreground">
-            Si llegaste a esta pantalla, la validación de autenticación te dejó pasar.
-          </p>
+          <p>La etapa 01 deja lista la sesión real con Supabase y la protección de la ruta.</p>
+          <p className="font-mono text-foreground">{authState.user?.email ?? 'Sesión autenticada'}</p>
+          <div className="pt-2">
+            {authState.configured ? (
+              <SignOutButton />
+            ) : (
+              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                Supabase no configurado
+              </p>
+            )}
+          </div>
         </CardContent>
       </Card>
     </main>

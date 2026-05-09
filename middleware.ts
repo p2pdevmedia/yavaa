@@ -1,34 +1,51 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
+import { type NextRequest, NextResponse } from 'next/server';
 
-import { updateSession } from '@/utils/supabase/middleware';
+import { buildSignInPath, hasSupabaseSessionCookie } from '@/lib/auth';
+import { getSupabasePublishableKey, getSupabaseUrl, hasSupabaseEnv } from '@/lib/env';
+
+function isProtectedRoute(request: NextRequest): boolean {
+  return request.nextUrl.pathname.startsWith('/dashboard');
+}
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request);
-
-  if (!request.nextUrl.pathname.startsWith('/dashboard')) {
-    return response;
-  }
-
-  const hasSupabaseSessionCookie = request.cookies
-    .getAll()
-    .some((cookie) => cookie.name.startsWith('sb-'));
-
-  if (hasSupabaseSessionCookie) {
-    return response;
-  }
-
-  const redirectUrl = request.nextUrl.clone();
-  redirectUrl.pathname = '/';
-  redirectUrl.searchParams.set('next', request.nextUrl.pathname);
-
-  const redirectResponse = NextResponse.redirect(redirectUrl);
-  response.cookies.getAll().forEach((cookie) => {
-    redirectResponse.cookies.set(cookie);
+  const response = NextResponse.next({
+    request: {
+      headers: request.headers
+    }
   });
 
-  return redirectResponse;
+  if (!hasSupabaseEnv()) {
+    if (isProtectedRoute(request) && !hasSupabaseSessionCookie(request.cookies)) {
+      return NextResponse.redirect(new URL(buildSignInPath(request.nextUrl.pathname), request.url));
+    }
+
+    return response;
+  }
+
+  const supabase = createServerClient(getSupabaseUrl(), getSupabasePublishableKey(), {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          request.cookies.set(name, value);
+          response.cookies.set(name, value, options);
+        });
+      }
+    }
+  });
+
+  const { data } = await supabase.auth.getUser();
+
+  if (isProtectedRoute(request) && !data.user) {
+    return NextResponse.redirect(new URL(buildSignInPath(request.nextUrl.pathname), request.url));
+  }
+
+  return response;
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)']
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map)$).*)']
 };

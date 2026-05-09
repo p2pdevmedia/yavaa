@@ -1,5 +1,9 @@
 # Etapa 00 - Alcance MVP
 
+## Estado
+
+Cerrada.
+
 ## Descripcion
 
 Esta etapa define el alcance real de la primera version de Yavaa.
@@ -77,4 +81,4 @@ La etapa termina cuando el equipo tiene una definicion estable del MVP, sin duda
 
 ## Proximo paso
 
-Cuando esta etapa quede cerrada, pasamos a la Etapa 01 para consolidar autenticacion y base tecnica.
+Etapa 01 activa para consolidar autenticacion y base tecnica.

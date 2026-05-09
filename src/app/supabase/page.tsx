@@ -60,9 +60,9 @@ export default async function SupabasePage() {
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-start px-4 py-12 sm:px-6 lg:px-8">
       <section className="space-y-8">
         <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Foundation data</h1>
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Datos de etapa 01</h1>
           <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            Esta vista confirma que la base de datos ya tiene la semilla inicial de la Etapa 0.
+            Esta vista confirma que la base de datos ya tiene la semilla inicial de la Etapa 1.
             Si el entorno no está configurado, la página sigue cargando en modo informativo.
           </p>
         </div>

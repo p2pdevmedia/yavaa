@@ -10,6 +10,11 @@ La idea es mantener cada fase separada para que podamos agregar después:
 - riesgos
 - tests asociados
 
+Estado actual:
+
+- Etapa 00 cerrada.
+- Etapa 01 activa.
+
 Orden recomendado:
 
 1. `etapa-00-alcance-mvp`
@@ -22,4 +27,3 @@ Orden recomendado:
 8. `etapa-07-calidad-y-piloto`
 
 Cada carpeta contiene la descripcion de la etapa y sirve como punto de partida para documentar el trabajo de esa fase.
-

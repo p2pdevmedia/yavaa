@@ -108,13 +108,13 @@ async function main() {
     update: {
       firstName: 'Foundation',
       lastName: 'Admin',
-      bio: 'Deterministic seed account for phase 00 validation.'
+      bio: 'Deterministic seed account for stage 1 validation.'
     },
     create: {
       userId: foundationAdmin.id,
       firstName: 'Foundation',
       lastName: 'Admin',
-      bio: 'Deterministic seed account for phase 00 validation.'
+      bio: 'Deterministic seed account for stage 1 validation.'
     }
   });
 
