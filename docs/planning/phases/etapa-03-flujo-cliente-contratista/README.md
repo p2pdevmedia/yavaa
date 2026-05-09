@@ -8,6 +8,7 @@ Cerrada por cortes funcionales.
 
 1. Flujo publico de discovery.
 2. Booking programado con listado y transiciones basicas.
+3. Urgencias con dispatch, aceptacion, ignorado, expiracion y reasignacion administrada.
 
 ## Descripcion
 
@@ -53,6 +54,13 @@ La segunda ejecucion de la misma etapa agrega:
 - aceptacion, rechazo y cancelacion basica
 - contrato OpenAPI y tests asociados
 
-## Pendiente
+## Corte 3
 
-El flujo de solicitudes urgentes y el resto de estados de booking siguen pendientes para una iteracion posterior.
+La tercera ejecucion cierra la etapa con el flujo de urgencias:
+
+- creacion de solicitudes urgentes
+- dispatch inicial a contractors elegibles
+- aceptacion e ignorado por contractor
+- expiracion y reasignacion administrada
+- toggle de disponibilidad de urgencias en contractor profile
+- rutas API, contrato OpenAPI, tests unitarios, Playwright y migracion aplicada

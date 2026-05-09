@@ -63,3 +63,33 @@ export function canViewAuditLog(context: PermissionContext): boolean {
 export function canAssignRoles(context: PermissionContext): boolean {
   return isActiveContext(context) && hasRole(context, 'admin');
 }
+
+export function canCreateEmergencyRequest(context: PermissionContext): boolean {
+  return isActiveContext(context) && hasRole(context, 'client');
+}
+
+export function canViewEmergencyRequest(
+  context: PermissionContext,
+  request: {
+    clientUserId: string;
+    assignedContractorUserId: string | null;
+    notifiedContractorUserIds: ReadonlyArray<string>;
+  }
+): boolean {
+  return (
+    isActiveContext(context) &&
+    (hasRole(context, 'admin') ||
+      (hasRole(context, 'client') && context.userId === request.clientUserId) ||
+      (hasRole(context, 'contractor') &&
+        (request.assignedContractorUserId === context.userId ||
+          request.notifiedContractorUserIds.includes(context.userId))))
+  );
+}
+
+export function canRespondToEmergencyRequest(context: PermissionContext, contractorUserId: string): boolean {
+  return isActiveContext(context) && hasRole(context, 'contractor') && context.userId === contractorUserId;
+}
+
+export function canReassignEmergencyRequest(context: PermissionContext): boolean {
+  return isActiveContext(context) && hasRole(context, 'admin');
+}

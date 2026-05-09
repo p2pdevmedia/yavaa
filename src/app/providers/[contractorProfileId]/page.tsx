@@ -27,6 +27,9 @@ export default async function ProviderProfilePage({ params }: ProviderProfilePag
         <div className="flex flex-wrap items-center gap-3">
           <Badge variant="secondary">Perfil público</Badge>
           <Badge variant="outline">Limitado</Badge>
+          <Badge variant={provider.acceptsEmergencies ? 'default' : 'secondary'}>
+            {provider.acceptsEmergencies ? 'Acepta urgencias' : 'Sin urgencias'}
+          </Badge>
         </div>
 
         <div className="space-y-4">
@@ -57,6 +60,12 @@ export default async function ProviderProfilePage({ params }: ProviderProfilePag
           </CardHeader>
           <CardContent className="space-y-4">
             {provider.bio ? <p className="text-sm leading-6 text-muted-foreground">{provider.bio}</p> : null}
+
+            <div className="flex flex-wrap gap-2">
+              <Badge variant={provider.acceptsEmergencies ? 'default' : 'secondary'}>
+                {provider.acceptsEmergencies ? 'Disponible para emergencias' : 'No disponible para emergencias'}
+              </Badge>
+            </div>
 
             <div className="flex flex-wrap gap-2">
               {provider.categories.map((category) => (

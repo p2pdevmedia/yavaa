@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DashboardPanel } from '@/components/dashboard/dashboard-panel';
 import { buildSignInPath, getAuthSessionState } from '@/lib/auth';
 import { resolveAppUser } from '@/lib/app-user';
+import { listPublicCatalogCategories } from '@/lib/public-catalog';
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -16,6 +17,7 @@ export default async function DashboardPage() {
   }
 
   const appUser = authState.user ? await resolveAppUser(authState.user) : null;
+  const categories = await listPublicCatalogCategories();
 
   if (!appUser?.user) {
     return (
@@ -42,6 +44,7 @@ export default async function DashboardPage() {
         initialUser={appUser.user}
         email={authState.user?.email ?? null}
         configured={authState.configured}
+        categories={categories}
       />
     </main>
   );

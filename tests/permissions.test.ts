@@ -7,6 +7,9 @@ import {
   canManageAddress,
   canManageCategoryCatalog,
   canManageContractorProfile,
+  canCreateEmergencyRequest,
+  canRespondToEmergencyRequest,
+  canReassignEmergencyRequest,
   canManageOwnProfile,
   canReviewContractorApplication,
   canViewAuditLog,
@@ -77,5 +80,14 @@ describe('permission helpers', () => {
     expect(canManageAddress(activeAdmin, 'client_001')).toBe(true);
     expect(canManageAddress(activeAdmin, 'admin_001')).toBe(true);
     expect(canManageAddress(suspendedAdmin, 'admin_002')).toBe(false);
+  });
+
+  it('allows active clients, contractors, and admins to work with emergency requests through server checks', () => {
+    expect(canCreateEmergencyRequest(activeClient)).toBe(true);
+    expect(canCreateEmergencyRequest(activeContractor)).toBe(false);
+    expect(canRespondToEmergencyRequest(activeContractor, 'contractor_001')).toBe(true);
+    expect(canRespondToEmergencyRequest(activeClient, 'contractor_001')).toBe(false);
+    expect(canReassignEmergencyRequest(activeAdmin)).toBe(true);
+    expect(canReassignEmergencyRequest(activeClient)).toBe(false);
   });
 });

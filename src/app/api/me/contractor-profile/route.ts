@@ -10,6 +10,7 @@ import { resolveRequestAuth } from '@/lib/request-auth';
 import { resolveAppUser } from '@/lib/app-user';
 
 const contractorProfileUpdateSchema = z.object({
+  acceptsEmergencies: z.boolean().optional().default(false),
   addressId: z.string().uuid().nullable().optional(),
   dniNumber: z.string().trim().min(6).max(32).nullable().optional(),
   dniFrontUrl: z.string().url().nullable().optional(),
@@ -104,6 +105,7 @@ export async function PATCH(request: NextRequest) {
       userId: appUser.id
     },
     update: {
+      acceptsEmergencies: data.acceptsEmergencies,
       addressId: data.addressId ?? undefined,
       dniNumber: data.dniNumber ?? undefined,
       dniFrontUrl: data.dniFrontUrl ?? undefined,
@@ -115,6 +117,7 @@ export async function PATCH(request: NextRequest) {
     },
     create: {
       userId: appUser.id,
+      acceptsEmergencies: data.acceptsEmergencies,
       addressId: data.addressId ?? null,
       dniNumber: data.dniNumber ?? null,
       dniFrontUrl: data.dniFrontUrl ?? null,

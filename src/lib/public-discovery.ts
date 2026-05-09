@@ -13,6 +13,7 @@ export type PublicProviderCard = {
   displayName: string;
   bio: string | null;
   profilePhotoUrl: string | null;
+  acceptsEmergencies: boolean;
   marketSlug: string | null;
   marketCity: string | null;
   marketProvince: string | null;
@@ -34,6 +35,7 @@ export type PublicProviderProfile = PublicProviderCard & {
 
 type PublicProviderRecord = {
   id: string;
+  acceptsEmergencies: boolean;
   profilePhotoUrl: string | null;
   user: {
     displayName: string | null;
@@ -71,6 +73,7 @@ const demoPublicProvider = {
   displayName: 'Carlos Perez',
   bio: 'Approved deterministic contractor used by public discovery tests.',
   profilePhotoUrl: null,
+  acceptsEmergencies: true,
   marketSlug: 'san-martin-de-los-andes',
   marketCity: 'San Martin de los Andes',
   marketProvince: 'Neuquen',
@@ -164,6 +167,7 @@ function mapProviderRecord(record: PublicProviderRecord): PublicProviderCard {
     displayName: buildDisplayName(record),
     bio: record.user.profile?.bio ?? null,
     profilePhotoUrl: record.profilePhotoUrl,
+    acceptsEmergencies: record.acceptsEmergencies,
     marketSlug: primarySourceWorkZone ? primarySourceWorkZone.market.slug : null,
     marketCity: primarySourceWorkZone ? primarySourceWorkZone.market.city : null,
     marketProvince: primarySourceWorkZone ? primarySourceWorkZone.market.province : null,
@@ -231,6 +235,7 @@ export async function listPublicProviders(
     where,
     select: {
       id: true,
+      acceptsEmergencies: true,
       profilePhotoUrl: true,
       user: {
         select: {
@@ -314,6 +319,7 @@ export async function getPublicProviderProfile(
     },
     select: {
       id: true,
+      acceptsEmergencies: true,
       profilePhotoUrl: true,
       user: {
         select: {

@@ -29,21 +29,13 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
   const publicProviderCardSchema = {
     type: 'object',
     additionalProperties: false,
-    required: [
-      'contractorProfileId',
-      'displayName',
-      'bio',
-      'profilePhotoUrl',
-      'marketSlug',
-      'marketCity',
-      'marketProvince',
-      'categories'
-    ],
+    required: ['contractorProfileId', 'displayName', 'bio', 'profilePhotoUrl', 'acceptsEmergencies', 'marketSlug', 'marketCity', 'marketProvince', 'categories'],
     properties: {
       contractorProfileId: { type: 'string' },
       displayName: { type: 'string' },
       bio: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       profilePhotoUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      acceptsEmergencies: { type: 'boolean' },
       marketSlug: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       marketCity: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       marketProvince: { anyOf: [{ type: 'string' }, { type: 'null' }] },
@@ -57,22 +49,13 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
   const publicProviderProfileSchema = {
     type: 'object',
     additionalProperties: false,
-    required: [
-      'contractorProfileId',
-      'displayName',
-      'bio',
-      'profilePhotoUrl',
-      'marketSlug',
-      'marketCity',
-      'marketProvince',
-      'categories',
-      'workZones'
-    ],
+    required: ['contractorProfileId', 'displayName', 'bio', 'profilePhotoUrl', 'acceptsEmergencies', 'marketSlug', 'marketCity', 'marketProvince', 'categories', 'workZones'],
     properties: {
       contractorProfileId: { type: 'string' },
       displayName: { type: 'string' },
       bio: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       profilePhotoUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      acceptsEmergencies: { type: 'boolean' },
       marketSlug: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       marketCity: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       marketProvince: { anyOf: [{ type: 'string' }, { type: 'null' }] },
@@ -208,6 +191,80 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       },
       category: bookingCategorySchema,
       address: bookingAddressSchema
+    }
+  } as const;
+
+  const emergencyCandidateSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'contractorProfileId', 'dispatchRound', 'status', 'notifiedAt', 'respondedAt', 'responseNote'],
+    properties: {
+      id: { type: 'string' },
+      contractorProfileId: { type: 'string' },
+      dispatchRound: { type: 'integer' },
+      status: {
+        type: 'string',
+        enum: ['NOTIFIED', 'ACCEPTED', 'IGNORED', 'EXPIRED', 'REVOKED']
+      },
+      notifiedAt: { type: 'string', format: 'date-time' },
+      respondedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      responseNote: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+    }
+  } as const;
+
+  const emergencyRequestSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+      'id',
+      'status',
+      'dispatchRound',
+      'expiresAt',
+      'description',
+      'acceptedAt',
+      'cancelledAt',
+      'createdAt',
+      'updatedAt',
+      'client',
+      'category',
+      'address',
+      'assignedContractorProfile',
+      'candidates'
+    ],
+    properties: {
+      id: { type: 'string' },
+      status: {
+        type: 'string',
+        enum: ['OPEN', 'DISPATCHING', 'ACCEPTED', 'CANCELLED_BY_CLIENT', 'REASSIGNMENT_NEEDED', 'EXPIRED']
+      },
+      dispatchRound: { type: 'integer' },
+      expiresAt: { type: 'string', format: 'date-time' },
+      description: { type: 'string' },
+      acceptedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      cancelledAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+      client: bookingUserSchema,
+      category: bookingCategorySchema,
+      address: bookingAddressSchema,
+      assignedContractorProfile: {
+        anyOf: [
+          {
+            type: 'object',
+            additionalProperties: false,
+            required: ['id', 'user'],
+            properties: {
+              id: { type: 'string' },
+              user: bookingUserSchema
+            }
+          },
+          { type: 'null' }
+        ]
+      },
+      candidates: {
+        type: 'array',
+        items: emergencyCandidateSchema
+      }
     }
   } as const;
 
@@ -441,10 +498,11 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
                                   {
                                     type: 'object',
                                     additionalProperties: false,
-                                    required: ['id', 'approvalStatus', 'dniNumber', 'dniFrontUrl', 'dniBackUrl', 'profilePhotoUrl', 'reviewNotes', 'submittedAt', 'reviewedAt', 'reviewedByUserId', 'addressId', 'categories', 'workZones'],
+                                    required: ['id', 'approvalStatus', 'acceptsEmergencies', 'dniNumber', 'dniFrontUrl', 'dniBackUrl', 'profilePhotoUrl', 'reviewNotes', 'submittedAt', 'reviewedAt', 'reviewedByUserId', 'addressId', 'categories', 'workZones'],
                                     properties: {
                                       id: { type: 'string' },
                                       approvalStatus: { type: 'string', enum: ['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'] },
+                                      acceptsEmergencies: { type: 'boolean' },
                                       dniNumber: { anyOf: [{ type: 'string' }, { type: 'null' }] },
                                       dniFrontUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
                                       dniBackUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
@@ -803,6 +861,225 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             '403': { description: 'The authenticated account cannot modify this booking.' },
             '404': { description: 'Booking not found.' },
             '422': { description: 'The booking cannot transition with that action.' }
+          }
+        }
+      },
+      '/api/emergencies': {
+        get: {
+          operationId: 'listEmergencyRequests',
+          summary: 'List emergency requests visible to the active account',
+          tags: ['emergencies'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': {
+              description: 'Emergency requests visible to the active account.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['requests'],
+                    properties: {
+                      requests: {
+                        type: 'array',
+                        items: emergencyRequestSchema
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' }
+          }
+        },
+        post: {
+          operationId: 'createEmergencyRequest',
+          summary: 'Create an emergency request',
+          tags: ['emergencies'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['categoryId', 'addressId', 'description'],
+                  properties: {
+                    categoryId: { type: 'string' },
+                    addressId: { type: 'string' },
+                    description: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '201': {
+              description: 'Created emergency request.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['request'],
+                    properties: {
+                      request: emergencyRequestSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid emergency request payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot create emergency requests.' },
+            '422': { description: 'The selected address, category, or contractor coverage is not compatible.' }
+          }
+        }
+      },
+      '/api/emergencies/{emergencyRequestId}': {
+        get: {
+          operationId: 'getEmergencyRequest',
+          summary: 'Get an emergency request by id',
+          tags: ['emergencies'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'emergencyRequestId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Emergency request details.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['request'],
+                    properties: {
+                      request: emergencyRequestSchema
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot view this emergency request.' },
+            '404': { description: 'Emergency request not found.' }
+          }
+        },
+        patch: {
+          operationId: 'cancelEmergencyRequest',
+          summary: 'Cancel an emergency request',
+          tags: ['emergencies'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'emergencyRequestId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Cancelled emergency request.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['request'],
+                    properties: {
+                      request: emergencyRequestSchema
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot cancel this emergency request.' },
+            '404': { description: 'Emergency request not found.' },
+            '422': { description: 'The emergency request cannot be cancelled in its current state.' }
+          }
+        }
+      },
+      '/api/emergencies/{emergencyRequestId}/response': {
+        patch: {
+          operationId: 'respondToEmergencyRequest',
+          summary: 'Accept or ignore an emergency request',
+          tags: ['emergencies'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'emergencyRequestId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Updated emergency request.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['request'],
+                    properties: {
+                      request: emergencyRequestSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid emergency response payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot respond to this emergency request.' },
+            '404': { description: 'Emergency request not found.' },
+            '422': { description: 'The emergency request cannot be answered in its current state.' }
+          }
+        }
+      },
+      '/api/admin/emergencies/{emergencyRequestId}/reassign': {
+        patch: {
+          operationId: 'reassignEmergencyRequest',
+          summary: 'Force emergency request reassignment',
+          tags: ['admin', 'emergencies'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'emergencyRequestId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Reassigned emergency request.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['request'],
+                    properties: {
+                      request: emergencyRequestSchema
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can reassign emergency requests.' },
+            '404': { description: 'Emergency request not found.' },
+            '422': { description: 'The emergency request cannot be reassigned in its current state.' }
           }
         }
       },

@@ -34,6 +34,12 @@ export function PublicProviderCard({ provider }: PublicProviderCardProps) {
         {provider.bio ? <p className="text-sm leading-6 text-muted-foreground">{provider.bio}</p> : null}
 
         <div className="flex flex-wrap gap-2">
+          <Badge variant={provider.acceptsEmergencies ? 'default' : 'secondary'}>
+            {provider.acceptsEmergencies ? 'Acepta urgencias' : 'Sin urgencias'}
+          </Badge>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
           {provider.categories.map((category) => (
             <Badge key={category.slug} variant={category.isPrimary ? 'default' : 'secondary'}>
               {category.name}

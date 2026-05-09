@@ -139,4 +139,55 @@ describe('app user resolver', () => {
     expect(result.matchedBy).toBe('email');
     expect(result.permissionContext?.roles).toEqual(['contractor']);
   });
+
+  it('maps contractor emergency eligibility when the contractor profile is loaded', async () => {
+    mockedHasDatabaseEnv.mockReturnValue(true);
+
+    const findFirst = vi.fn().mockResolvedValue({
+      id: 'user_003',
+      email: 'foundation-emergency@yavaa.test',
+      supabaseAuthId: 'auth_003',
+      displayName: 'Emergency Contractor',
+      status: UserStatus.ACTIVE,
+      profile: null,
+      addresses: [],
+      roles: [
+        {
+          role: {
+            slug: 'contractor',
+            name: 'Contractor'
+          }
+        }
+      ],
+      contractorProfile: {
+        id: 'cp_003',
+        approvalStatus: 'APPROVED',
+        acceptsEmergencies: true,
+        dniNumber: null,
+        dniFrontUrl: null,
+        dniBackUrl: null,
+        profilePhotoUrl: null,
+        reviewNotes: null,
+        submittedAt: null,
+        reviewedAt: null,
+        reviewedByUserId: null,
+        addressId: null,
+        categories: [],
+        workZones: []
+      }
+    });
+
+    mockedGetPrismaClient.mockReturnValue({
+      user: {
+        findFirst
+      }
+    } as never);
+
+    const result = await resolveAppUser({
+      id: 'auth_003',
+      email: 'foundation-emergency@yavaa.test'
+    });
+
+    expect(result.user?.contractorProfile?.acceptsEmergencies).toBe(true);
+  });
 });

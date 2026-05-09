@@ -21,5 +21,6 @@ test('public search filters by category and market and opens a limited profile',
   await page.getByRole('link', { name: /Ver perfil/i }).first().click();
 
   await expect(page).toHaveURL(/\/providers\//);
+  await expect(page.getByText(/Acepta urgencias/i)).toBeVisible();
   await expect(page.getByText(/@/)).toHaveCount(0);
 });

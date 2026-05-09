@@ -50,6 +50,7 @@ type DashboardUser = {
   contractorProfile: {
     id: string;
     approvalStatus: string;
+    acceptsEmergencies: boolean;
     dniNumber: string | null;
     dniFrontUrl: string | null;
     dniBackUrl: string | null;
@@ -86,6 +87,14 @@ type DashboardUser = {
   } | null;
 };
 
+type DashboardCategory = {
+  id: string;
+  slug: string;
+  name: string;
+  group: string | null;
+  isInitial: boolean;
+};
+
 type UserEnvelope = {
   appUser: DashboardUser | null;
 };
@@ -94,6 +103,7 @@ type DashboardPanelProps = {
   initialUser: DashboardUser;
   email: string | null;
   configured: boolean;
+  categories: DashboardCategory[];
 };
 
 type ProfileDraft = {
@@ -114,6 +124,12 @@ type AddressDraft = {
   postalCode: string;
   notes: string;
   type: 'HOME' | 'WORK' | 'OTHER';
+};
+
+type EmergencyDraft = {
+  categoryId: string;
+  addressId: string;
+  description: string;
 };
 
 function toStringOrEmpty(value: string | null | undefined): string {
@@ -146,6 +162,14 @@ function buildAddressDraft(user: DashboardUser): AddressDraft {
   };
 }
 
+function buildEmergencyDraft(user: DashboardUser, categories: DashboardCategory[]): EmergencyDraft {
+  return {
+    categoryId: categories[0]?.id ?? '',
+    addressId: user.addresses[0]?.id ?? '',
+    description: ''
+  };
+}
+
 function formatName(user: DashboardUser): string {
   const namePieces = [user.profile?.firstName, user.profile?.lastName].filter(
     (value): value is string => Boolean(value)
@@ -153,16 +177,24 @@ function formatName(user: DashboardUser): string {
   return namePieces.length > 0 ? namePieces.join(' ') : user.displayName ?? user.email;
 }
 
-export function DashboardPanel({ initialUser, email, configured }: DashboardPanelProps) {
+export function DashboardPanel({ initialUser, email, configured, categories }: DashboardPanelProps) {
   const [user, setUser] = useState(initialUser);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(() => buildAddressDraft(initialUser));
+  const [emergencyDraft, setEmergencyDraft] = useState<EmergencyDraft>(() =>
+    buildEmergencyDraft(initialUser, categories)
+  );
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
   const [addressStatus, setAddressStatus] = useState<string | null>(null);
+  const [emergencyError, setEmergencyError] = useState<string | null>(null);
+  const [emergencyStatus, setEmergencyStatus] = useState<string | null>(null);
+  const [isSavingEmergency, setIsSavingEmergency] = useState(false);
+  const [isSavingEmergencyAvailability, setIsSavingEmergencyAvailability] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [acceptsEmergencies, setAcceptsEmergencies] = useState(initialUser.contractorProfile?.acceptsEmergencies ?? false);
 
   async function parseEnvelope(response: Response): Promise<UserEnvelope | null> {
     try {
@@ -255,10 +287,16 @@ export function DashboardPanel({ initialUser, email, configured }: DashboardPane
         return;
       }
 
-      if (payload?.appUser) {
-        setUser(payload.appUser);
-        setProfileDraft(buildProfileDraft(payload.appUser));
-        setAddressDraft(buildAddressDraft(payload.appUser));
+      const nextAppUser = payload?.appUser;
+
+      if (nextAppUser) {
+        setUser(nextAppUser);
+        setProfileDraft(buildProfileDraft(nextAppUser));
+        setAddressDraft(buildAddressDraft(nextAppUser));
+        setEmergencyDraft((current) => ({
+          ...current,
+          addressId: nextAppUser.addresses[0]?.id ?? current.addressId
+        }));
       } else {
         setAddressDraft(buildAddressDraft(user));
       }
@@ -268,6 +306,90 @@ export function DashboardPanel({ initialUser, email, configured }: DashboardPane
       setAddressError('No pudimos crear la dirección.');
     } finally {
       setIsSavingAddress(false);
+    }
+  }
+
+  async function handleEmergencySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setEmergencyError(null);
+    setEmergencyStatus(null);
+    setIsSavingEmergency(true);
+
+    try {
+      const response = await fetch('/api/emergencies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          categoryId: emergencyDraft.categoryId,
+          addressId: emergencyDraft.addressId,
+          description: emergencyDraft.description
+        })
+      });
+
+      const payload = await parseEnvelope(response);
+
+      if (!response.ok) {
+        setEmergencyError(
+          (payload as { message?: string; error?: string } | null)?.message ??
+            (payload as { error?: string } | null)?.error ??
+            'No pudimos crear la urgencia.'
+        );
+        return;
+      }
+
+      setEmergencyStatus('Urgencia creada y enviada a contractors elegibles.');
+      setEmergencyDraft((current) => ({
+        ...current,
+        description: ''
+      }));
+    } catch {
+      setEmergencyError('No pudimos crear la urgencia.');
+    } finally {
+      setIsSavingEmergency(false);
+    }
+  }
+
+  async function handleEmergencyAvailabilityToggle() {
+    setEmergencyError(null);
+    setEmergencyStatus(null);
+    setIsSavingEmergencyAvailability(true);
+
+    try {
+      const response = await fetch('/api/me/contractor-profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          acceptsEmergencies: !acceptsEmergencies
+        })
+      });
+
+      const payload = await parseEnvelope(response);
+
+      if (!response.ok) {
+        setEmergencyError(
+          (payload as { message?: string; error?: string } | null)?.message ??
+            (payload as { error?: string } | null)?.error ??
+            'No pudimos actualizar la disponibilidad para urgencias.'
+        );
+        return;
+      }
+
+      if (payload?.appUser?.contractorProfile) {
+        setUser(payload.appUser);
+        setAcceptsEmergencies(payload.appUser.contractorProfile.acceptsEmergencies);
+      } else {
+        setAcceptsEmergencies((current) => !current);
+      }
+
+      setEmergencyStatus('Disponibilidad de urgencias actualizada.');
+    } catch {
+      setEmergencyError('No pudimos actualizar la disponibilidad para urgencias.');
+    } finally {
+      setIsSavingEmergencyAvailability(false);
     }
   }
 
@@ -297,6 +419,9 @@ export function DashboardPanel({ initialUser, email, configured }: DashboardPane
           <div className="rounded-2xl border border-border/70 px-4 py-3 text-sm">
             <p className="text-muted-foreground">Contractor</p>
             <p className="font-mono text-foreground">{user.contractorProfile?.approvalStatus ?? 'none'}</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Urgencias: {user.contractorProfile?.acceptsEmergencies ? 'activa' : 'inactiva'}
+            </p>
           </div>
           {configured ? <SignOutButton /> : null}
         </div>
@@ -559,6 +684,111 @@ export function DashboardPanel({ initialUser, email, configured }: DashboardPane
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-border/70 bg-card/90 shadow-soft">
+        <CardHeader>
+          <CardTitle className="font-display text-2xl">Urgencias</CardTitle>
+          <CardDescription>Dispará una solicitud urgente o marcate como disponible para responderlas.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form className="space-y-4" onSubmit={handleEmergencySubmit}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="emergency-category">Categoría</Label>
+                <select
+                  id="emergency-category"
+                  className="flex h-11 w-full rounded-2xl border border-input bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  value={emergencyDraft.categoryId}
+                  onChange={(event) =>
+                    setEmergencyDraft((current) => ({ ...current, categoryId: event.target.value }))
+                  }
+                  disabled={categories.length === 0}
+                >
+                  {categories.length === 0 ? <option value="">Sin categorías</option> : null}
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="emergency-address">Dirección</Label>
+                <select
+                  id="emergency-address"
+                  className="flex h-11 w-full rounded-2xl border border-input bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  value={emergencyDraft.addressId}
+                  onChange={(event) =>
+                    setEmergencyDraft((current) => ({ ...current, addressId: event.target.value }))
+                  }
+                  disabled={user.addresses.length === 0}
+                >
+                  {user.addresses.length === 0 ? <option value="">Sin direcciones</option> : null}
+                  {user.addresses.map((address) => (
+                    <option key={address.id} value={address.id}>
+                      {address.label} - {address.city}, {address.province}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergency-description">Descripción</Label>
+              <Textarea
+                id="emergency-description"
+                value={emergencyDraft.description}
+                onChange={(event) =>
+                  setEmergencyDraft((current) => ({ ...current, description: event.target.value }))
+                }
+                placeholder="Contá brevemente qué está pasando"
+              />
+            </div>
+
+            {emergencyError ? (
+              <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {emergencyError}
+              </p>
+            ) : null}
+
+            {emergencyStatus ? (
+              <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                {emergencyStatus}
+              </p>
+            ) : null}
+
+            <Button
+              type="submit"
+              disabled={isSavingEmergency || categories.length === 0 || user.addresses.length === 0}
+            >
+              {isSavingEmergency ? 'Enviando...' : 'Crear urgencia'}
+            </Button>
+          </form>
+
+          {(user.roles.includes('contractor') || user.contractorProfile) ? (
+            <>
+              <Separator />
+              <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">Disponibilidad para urgencias</p>
+                  <p className="text-sm text-muted-foreground">
+                    {acceptsEmergencies
+                      ? 'Tu perfil aparece en dispatch de urgencias.'
+                      : 'Tu perfil no aparece en dispatch de urgencias.'}
+                  </p>
+                </div>
+                <Button type="button" variant="secondary" onClick={handleEmergencyAvailabilityToggle}>
+                  {isSavingEmergencyAvailability
+                    ? 'Guardando...'
+                    : acceptsEmergencies
+                      ? 'Desactivar urgencias'
+                      : 'Activar urgencias'}
+                </Button>
+              </div>
+            </>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <Card className="border-border/70 bg-card/90 shadow-soft">
         <CardHeader>

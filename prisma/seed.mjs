@@ -261,6 +261,7 @@ async function main() {
     update: {
       addressId: contractorAddress.id,
       approvalStatus: ContractorApprovalStatus.PENDING_REVIEW,
+      acceptsEmergencies: true,
       dniNumber: '12345678',
       dniFrontUrl: 'https://example.com/seeds/dni-front.jpg',
       dniBackUrl: 'https://example.com/seeds/dni-back.jpg',
@@ -274,6 +275,7 @@ async function main() {
       userId: foundationContractor.id,
       addressId: contractorAddress.id,
       approvalStatus: ContractorApprovalStatus.PENDING_REVIEW,
+      acceptsEmergencies: true,
       dniNumber: '12345678',
       dniFrontUrl: 'https://example.com/seeds/dni-front.jpg',
       dniBackUrl: 'https://example.com/seeds/dni-back.jpg',
@@ -364,6 +366,7 @@ async function main() {
     update: {
       addressId: publicContractorAddress.id,
       approvalStatus: ContractorApprovalStatus.APPROVED,
+      acceptsEmergencies: true,
       dniNumber: '87654321',
       dniFrontUrl: 'https://example.com/seeds/public-dni-front.jpg',
       dniBackUrl: 'https://example.com/seeds/public-dni-back.jpg',
@@ -377,6 +380,7 @@ async function main() {
       userId: publicContractor.id,
       addressId: publicContractorAddress.id,
       approvalStatus: ContractorApprovalStatus.APPROVED,
+      acceptsEmergencies: true,
       dniNumber: '87654321',
       dniFrontUrl: 'https://example.com/seeds/public-dni-front.jpg',
       dniBackUrl: 'https://example.com/seeds/public-dni-back.jpg',

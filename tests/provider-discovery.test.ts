@@ -22,6 +22,7 @@ describe('public discovery', () => {
     const findMany = vi.fn().mockResolvedValue([
       {
         id: 'cp_001',
+        acceptsEmergencies: true,
         profilePhotoUrl: null,
         user: {
           displayName: 'Foundation Contractor',
@@ -75,6 +76,7 @@ describe('public discovery', () => {
       contractorProfileId: 'cp_001',
       displayName: 'Carlos Perez',
       bio: 'Plomero',
+      acceptsEmergencies: true,
       marketSlug: 'san-martin-de-los-andes',
       marketCity: 'San Martin de los Andes',
       marketProvince: 'Neuquen'
