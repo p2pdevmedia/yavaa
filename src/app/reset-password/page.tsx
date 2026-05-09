@@ -2,9 +2,10 @@ import { cookies } from 'next/headers';
 
 import { ResetPasswordForm } from '@/components/auth/reset-password-form';
 import { getAuthSessionState } from '@/lib/auth';
+import { buildAuthErrorMessage, hasAuthErrorParams, type AuthErrorParams } from '@/lib/auth-errors';
 
 type ResetPasswordPageProps = {
-  searchParams?: Promise<{
+  searchParams?: Promise<AuthErrorParams & {
     authError?: string | string[];
   }>;
 };
@@ -12,12 +13,13 @@ type ResetPasswordPageProps = {
 export default async function ResetPasswordPage({ searchParams }: ResetPasswordPageProps) {
   const cookieStore = await cookies();
   const authState = await getAuthSessionState(cookieStore);
-  const resolvedSearchParams: {
+  const resolvedSearchParams: AuthErrorParams & {
     authError?: string | string[];
   } = (await Promise.resolve(searchParams)) ?? {};
   const authError = Array.isArray(resolvedSearchParams.authError)
     ? resolvedSearchParams.authError[0]
-    : resolvedSearchParams.authError;
+    : resolvedSearchParams.authError ??
+      (hasAuthErrorParams(resolvedSearchParams) ? buildAuthErrorMessage(resolvedSearchParams) : undefined);
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 py-12 sm:px-6 lg:px-8">

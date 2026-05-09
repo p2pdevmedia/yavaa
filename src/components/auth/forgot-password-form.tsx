@@ -11,6 +11,7 @@ import { createClient } from '@/utils/supabase/client';
 
 type ForgotPasswordFormProps = {
   configured: boolean;
+  authError?: string;
 };
 
 function getPasswordResetErrorMessage(error: { code?: string; message: string }) {
@@ -21,9 +22,9 @@ function getPasswordResetErrorMessage(error: { code?: string; message: string })
   return error.message;
 }
 
-export function ForgotPasswordForm({ configured }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm({ configured, authError }: ForgotPasswordFormProps) {
   const [email, setEmail] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(authError ?? null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

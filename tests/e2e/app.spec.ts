@@ -43,6 +43,18 @@ test('password reset pages render', async ({ page }) => {
   await expect(page.getByRole('button', { name: /Actualizar contraseña/i })).toBeVisible();
 });
 
+test('expired Supabase recovery links land on the retry form', async ({ page }) => {
+  await page.goto(
+    '/?error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired'
+  );
+
+  await expect(page).toHaveURL(/\/forgot-password\?authError=/);
+  await expect(page.getByRole('heading', { name: /Recuperar contraseña/i })).toBeVisible();
+  await expect(page.getByTestId('forgot-password-error')).toContainText(
+    'El enlace de recuperación venció o ya fue usado'
+  );
+});
+
 test('landing page exposes the public discovery entry point', async ({ page }) => {
   await page.goto('/');
 

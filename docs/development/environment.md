@@ -24,6 +24,21 @@ In Supabase Dashboard > Authentication > URL Configuration:
 - set Site URL to the canonical deployed web origin, for example `https://www.yavaa.lat`
 - add the local development redirect URLs you use, for example `http://localhost:3000/**` and `http://127.0.0.1:3000/**`
 - add production or preview callback URLs intentionally, for example `https://www.yavaa.lat/auth/callback` or the approved Vercel preview pattern
+- keep legacy/non-canonical callback variants only while links may still use them, for example `https://yavaa.lat/auth/callback`
+
+Password recovery must arrive at the callback, not only at the site root. A valid recovery email
+created by the app should include a `redirect_to` value shaped like:
+
+```txt
+https://www.yavaa.lat/auth/callback?next=%2Freset-password
+```
+
+If the email link contains only `redirect_to=https://www.yavaa.lat` or `redirect_to=https://yavaa.lat`,
+the user will land on the home page instead of the reset form. In that case:
+
+- verify `NEXT_PUBLIC_SITE_URL=https://www.yavaa.lat` in the deployed app environment
+- verify the callback URL above is allow-listed in Supabase Auth URL Configuration
+- if using a custom recovery email template, keep Supabase's `{{ .ConfirmationURL }}` link or another dynamic redirect value; do not hard-code `{{ .SiteURL }}` as the recovery link target
 
 To send auth emails from `@yavaa.lat`:
 

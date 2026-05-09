@@ -3,9 +3,21 @@ import { cookies } from 'next/headers';
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
 import { getAuthSessionState } from '@/lib/auth';
 
-export default async function ForgotPasswordPage() {
+type ForgotPasswordPageProps = {
+  searchParams?: Promise<{
+    authError?: string | string[];
+  }>;
+};
+
+export default async function ForgotPasswordPage({ searchParams }: ForgotPasswordPageProps) {
   const cookieStore = await cookies();
   const authState = await getAuthSessionState(cookieStore);
+  const resolvedSearchParams: {
+    authError?: string | string[];
+  } = (await Promise.resolve(searchParams)) ?? {};
+  const authError = Array.isArray(resolvedSearchParams.authError)
+    ? resolvedSearchParams.authError[0]
+    : resolvedSearchParams.authError;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-center px-4 py-12 sm:px-6 lg:px-8">
@@ -24,7 +36,7 @@ export default async function ForgotPasswordPage() {
         </div>
 
         <div className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-soft backdrop-blur">
-          <ForgotPasswordForm configured={authState.configured} />
+          <ForgotPasswordForm configured={authState.configured} authError={authError} />
         </div>
       </section>
     </main>

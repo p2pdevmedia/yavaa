@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canAccessOwnResource,
   canAssignRoles,
+  canManageDebt,
   canManageAddress,
   canManageCategoryCatalog,
   canManageUsers,
@@ -37,6 +38,12 @@ const activeAdmin: PermissionContext = {
   userId: 'admin_001',
   status: UserStatus.ACTIVE,
   roles: ['admin', 'support']
+};
+
+const activeSupport: PermissionContext = {
+  userId: 'support_001',
+  status: UserStatus.ACTIVE,
+  roles: ['support']
 };
 
 const suspendedAdmin: PermissionContext = {
@@ -79,6 +86,13 @@ describe('permission helpers', () => {
     expect(canCorrectBookingsOperationally(suspendedAdmin)).toBe(false);
     expect(canAssignRoles(suspendedAdmin)).toBe(false);
     expect(canViewAuditLog(suspendedAdmin)).toBe(false);
+  });
+
+  it('allows only active admins to manage debt', () => {
+    expect(canManageDebt(activeAdmin)).toBe(true);
+    expect(canManageDebt(activeSupport)).toBe(false);
+    expect(canManageDebt(activeClient)).toBe(false);
+    expect(canManageDebt(suspendedAdmin)).toBe(false);
   });
 
   it('lets admins manage addresses, but still blocks suspended users', () => {

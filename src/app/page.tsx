@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +9,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { APP_DESCRIPTION, APP_NAME, APP_VERSION } from '@/lib/app-metadata';
+import { buildAuthErrorRedirectPath, hasAuthErrorParams, type AuthErrorParams } from '@/lib/auth-errors';
 import { getAuthSessionState } from '@/lib/auth';
+
+type HomePageProps = {
+  searchParams?: Promise<AuthErrorParams>;
+};
 
 const foundationChecks = [
   { label: 'Next.js App Router', value: 'Activado' },
@@ -18,7 +24,13 @@ const foundationChecks = [
   { label: 'Vitest + Playwright', value: 'Conectado' }
 ];
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedSearchParams = (await Promise.resolve(searchParams)) ?? {};
+
+  if (hasAuthErrorParams(resolvedSearchParams)) {
+    redirect(buildAuthErrorRedirectPath(resolvedSearchParams) as Route);
+  }
+
   const cookieStore = await cookies();
   const authState = await getAuthSessionState(cookieStore);
 

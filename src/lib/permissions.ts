@@ -60,6 +60,10 @@ export function canManageUsers(context: PermissionContext): boolean {
   return isActiveContext(context) && hasRole(context, 'admin');
 }
 
+export function canManageDebt(context: PermissionContext): boolean {
+  return isActiveContext(context) && hasRole(context, 'admin');
+}
+
 export function canCorrectBookingsOperationally(context: PermissionContext): boolean {
   return isActiveContext(context) && hasRole(context, 'admin');
 }
