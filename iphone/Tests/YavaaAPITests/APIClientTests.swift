@@ -14,4 +14,42 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
         XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer session-token")
     }
+
+    func testDecodesAuthenticatedMeResponseWithRoles() throws {
+        let json = """
+        {
+          "authenticated": true,
+          "configured": true,
+          "reason": null,
+          "identity": {
+            "id": "supabase_001",
+            "email": "dual@yavaa.test"
+          },
+          "matchedBy": "supabase_auth_id",
+          "permissionContext": {
+            "userId": "user_001",
+            "status": "ACTIVE",
+            "roles": ["client", "contractor"]
+          },
+          "appUser": {
+            "id": "user_001",
+            "email": "dual@yavaa.test",
+            "displayName": "Dual User",
+            "status": "ACTIVE",
+            "roles": ["client", "contractor"],
+            "profile": null,
+            "addresses": [],
+            "contractorProfile": null
+          }
+        }
+        """.data(using: .utf8)!
+
+        let decoder = JSONDecoder()
+        let response = try decoder.decode(WebsiteMeResponse.self, from: json)
+
+        XCTAssertTrue(response.authenticated)
+        XCTAssertEqual(response.identity?.id, "supabase_001")
+        XCTAssertEqual(response.appUser?.roles, [.client, .contractor])
+        XCTAssertEqual(response.toSessionState().mode, .client)
+    }
 }

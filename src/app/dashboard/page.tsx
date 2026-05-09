@@ -13,6 +13,26 @@ import { getDashboardAdminData } from '@/lib/dashboard-admin';
 import { serializeBookingsForDashboard } from '@/lib/dashboard-workspace';
 import { getPrismaClient } from '@/lib/prisma';
 import { listPublicCatalogCategories } from '@/lib/public-catalog';
+import { isDatabaseUnavailableError } from '@/lib/public-db-fallback';
+
+function DatabaseUnavailableState({ email }: { email: string | null }) {
+  return (
+    <main className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-4 py-8 sm:px-6 lg:px-8">
+      <Card className="w-full border-border/70 bg-card/90 shadow-soft">
+        <CardHeader>
+          <CardTitle className="font-display text-3xl">Base de datos no disponible</CardTitle>
+          <CardDescription>
+            La sesión está activa, pero Yavaa no puede verificar permisos ni cargar datos operativos ahora.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm leading-6 text-muted-foreground">
+          <p className="font-mono text-foreground">{email ?? 'Sesión autenticada'}</p>
+          <p>Volvé a intentar en unos minutos. Ninguna acción protegida se habilita sin validar la base.</p>
+        </CardContent>
+      </Card>
+    </main>
+  );
+}
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -22,8 +42,26 @@ export default async function DashboardPage() {
     redirect(buildSignInPath('/dashboard') as Route);
   }
 
-  const appUser = authState.user ? await resolveAppUser(authState.user) : null;
-  const categories = await listPublicCatalogCategories();
+  let appUser: Awaited<ReturnType<typeof resolveAppUser>> | null = null;
+  let categories: Awaited<ReturnType<typeof listPublicCatalogCategories>> = [];
+  let bookings: Awaited<ReturnType<typeof listBookingsForActor>> = [];
+  let notifications: Awaited<ReturnType<typeof listNotificationsForUser>> = [];
+  let adminData: Awaited<ReturnType<typeof getDashboardAdminData>> = null;
+
+  try {
+    appUser = authState.user ? await resolveAppUser(authState.user) : null;
+    categories = await listPublicCatalogCategories();
+    const prisma = getPrismaClient();
+    bookings = appUser?.permissionContext ? await listBookingsForActor(prisma, appUser.permissionContext) : [];
+    notifications = appUser?.user ? await listNotificationsForUser(prisma, appUser.user.id, 5) : [];
+    adminData = appUser?.permissionContext ? await getDashboardAdminData(prisma, appUser.permissionContext) : null;
+  } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      return <DatabaseUnavailableState email={authState.user?.email ?? null} />;
+    }
+
+    throw error;
+  }
 
   if (!appUser?.user) {
     return (
@@ -43,17 +81,6 @@ export default async function DashboardPage() {
       </main>
     );
   }
-
-  const prisma = getPrismaClient();
-  const bookings = appUser.permissionContext
-    ? await listBookingsForActor(prisma, appUser.permissionContext)
-    : [];
-  const notifications = appUser.user
-    ? await listNotificationsForUser(prisma, appUser.user.id, 5)
-    : [];
-  const adminData = appUser.permissionContext
-    ? await getDashboardAdminData(prisma, appUser.permissionContext)
-    : null;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl items-start px-4 py-8 sm:px-6 lg:px-8">

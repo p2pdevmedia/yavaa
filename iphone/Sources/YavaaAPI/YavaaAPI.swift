@@ -1,4 +1,5 @@
 import Foundation
+import YavaaCore
 
 public enum APIError: Error, Equatable, Sendable {
     case invalidPath(String)
@@ -119,7 +120,7 @@ public final class APIClient: @unchecked Sendable {
         return try decoder.decode(Response.self, from: data)
     }
 
-    public func fetchCurrentSession() async throws -> WebsiteSessionResponse {
+    public func fetchCurrentSession() async throws -> WebsiteMeResponse {
         try await send(APIRequest(path: "/api/me", method: .get))
     }
 
@@ -128,16 +129,86 @@ public final class APIClient: @unchecked Sendable {
     }
 }
 
-public struct WebsiteSessionResponse: Decodable, Equatable, Sendable {
+public struct WebsiteMeResponse: Decodable, Equatable, Sendable {
     public let authenticated: Bool
     public let configured: Bool
-    public let reason: String?
-    public let identity: WebsiteIdentity?
+    public let reason: AuthFailureReason?
+    public let identity: UserIdentity?
+    public let appUser: WebsiteAppUser?
+    public let matchedBy: String?
+    public let permissionContext: WebsitePermissionContext?
+
+    public func toSessionState(preferredMode: AppMode? = nil) -> SessionState {
+        guard authenticated, let appUser else {
+            return SessionState(isAuthenticated: false, identity: identity, reason: reason)
+        }
+
+        let account = AccountSummary(
+            id: appUser.id,
+            email: appUser.email,
+            status: appUser.status,
+            roles: appUser.roles
+        )
+
+        return SessionState.authenticated(
+            identity: identity,
+            account: account,
+            preferredMode: preferredMode
+        )
+    }
 }
 
-public struct WebsiteIdentity: Decodable, Equatable, Sendable {
+public struct WebsitePermissionContext: Decodable, Equatable, Sendable {
+    public let userId: String
+    public let status: UserStatus
+    public let roles: [AppRole]
+}
+
+public struct WebsiteAppUser: Decodable, Equatable, Sendable {
     public let id: String
-    public let email: String?
+    public let email: String
+    public let displayName: String?
+    public let status: UserStatus
+    public let roles: [AppRole]
+    public let profile: WebsiteProfile?
+    public let addresses: [WebsiteAddress]
+    public let contractorProfile: WebsiteContractorProfile?
+}
+
+public struct WebsiteProfile: Decodable, Equatable, Sendable {
+    public let firstName: String?
+    public let lastName: String?
+    public let avatarUrl: String?
+    public let phone: String?
+    public let bio: String?
+}
+
+public struct WebsiteAddress: Decodable, Equatable, Sendable {
+    public let id: String
+    public let label: String
+    public let line1: String
+    public let line2: String?
+    public let city: String
+    public let province: String
+    public let postalCode: String?
+    public let notes: String?
+    public let type: String
+    public let isDefault: Bool
+}
+
+public struct WebsiteContractorProfile: Decodable, Equatable, Sendable {
+    public let id: String
+    public let approvalStatus: String
+    public let acceptsEmergencies: Bool
+    public let dniNumber: String?
+    public let dniFrontUrl: String?
+    public let dniBackUrl: String?
+    public let profilePhotoUrl: String?
+    public let reviewNotes: String?
+    public let submittedAt: String?
+    public let reviewedAt: String?
+    public let reviewedByUserId: String?
+    public let addressId: String?
 }
 
 public struct OpenAPIDocumentSummary: Decodable, Equatable, Sendable {

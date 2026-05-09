@@ -77,6 +77,36 @@ In Supabase Dashboard > Authentication > URL Configuration:
 4. Run `npm run db:migrate`.
 5. Run `npm run db:seed`.
 
+## Supabase Prisma connection strings
+
+For local Postgres, `DATABASE_URL` and `DIRECT_URL` can point at the same local database.
+
+For hosted Supabase, keep these two URLs separate when possible:
+
+- `DATABASE_URL`: runtime URL used by the Next.js app. In serverless/Vercel-style environments, use the Supabase session pooler URL because the direct `db.<project-ref>.supabase.co` hostname can be IPv6-only.
+- `DIRECT_URL`: direct database URL for workflows that need a non-pooled connection. The current Prisma schema still reads `DATABASE_URL`, so use a Prisma-compatible URL when running migrations.
+
+Example shape:
+
+```txt
+DATABASE_URL="postgresql://postgres.<project-ref>:<db-password>@<pooler-host>:5432/postgres"
+DIRECT_URL="postgresql://postgres:<db-password>@db.<project-ref>.supabase.co:5432/postgres"
+```
+
+For the current Yavaa Supabase project (`mvzkbhnfuhjvnojncwbf`, region `us-west-1`), the verified pooler host is:
+
+```txt
+aws-1-us-west-1.pooler.supabase.com
+```
+
+The resulting runtime URL shape is:
+
+```txt
+DATABASE_URL="postgresql://postgres.mvzkbhnfuhjvnojncwbf:<db-password>@aws-1-us-west-1.pooler.supabase.com:5432/postgres"
+```
+
+Do not commit real database passwords. Update deployed environment variables through the hosting provider.
+
 ## Testing Supabase
 
 - Our Supabase project is used as a testing environment.

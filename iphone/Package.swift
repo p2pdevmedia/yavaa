@@ -20,7 +20,7 @@ let package = Package(
             name: "YavaaApp",
             dependencies: ["YavaaAPI", "YavaaAuth", "YavaaCore", "YavaaDesign"]
         ),
-        .target(name: "YavaaAPI"),
+        .target(name: "YavaaAPI", dependencies: ["YavaaCore"]),
         .target(name: "YavaaAuth", dependencies: ["YavaaAPI", "YavaaCore"]),
         .target(name: "YavaaCore"),
         .target(name: "YavaaDesign"),
