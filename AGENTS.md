@@ -141,6 +141,7 @@ Agents should first:
 - Prisma is the source of schema truth.
 - All schema changes require migrations.
 - Never manually drift database schema.
+- Always run the matching migration workflow before relying on a schema change, even when the target Supabase database is only used for testing.
 
 ## Relationships
 

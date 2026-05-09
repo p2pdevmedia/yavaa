@@ -9,6 +9,7 @@ Phase 00 foundation is scaffolded in this repository:
 - Next.js App Router + TypeScript strict mode
 - Prisma + PostgreSQL schema and migration baseline
 - Supabase auth utilities and session bootstrap endpoint
+- Deterministic foundation seed for roles, launch market, and categories
 - OpenAPI generation and published JSON output
 - Vitest and Playwright test wiring
 - Tailwind CSS and shadcn-style component primitives

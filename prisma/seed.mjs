@@ -20,7 +20,59 @@ const seedRoles = [
   { slug: 'support', name: 'Support', description: 'Helps with operational follow-up.' }
 ];
 
+const seedMarket = {
+  slug: 'san-martin-de-los-andes',
+  country: 'Argentina',
+  province: 'Neuquen',
+  city: 'San Martin de los Andes',
+  isPrimary: true
+};
+
+const seedCategories = [
+  { slug: 'construction', name: 'Construction', group: 'construction' },
+  { slug: 'home-services', name: 'Home Services', group: 'home services' },
+  { slug: 'psychologists', name: 'Psychologists', group: 'health' },
+  { slug: 'teachers', name: 'Teachers', group: 'education' },
+  { slug: 'massage-therapists', name: 'Massage Therapists', group: 'wellness' },
+  { slug: 'wellness', name: 'Wellness', group: 'wellness' },
+  { slug: 'delivery', name: 'Delivery', group: 'logistics' },
+  { slug: 'errands', name: 'Errands', group: 'assistance' },
+  { slug: 'technology', name: 'Technology', group: 'technology' }
+];
+
 async function main() {
+  await prisma.market.upsert({
+    where: { slug: seedMarket.slug },
+    update: {
+      country: seedMarket.country,
+      province: seedMarket.province,
+      city: seedMarket.city,
+      isPrimary: seedMarket.isPrimary
+    },
+    create: seedMarket
+  });
+
+  await Promise.all(
+    seedCategories.map((category) =>
+      prisma.category.upsert({
+        where: { slug: category.slug },
+        update: {
+          name: category.name,
+          group: category.group,
+          status: 'ACTIVE',
+          isInitial: true
+        },
+        create: {
+          slug: category.slug,
+          name: category.name,
+          group: category.group,
+          status: 'ACTIVE',
+          isInitial: true
+        }
+      })
+    )
+  );
+
   const roles = await Promise.all(
     seedRoles.map((role) =>
       prisma.role.upsert({

@@ -18,6 +18,12 @@
 4. Run `npm run db:migrate`.
 5. Run `npm run db:seed`.
 
+## Testing Supabase
+
+- Our Supabase project is used as a testing environment.
+- Schema changes must still be applied through Prisma migrations before anything depends on them.
+- Do not treat the testing database as disposable drift; keep it aligned with the schema on purpose.
+
 ## Notes
 - Keep secrets out of git.
 - Do not rely on client-side checks for permissions.
