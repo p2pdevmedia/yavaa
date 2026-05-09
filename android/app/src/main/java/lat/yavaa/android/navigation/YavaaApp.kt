@@ -21,9 +21,21 @@ import lat.yavaa.android.YavaaContainer
 import lat.yavaa.android.feature.auth.AuthScreen
 import lat.yavaa.android.feature.auth.AuthViewModel
 import lat.yavaa.android.feature.auth.AuthViewModelFactory
+import lat.yavaa.android.feature.discovery.DiscoveryScreen
+import lat.yavaa.android.feature.discovery.DiscoveryViewModel
+import lat.yavaa.android.feature.discovery.DiscoveryViewModelFactory
+import lat.yavaa.android.feature.discovery.ProviderProfileScreen
+import lat.yavaa.android.feature.discovery.ProviderProfileViewModel
+import lat.yavaa.android.feature.discovery.ProviderProfileViewModelFactory
 import lat.yavaa.android.feature.home.HomeScreen
 import lat.yavaa.android.feature.home.HomeViewModel
 import lat.yavaa.android.feature.home.HomeViewModelFactory
+
+private sealed interface YavaaRoute {
+    data object Discovery : YavaaRoute
+    data object Account : YavaaRoute
+    data class ProviderProfile(val contractorProfileId: String) : YavaaRoute
+}
 
 @Composable
 fun YavaaApp(container: YavaaContainer) {
@@ -35,6 +47,9 @@ fun YavaaApp(container: YavaaContainer) {
 
 @Composable
 private fun ReadyYavaaApp(container: YavaaContainer.Ready) {
+    var route by remember {
+        mutableStateOf<YavaaRoute>(YavaaRoute.Discovery)
+    }
     var authenticated by remember {
         mutableStateOf(container.authRepository.currentAccessToken() != null)
     }
@@ -45,19 +60,54 @@ private fun ReadyYavaaApp(container: YavaaContainer.Ready) {
         }
     }
 
-    if (authenticated) {
-        val homeViewModel: HomeViewModel = viewModel(
-            factory = HomeViewModelFactory(
-                authRepository = container.authRepository,
-                apiClient = container.apiClient
+    when (val currentRoute = route) {
+        YavaaRoute.Discovery -> {
+            val discoveryViewModel: DiscoveryViewModel = viewModel(
+                factory = DiscoveryViewModelFactory(container.apiClient)
             )
-        )
-        HomeScreen(viewModel = homeViewModel)
-    } else {
-        val authViewModel: AuthViewModel = viewModel(
-            factory = AuthViewModelFactory(authRepository = container.authRepository)
-        )
-        AuthScreen(viewModel = authViewModel)
+            DiscoveryScreen(
+                viewModel = discoveryViewModel,
+                onProviderClick = { contractorProfileId ->
+                    route = YavaaRoute.ProviderProfile(contractorProfileId)
+                },
+                onAccountClick = {
+                    route = YavaaRoute.Account
+                }
+            )
+        }
+
+        YavaaRoute.Account -> {
+            if (authenticated) {
+                val homeViewModel: HomeViewModel = viewModel(
+                    factory = HomeViewModelFactory(
+                        authRepository = container.authRepository,
+                        apiClient = container.apiClient
+                    )
+                )
+                HomeScreen(viewModel = homeViewModel)
+            } else {
+                val authViewModel: AuthViewModel = viewModel(
+                    factory = AuthViewModelFactory(authRepository = container.authRepository)
+                )
+                AuthScreen(viewModel = authViewModel)
+            }
+        }
+
+        is YavaaRoute.ProviderProfile -> {
+            val providerProfileViewModel: ProviderProfileViewModel = viewModel(
+                key = "provider-profile-${currentRoute.contractorProfileId}",
+                factory = ProviderProfileViewModelFactory(
+                    discoveryApi = container.apiClient,
+                    contractorProfileId = currentRoute.contractorProfileId
+                )
+            )
+            ProviderProfileScreen(
+                viewModel = providerProfileViewModel,
+                onBack = {
+                    route = YavaaRoute.Discovery
+                }
+            )
+        }
     }
 }
 
@@ -81,4 +131,3 @@ private fun MisconfiguredScreen(message: String) {
         )
     }
 }
-
