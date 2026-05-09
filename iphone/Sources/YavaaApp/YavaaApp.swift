@@ -13,12 +13,16 @@ public final class AppContainer: ObservableObject {
     private let sessionController: SessionController
 
     public init(apiEnvironment: APIEnvironment = .localWebsite) {
-        let tokenStore = InMemorySessionTokenStore()
+        let tokenStore = KeychainSessionTokenStore()
         let tokenProvider = StoredAccessTokenProvider(store: tokenStore)
         let apiClient = APIClient(environment: apiEnvironment, tokenProvider: tokenProvider)
 
         self.apiClient = apiClient
-        self.sessionController = SessionController(apiClient: apiClient)
+        self.sessionController = SessionController(
+            apiClient: apiClient,
+            tokenStore: tokenStore,
+            preferredModeStore: InMemoryPreferredModeStore()
+        )
     }
 
     public func bootstrap() async {

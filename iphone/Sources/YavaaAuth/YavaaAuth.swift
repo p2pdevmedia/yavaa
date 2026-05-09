@@ -4,29 +4,65 @@ import Supabase
 import YavaaAPI
 import YavaaCore
 
+public struct AuthSessionCredentials: Equatable, Sendable {
+    public let accessToken: String
+    public let refreshToken: String
+
+    public init(accessToken: String, refreshToken: String) {
+        self.accessToken = accessToken
+        self.refreshToken = refreshToken
+    }
+}
+
 public protocol SessionTokenStore: Sendable {
     func loadAccessToken() async throws -> String?
+    func loadSessionCredentials() async throws -> AuthSessionCredentials?
     func saveAccessToken(_ token: String) async throws
+    func saveSessionCredentials(_ credentials: AuthSessionCredentials) async throws
     func clearAccessToken() async throws
 }
 
+public extension SessionTokenStore {
+    func loadSessionCredentials() async throws -> AuthSessionCredentials? {
+        guard let accessToken = try await loadAccessToken() else {
+            return nil
+        }
+
+        return AuthSessionCredentials(accessToken: accessToken, refreshToken: "")
+    }
+
+    func saveSessionCredentials(_ credentials: AuthSessionCredentials) async throws {
+        try await saveAccessToken(credentials.accessToken)
+    }
+}
+
 public actor InMemorySessionTokenStore: SessionTokenStore {
-    private var token: String?
+    private var credentials: AuthSessionCredentials?
 
     public init(token: String? = nil) {
-        self.token = token
+        self.credentials = token.map {
+            AuthSessionCredentials(accessToken: $0, refreshToken: "")
+        }
     }
 
     public func loadAccessToken() async throws -> String? {
-        token
+        credentials?.accessToken
+    }
+
+    public func loadSessionCredentials() async throws -> AuthSessionCredentials? {
+        credentials
     }
 
     public func saveAccessToken(_ token: String) async throws {
-        self.token = token
+        self.credentials = AuthSessionCredentials(accessToken: token, refreshToken: "")
+    }
+
+    public func saveSessionCredentials(_ credentials: AuthSessionCredentials) async throws {
+        self.credentials = credentials
     }
 
     public func clearAccessToken() async throws {
-        token = nil
+        credentials = nil
     }
 }
 
@@ -38,17 +74,56 @@ public enum KeychainSessionTokenStoreError: Error, Equatable, Sendable {
 public actor KeychainSessionTokenStore: SessionTokenStore {
     private let service: String
     private let account: String
+    private let accessibility: CFString
 
     public init(
         service: String = "lat.yavaa.iphone.session",
-        account: String = "supabase-access-token"
+        account: String = "supabase-session",
+        accessibility: CFString = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
     ) {
         self.service = service
         self.account = account
+        self.accessibility = accessibility
     }
 
     public func loadAccessToken() async throws -> String? {
-        var query = keychainQuery()
+        try loadToken(account: accessTokenAccount)
+    }
+
+    public func loadSessionCredentials() async throws -> AuthSessionCredentials? {
+        guard let accessToken = try loadToken(account: accessTokenAccount) else {
+            return nil
+        }
+
+        let refreshToken = try loadToken(account: refreshTokenAccount) ?? ""
+        return AuthSessionCredentials(accessToken: accessToken, refreshToken: refreshToken)
+    }
+
+    public func saveAccessToken(_ token: String) async throws {
+        try saveToken(token, account: accessTokenAccount)
+        try clearToken(account: refreshTokenAccount)
+    }
+
+    public func saveSessionCredentials(_ credentials: AuthSessionCredentials) async throws {
+        try saveToken(credentials.accessToken, account: accessTokenAccount)
+        try saveToken(credentials.refreshToken, account: refreshTokenAccount)
+    }
+
+    public func clearAccessToken() async throws {
+        try clearToken(account: accessTokenAccount)
+        try clearToken(account: refreshTokenAccount)
+    }
+
+    private var accessTokenAccount: String {
+        "\(account).access-token"
+    }
+
+    private var refreshTokenAccount: String {
+        "\(account).refresh-token"
+    }
+
+    private func loadToken(account: String) throws -> String? {
+        var query = keychainQuery(account: account)
         query[kSecReturnData as String] = true
         query[kSecMatchLimit as String] = kSecMatchLimitOne
 
@@ -71,13 +146,9 @@ public actor KeychainSessionTokenStore: SessionTokenStore {
         return token
     }
 
-    public func saveAccessToken(_ token: String) async throws {
-        let deleteStatus = SecItemDelete(keychainQuery() as CFDictionary)
-        guard deleteStatus == errSecSuccess || deleteStatus == errSecItemNotFound else {
-            throw KeychainSessionTokenStoreError.unhandledStatus(deleteStatus)
-        }
-
-        var query = keychainQuery()
+    private func saveToken(_ token: String, account: String) throws {
+        try clearToken(account: account)
+        var query = keychainQuery(account: account)
         query[kSecValueData as String] = Data(token.utf8)
 
         let addStatus = SecItemAdd(query as CFDictionary, nil)
@@ -86,18 +157,19 @@ public actor KeychainSessionTokenStore: SessionTokenStore {
         }
     }
 
-    public func clearAccessToken() async throws {
-        let status = SecItemDelete(keychainQuery() as CFDictionary)
+    private func clearToken(account: String) throws {
+        let status = SecItemDelete(keychainQuery(account: account) as CFDictionary)
         guard status == errSecSuccess || status == errSecItemNotFound else {
             throw KeychainSessionTokenStoreError.unhandledStatus(status)
         }
     }
 
-    private func keychainQuery() -> [String: Any] {
+    private func keychainQuery(account: String) -> [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: account
+            kSecAttrAccount as String: account,
+            kSecAttrAccessible as String: accessibility
         ]
     }
 }
@@ -142,12 +214,13 @@ public actor InMemoryPreferredModeStore: PreferredModeStore {
 
 public enum AuthServiceError: Error, Equatable, Sendable {
     case missingAccessToken
+    case confirmationRequired
     case missingAuthService
 }
 
 public protocol AuthenticationService: Sendable {
-    func signIn(email: String, password: String) async throws -> String
-    func signUp(email: String, password: String) async throws -> String
+    func signIn(email: String, password: String) async throws -> AuthSessionCredentials
+    func signUp(email: String, password: String) async throws -> AuthSessionCredentials
     func signOut() async throws
 }
 
@@ -162,19 +235,32 @@ public final class SupabaseAuthenticationService: AuthenticationService, @unchec
         )
     }
 
-    public func signIn(email: String, password: String) async throws -> String {
+    public func signIn(email: String, password: String) async throws -> AuthSessionCredentials {
         let session = try await client.auth.signIn(email: email, password: password)
-        return session.accessToken
-    }
-
-    public func signUp(email: String, password: String) async throws -> String {
-        let response = try await client.auth.signUp(email: email, password: password)
-
-        guard let accessToken = response.session?.accessToken else {
+        guard !session.accessToken.isEmpty else {
             throw AuthServiceError.missingAccessToken
         }
 
-        return accessToken
+        return AuthSessionCredentials(
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken
+        )
+    }
+
+    public func signUp(email: String, password: String) async throws -> AuthSessionCredentials {
+        let response = try await client.auth.signUp(email: email, password: password)
+
+        guard let session = response.session else {
+            throw AuthServiceError.confirmationRequired
+        }
+        guard !session.accessToken.isEmpty else {
+            throw AuthServiceError.missingAccessToken
+        }
+
+        return AuthSessionCredentials(
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken
+        )
     }
 
     public func signOut() async throws {
@@ -224,8 +310,8 @@ public actor SessionController {
             throw AuthServiceError.missingAuthService
         }
 
-        let accessToken = try await authService.signIn(email: email, password: password)
-        try await tokenStore.saveAccessToken(accessToken)
+        let credentials = try await authService.signIn(email: email, password: password)
+        try await tokenStore.saveSessionCredentials(credentials)
         return await refreshSession()
     }
 
@@ -234,8 +320,8 @@ public actor SessionController {
             throw AuthServiceError.missingAuthService
         }
 
-        let accessToken = try await authService.signUp(email: email, password: password)
-        try await tokenStore.saveAccessToken(accessToken)
+        let credentials = try await authService.signUp(email: email, password: password)
+        try await tokenStore.saveSessionCredentials(credentials)
         return await refreshSession()
     }
 
@@ -246,7 +332,11 @@ public actor SessionController {
     }
 
     public func signOut() async throws -> SessionState {
-        try await authService?.signOut()
+        do {
+            try await authService?.signOut()
+        } catch {
+        }
+
         try await tokenStore.clearAccessToken()
         try await preferredModeStore.clearPreferredMode()
         return .signedOut
