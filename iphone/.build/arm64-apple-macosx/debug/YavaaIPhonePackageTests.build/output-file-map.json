@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/primary.swiftdeps"
+  },
+  "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.derived/runner.swift": {
+    "dependencies": "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/runner.d",
+    "object": "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/runner.swift.o",
+    "swiftmodule": "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/runner~partial.swiftmodule",
+    "swift-dependencies": "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/runner.swiftdeps",
+    "diagnostics": "/Users/p2pmac/Projects/yavaa/iphone/.build/arm64-apple-macosx/debug/YavaaIPhonePackageTests.build/runner.dia"
+  }
+}
