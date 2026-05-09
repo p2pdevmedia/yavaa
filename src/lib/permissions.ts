@@ -56,6 +56,10 @@ export function canManageCategoryCatalog(context: PermissionContext): boolean {
   return isActiveContext(context) && hasRole(context, 'admin');
 }
 
+export function canManageUsers(context: PermissionContext): boolean {
+  return isActiveContext(context) && hasRole(context, 'admin');
+}
+
 export function canViewAuditLog(context: PermissionContext): boolean {
   return isActiveContext(context) && hasRole(context, 'admin');
 }

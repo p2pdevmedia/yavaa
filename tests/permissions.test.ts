@@ -6,6 +6,7 @@ import {
   canAssignRoles,
   canManageAddress,
   canManageCategoryCatalog,
+  canManageUsers,
   canManageContractorProfile,
   canCreateEmergencyRequest,
   canRespondToEmergencyRequest,
@@ -67,10 +68,12 @@ describe('permission helpers', () => {
   it('limits approval and catalog actions to active admins', () => {
     expect(canReviewContractorApplication(activeAdmin)).toBe(true);
     expect(canManageCategoryCatalog(activeAdmin)).toBe(true);
+    expect(canManageUsers(activeAdmin)).toBe(true);
     expect(canAssignRoles(activeAdmin)).toBe(true);
     expect(canViewAuditLog(activeAdmin)).toBe(true);
     expect(canReviewContractorApplication(suspendedAdmin)).toBe(false);
     expect(canManageCategoryCatalog(suspendedAdmin)).toBe(false);
+    expect(canManageUsers(suspendedAdmin)).toBe(false);
     expect(canAssignRoles(suspendedAdmin)).toBe(false);
     expect(canViewAuditLog(suspendedAdmin)).toBe(false);
   });

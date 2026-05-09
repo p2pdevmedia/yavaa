@@ -204,6 +204,17 @@ export function AuthForm({ mode, nextPath, configured }: AuthFormProps) {
           {copy.alternateLabel}
         </Link>
       </p>
+
+      {mode === 'sign-in' ? (
+        <p className="text-sm text-muted-foreground">
+          <Link
+            className="font-medium text-foreground underline underline-offset-4"
+            href={'/forgot-password' as Route}
+          >
+            Olvidé mi contraseña
+          </Link>
+        </p>
+      ) : null}
     </div>
   );
 }

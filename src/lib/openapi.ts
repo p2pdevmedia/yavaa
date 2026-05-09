@@ -298,6 +298,61 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const adminUserProfileSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['firstName', 'lastName', 'phone'],
+    properties: {
+      firstName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      lastName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      phone: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+    }
+  } as const;
+
+  const adminUserRoleSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['slug', 'name'],
+    properties: {
+      slug: { type: 'string', enum: ['client', 'contractor', 'admin', 'support'] },
+      name: { type: 'string' }
+    }
+  } as const;
+
+  const adminUserSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'email', 'displayName', 'status', 'createdAt', 'updatedAt', 'profile', 'roles'],
+    properties: {
+      id: { type: 'string' },
+      email: { type: 'string' },
+      displayName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      status: { type: 'string', enum: ['ACTIVE', 'SUSPENDED', 'BLOCKED'] },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+      profile: {
+        anyOf: [
+          adminUserProfileSchema,
+          { type: 'null' }
+        ]
+      },
+      roles: {
+        type: 'array',
+        items: adminUserRoleSchema
+      }
+    }
+  } as const;
+
+  const adminUserStatusInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['status'],
+    properties: {
+      status: { type: 'string', enum: ['ACTIVE', 'SUSPENDED', 'BLOCKED'] },
+      reason: { type: 'string', minLength: 8, maxLength: 1000 }
+    }
+  } as const;
+
   const emergencyCandidateSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1351,6 +1406,82 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             '403': { description: 'Only active admins can reassign emergency requests.' },
             '404': { description: 'Emergency request not found.' },
             '422': { description: 'The emergency request cannot be reassigned in its current state.' }
+          }
+        }
+      },
+      '/api/admin/users': {
+        get: {
+          operationId: 'adminListUsers',
+          summary: 'List users for admin operations',
+          tags: ['admin'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': {
+              description: 'Users available to admin operations.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['users'],
+                    properties: {
+                      users: {
+                        type: 'array',
+                        items: adminUserSchema
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can manage users.' }
+          }
+        }
+      },
+      '/api/admin/users/{userId}': {
+        patch: {
+          operationId: 'adminUpdateUserStatus',
+          summary: 'Update user operational status',
+          tags: ['admin'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'userId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: adminUserStatusInputSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Updated user operational status.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['user'],
+                    properties: {
+                      user: adminUserSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid user status payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can manage users.' },
+            '404': { description: 'User not found.' },
+            '422': { description: 'The requested status change is not allowed.' }
           }
         }
       },

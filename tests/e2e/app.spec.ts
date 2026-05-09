@@ -25,9 +25,20 @@ test('unauthorized access to the protected route redirects to sign in', async ({
 test('auth pages render', async ({ page }) => {
   await page.goto('/sign-in');
   await expect(page.getByRole('heading', { name: /Iniciar sesión/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Olvidé mi contraseña/i })).toBeVisible();
 
   await page.goto('/sign-up');
   await expect(page.getByRole('heading', { name: /Crear cuenta/i })).toBeVisible();
+});
+
+test('password reset pages render', async ({ page }) => {
+  await page.goto('/forgot-password');
+  await expect(page.getByRole('heading', { name: /Recuperar contraseña/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Enviar enlace/i })).toBeVisible();
+
+  await page.goto('/reset-password');
+  await expect(page.getByRole('heading', { name: /Nueva contraseña/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Actualizar contraseña/i })).toBeVisible();
 });
 
 test('landing page exposes the public discovery entry point', async ({ page }) => {

@@ -1,6 +1,5 @@
 type AuthRedirectBaseInput = {
   siteUrl?: string;
-  vercelUrl?: string;
   windowOrigin: string;
 };
 
@@ -16,10 +15,9 @@ function normalizeBaseUrl(url: string): string {
 
 export function getAuthRedirectBaseUrl({
   siteUrl,
-  vercelUrl,
   windowOrigin
 }: AuthRedirectBaseInput): string {
-  const configuredUrl = siteUrl?.trim() || vercelUrl?.trim();
+  const configuredUrl = siteUrl?.trim();
 
   if (configuredUrl) {
     return normalizeBaseUrl(configuredUrl);
@@ -31,9 +29,17 @@ export function getAuthRedirectBaseUrl({
 export function buildAuthEmailRedirectTo(nextPath: string, windowOrigin: string): string {
   const baseUrl = getAuthRedirectBaseUrl({
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-    vercelUrl: process.env.NEXT_PUBLIC_VERCEL_URL,
     windowOrigin
   });
 
   return `${baseUrl}${nextPath}`;
+}
+
+export function buildPasswordResetRedirectTo(windowOrigin: string): string {
+  const baseUrl = getAuthRedirectBaseUrl({
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    windowOrigin
+  });
+
+  return `${baseUrl}/auth/callback?next=${encodeURIComponent('/reset-password')}`;
 }
