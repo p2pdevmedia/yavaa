@@ -239,21 +239,34 @@ public struct YavaaRootView: View {
     }
 }
 
-private struct YavaaAppConfiguration {
+struct YavaaAppConfiguration {
     let apiEnvironment: APIEnvironment
     let authService: AuthenticationService?
 
     static func load(
-        environment: [String: String] = ProcessInfo.processInfo.environment
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        bundleInfo: [String: Any] = Bundle.main.infoDictionary ?? [:]
     ) -> YavaaAppConfiguration {
-        let apiEnvironment = environment["YAVAA_API_BASE_URL"]
+        let apiEnvironment = configurationValue(
+            "YAVAA_API_BASE_URL",
+            environment: environment,
+            bundleInfo: bundleInfo
+        )
             .flatMap(URL.init(string:))
             .map(APIEnvironment.init(baseURL:)) ?? .production
 
         let authService: AuthenticationService?
-        if let supabaseURLString = environment["YAVAA_SUPABASE_URL"],
+        if let supabaseURLString = configurationValue(
+            "YAVAA_SUPABASE_URL",
+            environment: environment,
+            bundleInfo: bundleInfo
+        ),
            let supabaseURL = URL(string: supabaseURLString),
-           let publishableKey = environment["YAVAA_SUPABASE_PUBLISHABLE_KEY"],
+           let publishableKey = configurationValue(
+                "YAVAA_SUPABASE_PUBLISHABLE_KEY",
+                environment: environment,
+                bundleInfo: bundleInfo
+           ),
            !publishableKey.isEmpty {
             authService = SupabaseAuthenticationService(
                 url: supabaseURL,
@@ -267,6 +280,18 @@ private struct YavaaAppConfiguration {
             apiEnvironment: apiEnvironment,
             authService: authService
         )
+    }
+
+    private static func configurationValue(
+        _ key: String,
+        environment: [String: String],
+        bundleInfo: [String: Any]
+    ) -> String? {
+        if let value = environment[key], !value.isEmpty {
+            return value
+        }
+
+        return bundleInfo[key] as? String
     }
 }
 

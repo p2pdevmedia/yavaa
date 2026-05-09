@@ -111,6 +111,29 @@ swift build
 swift test
 ```
 
+Proyecto Xcode para iPhone:
+
+```sh
+open iphone.xcodeproj
+```
+
+El scheme `YavaaIPhone` corre la app `Yavaa` en iPhone Simulator. Para compilar por consola:
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  xcodebuild -project iphone.xcodeproj \
+  -scheme YavaaIPhone \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  CODE_SIGNING_ALLOWED=NO \
+  build
+```
+
+El scheme de desarrollo inyecta las variables runtime que necesita el login:
+
+- `YAVAA_API_BASE_URL`
+- `YAVAA_SUPABASE_URL`
+- `YAVAA_SUPABASE_PUBLISHABLE_KEY`
+
 Nota: en esta maquina `swift build` compila correctamente. `swift test` queda bloqueado por el toolchain local porque no expone `XCTest`; debe correrse desde un entorno Xcode completo o ajustarse cuando se cree el proyecto `.xcodeproj`.
 
 ## Objetivo
