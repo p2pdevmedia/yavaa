@@ -3,25 +3,58 @@ import { hasDatabaseEnv } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
+type MarketRow = {
+  id: string;
+  city: string;
+  province: string;
+  country: string;
+  is_primary: boolean;
+};
+
+type CategoryRow = {
+  id: string;
+  name: string;
+  category_group: string | null;
+};
+
+type RoleRow = {
+  id: string;
+  slug: string;
+};
+
 export default async function SupabasePage() {
   const configured = hasDatabaseEnv();
   const prisma = configured ? getPrismaClient() : null;
 
-  const data = configured
-    ? await prisma!.$transaction([
-        prisma!.market.findMany({
-          orderBy: [{ isPrimary: 'desc' }, { city: 'asc' }]
-        }),
-        prisma!.category.findMany({
-          orderBy: [{ isInitial: 'desc' }, { name: 'asc' }]
-        }),
-        prisma!.role.findMany({
-          orderBy: { slug: 'asc' }
-        })
+  const [markets, categories, roles] = configured && prisma
+    ? await Promise.all([
+        prisma.$queryRaw<MarketRow[]>`
+          SELECT
+            id,
+            city,
+            province,
+            country,
+            is_primary
+          FROM markets
+          ORDER BY is_primary DESC, city ASC
+        `,
+        prisma.$queryRaw<CategoryRow[]>`
+          SELECT
+            id,
+            name,
+            category_group
+          FROM categories
+          ORDER BY is_initial DESC, name ASC
+        `,
+        prisma.$queryRaw<RoleRow[]>`
+          SELECT
+            id,
+            slug
+          FROM roles
+          ORDER BY slug ASC
+        `
       ])
     : [[], [], []];
-
-  const [markets, categories, roles] = data;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl items-start px-4 py-12 sm:px-6 lg:px-8">
@@ -43,7 +76,7 @@ export default async function SupabasePage() {
                   markets.map((market) => (
                     <li key={market.id}>
                       {market.city}, {market.province} - {market.country}
-                      {market.isPrimary ? ' (primary)' : ''}
+                      {market.is_primary ? ' (primary)' : ''}
                     </li>
                   ))
                 ) : (
@@ -63,7 +96,7 @@ export default async function SupabasePage() {
                   categories.map((category) => (
                     <li key={category.id}>
                       {category.name}
-                      {category.group ? ` - ${category.group}` : ''}
+                      {category.category_group ? ` - ${category.category_group}` : ''}
                     </li>
                   ))
                 ) : (
