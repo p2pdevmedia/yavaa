@@ -97,6 +97,29 @@ function buildMockPrisma() {
         ...bookingRow,
         ...data
       }))
+    },
+    bookingMessage: {
+      create: vi.fn().mockImplementation(async ({ data }: { data: { bookingId: string; senderUserId: string | null; kind: string; systemEvent: string | null; body: string } }) => ({
+        id: `message_${data.kind.toLowerCase()}`,
+        bookingId: data.bookingId,
+        senderUserId: data.senderUserId,
+        kind: data.kind,
+        systemEvent: data.systemEvent,
+        body: data.body,
+        createdAt: new Date('2026-05-09T10:00:00.000Z'),
+        updatedAt: new Date('2026-05-09T10:00:00.000Z'),
+        senderUser: data.senderUserId
+          ? {
+              id: data.senderUserId,
+              email: 'contractor@yavaa.test',
+              displayName: 'Contractor One',
+              profile: {
+                firstName: 'Contractor',
+                lastName: 'One'
+              }
+            }
+          : null
+      }))
     }
   };
 
@@ -156,6 +179,7 @@ describe('bookings helpers', () => {
     expect(prisma.contractorProfile.findFirst).toHaveBeenCalledTimes(1);
     expect(prisma.category.findFirst).toHaveBeenCalledTimes(1);
     expect(tx.booking.create).toHaveBeenCalledTimes(1);
+    expect(tx.bookingMessage.create).toHaveBeenCalledTimes(1);
     expect(mockedRecordAuditLog).toHaveBeenCalledTimes(1);
     expect(booking).toMatchObject({
       id: bookingRow.id,
@@ -190,7 +214,7 @@ describe('bookings helpers', () => {
   });
 
   it('lets an active contractor accept a pending booking', async () => {
-    const { prisma } = buildMockPrisma();
+    const { prisma, tx } = buildMockPrisma();
 
     const booking = await actOnBooking(
       prisma as never,
@@ -201,6 +225,7 @@ describe('bookings helpers', () => {
 
     expect(prisma.booking.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(tx.bookingMessage.create).toHaveBeenCalledTimes(1);
     expect(booking.status).toBe('ACCEPTED');
     expect(booking.acceptedAt).toBeInstanceOf(Date);
   });
@@ -215,7 +240,7 @@ describe('bookings helpers', () => {
   });
 
   it('lets an active admin cancel a booking', async () => {
-    const { prisma } = buildMockPrisma();
+    const { prisma, tx } = buildMockPrisma();
 
     const booking = await actOnBooking(
       prisma as never,
@@ -228,5 +253,6 @@ describe('bookings helpers', () => {
     expect(booking.status).toBe('CANCELLED_BY_CLIENT');
     expect(booking.cancelledAt).toBeInstanceOf(Date);
     expect(booking.decisionReason).toBe('Admin override');
+    expect(tx.bookingMessage.create).toHaveBeenCalledTimes(1);
   });
 });

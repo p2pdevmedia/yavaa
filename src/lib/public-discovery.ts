@@ -2,6 +2,7 @@ import { ContractorApprovalStatus, UserStatus } from '@prisma/client';
 
 import { hasDatabaseEnv } from '@/lib/env';
 import { getPrismaClient } from '@/lib/prisma';
+import { isDatabaseUnavailableError, shouldUsePublicDemoFallback } from '@/lib/public-db-fallback';
 
 export type PublicProviderSearchFilters = {
   category?: string | null;
@@ -199,106 +200,119 @@ export async function listPublicProviders(
     };
   }
 
-  const prisma = getPrismaClient();
-  const where = {
-    approvalStatus: ContractorApprovalStatus.APPROVED,
-    user: {
-      status: UserStatus.ACTIVE
-    },
-    ...(category
-      ? {
-          categories: {
-            some: {
-              category: {
-                slug: category
+  try {
+    const prisma = getPrismaClient();
+    const where = {
+      approvalStatus: ContractorApprovalStatus.APPROVED,
+      user: {
+        status: UserStatus.ACTIVE
+      },
+      ...(category
+        ? {
+            categories: {
+              some: {
+                category: {
+                  slug: category
+                }
               }
             }
           }
-        }
-      : {}),
-    ...(market
-      ? {
-          workZones: {
-            some: {
-              workZone: {
+        : {}),
+      ...(market
+        ? {
+            workZones: {
+              some: {
+                workZone: {
+                  market: {
+                    slug: market
+                  }
+                }
+              }
+            }
+          }
+        : {})
+    };
+
+    const records = (await prisma.contractorProfile.findMany({
+      where,
+      select: {
+        id: true,
+        acceptsEmergencies: true,
+        profilePhotoUrl: true,
+        user: {
+          select: {
+            displayName: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
+                bio: true
+              }
+            }
+          }
+        },
+        categories: {
+          select: {
+            isPrimary: true,
+            category: {
+              select: {
+                slug: true,
+                name: true,
+                group: true
+              }
+            }
+          }
+        },
+        workZones: {
+          select: {
+            workZone: {
+              select: {
+                slug: true,
+                name: true,
+                description: true,
                 market: {
-                  slug: market
+                  select: {
+                    slug: true,
+                    city: true,
+                    province: true
+                  }
                 }
               }
             }
           }
         }
-      : {})
-  };
+      },
+      orderBy: {
+        user: {
+          displayName: 'asc'
+        }
+      }
+    })) as PublicProviderRecord[];
 
-  const records = (await prisma.contractorProfile.findMany({
-    where,
-    select: {
-      id: true,
-      acceptsEmergencies: true,
-      profilePhotoUrl: true,
-      user: {
-        select: {
-          displayName: true,
-          profile: {
-            select: {
-              firstName: true,
-              lastName: true,
-              bio: true
-            }
-          }
-        }
-      },
-      categories: {
-        select: {
-          isPrimary: true,
-          category: {
-            select: {
-              slug: true,
-              name: true,
-              group: true
-            }
-          }
-        }
-      },
-      workZones: {
-        select: {
-          workZone: {
-            select: {
-              slug: true,
-              name: true,
-              description: true,
-              market: {
-                select: {
-                  slug: true,
-                  city: true,
-                  province: true
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    orderBy: {
-      user: {
-        displayName: 'asc'
-      }
+    if (records.length === 0 && shouldUsePublicDemoFallback()) {
+      const matchesCategory = !category || demoPublicProvider.categories.some((item) => item.slug === category);
+      const matchesMarket = !market || demoPublicProvider.marketSlug === market;
+
+      return {
+        items: matchesCategory && matchesMarket ? [demoPublicProvider] : []
+      };
     }
-  })) as PublicProviderRecord[];
-
-  if (records.length === 0 && process.env.NODE_ENV !== 'production') {
-    const matchesCategory = !category || demoPublicProvider.categories.some((item) => item.slug === category);
-    const matchesMarket = !market || demoPublicProvider.marketSlug === market;
 
     return {
-      items: matchesCategory && matchesMarket ? [demoPublicProvider] : []
+      items: records.map(mapProviderRecord)
     };
-  }
+  } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      const matchesCategory = !category || demoPublicProvider.categories.some((item) => item.slug === category);
+      const matchesMarket = !market || demoPublicProvider.marketSlug === market;
 
-  return {
-    items: records.map(mapProviderRecord)
-  };
+      return {
+        items: shouldUsePublicDemoFallback() && matchesCategory && matchesMarket ? [demoPublicProvider] : []
+      };
+    }
+
+    throw error;
+  }
 }
 
 export async function getPublicProviderProfile(
@@ -308,69 +322,75 @@ export async function getPublicProviderProfile(
     return contractorProfileId === demoPublicProviderId ? demoPublicProvider : null;
   }
 
-  const prisma = getPrismaClient();
-  const record = (await prisma.contractorProfile.findFirst({
-    where: {
-      id: contractorProfileId,
-      approvalStatus: ContractorApprovalStatus.APPROVED,
-      user: {
-        status: UserStatus.ACTIVE
-      }
-    },
-    select: {
-      id: true,
-      acceptsEmergencies: true,
-      profilePhotoUrl: true,
-      user: {
-        select: {
-          displayName: true,
-          profile: {
-            select: {
-              firstName: true,
-              lastName: true,
-              bio: true
-            }
-          }
+  try {
+    const prisma = getPrismaClient();
+    const record = (await prisma.contractorProfile.findFirst({
+      where: {
+        id: contractorProfileId,
+        approvalStatus: ContractorApprovalStatus.APPROVED,
+        user: {
+          status: UserStatus.ACTIVE
         }
       },
-      categories: {
-        select: {
-          isPrimary: true,
-          category: {
-            select: {
-              slug: true,
-              name: true,
-              group: true
+      select: {
+        id: true,
+        acceptsEmergencies: true,
+        profilePhotoUrl: true,
+        user: {
+          select: {
+            displayName: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true,
+                bio: true
+              }
             }
           }
-        }
-      },
-      workZones: {
-        select: {
-          workZone: {
-            select: {
-              slug: true,
-              name: true,
-              description: true,
-              market: {
-                select: {
-                  slug: true,
-                  city: true,
-                  province: true
+        },
+        categories: {
+          select: {
+            isPrimary: true,
+            category: {
+              select: {
+                slug: true,
+                name: true,
+                group: true
+              }
+            }
+          }
+        },
+        workZones: {
+          select: {
+            workZone: {
+              select: {
+                slug: true,
+                name: true,
+                description: true,
+                market: {
+                  select: {
+                    slug: true,
+                    city: true,
+                    province: true
+                  }
                 }
               }
             }
           }
         }
       }
+    })) as PublicProviderRecord | null;
+
+    if (!record) {
+      return shouldUsePublicDemoFallback() && contractorProfileId === demoPublicProviderId ? demoPublicProvider : null;
     }
-  })) as PublicProviderRecord | null;
 
-  if (!record) {
-    return process.env.NODE_ENV !== 'production' && contractorProfileId === demoPublicProviderId
-      ? demoPublicProvider
-      : null;
+    return mapProviderProfile(record);
+  } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      return shouldUsePublicDemoFallback() && contractorProfileId === demoPublicProviderId ? demoPublicProvider : null;
+    }
+
+    throw error;
   }
-
-  return mapProviderProfile(record);
 }

@@ -93,3 +93,35 @@ export function canRespondToEmergencyRequest(context: PermissionContext, contrac
 export function canReassignEmergencyRequest(context: PermissionContext): boolean {
   return isActiveContext(context) && hasRole(context, 'admin');
 }
+
+export function canViewBookingConversation(
+  context: PermissionContext,
+  booking: {
+    clientUserId: string;
+    contractorProfile: {
+      userId: string;
+    };
+  }
+): boolean {
+  return (
+    isActiveContext(context) &&
+    (hasAnyRole(context, ['admin', 'support']) ||
+      booking.clientUserId === context.userId ||
+      booking.contractorProfile.userId === context.userId)
+  );
+}
+
+export function canWriteBookingConversation(
+  context: PermissionContext,
+  booking: {
+    clientUserId: string;
+    contractorProfile: {
+      userId: string;
+    };
+  }
+): boolean {
+  return (
+    isActiveContext(context) &&
+    (booking.clientUserId === context.userId || booking.contractorProfile.userId === context.userId)
+  );
+}

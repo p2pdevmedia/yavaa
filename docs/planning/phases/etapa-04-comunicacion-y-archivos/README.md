@@ -24,3 +24,11 @@ Esta etapa agrega la coordinacion operativa entre las partes sin depender de can
 
 La comunicacion queda dentro de Yavaa y cada intercambio importante tiene trazabilidad.
 
+## Corte inicial
+
+Primer slice de esta etapa:
+
+- chat interno ligado a bookings
+- mensajes de sistema para eventos de booking
+- persistencia de metadatos de archivos y comprobantes
+- permisos server-side para lectura y escritura de la conversacion

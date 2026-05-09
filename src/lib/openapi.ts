@@ -194,6 +194,99 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const bookingConversationUserSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'email', 'displayName', 'profile'],
+    properties: {
+      id: { type: 'string' },
+      email: { type: 'string' },
+      displayName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      profile: {
+        anyOf: [
+          {
+            type: 'object',
+            additionalProperties: false,
+            required: ['firstName', 'lastName', 'avatarUrl'],
+            properties: {
+              firstName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              lastName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+              avatarUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+            }
+          },
+          { type: 'null' }
+        ]
+      }
+    }
+  } as const;
+
+  const bookingMessageSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'bookingId', 'senderUserId', 'kind', 'systemEvent', 'body', 'createdAt', 'updatedAt', 'senderUser'],
+    properties: {
+      id: { type: 'string' },
+      bookingId: { type: 'string' },
+      senderUserId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      kind: { type: 'string', enum: ['USER', 'SYSTEM'] },
+      systemEvent: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      body: { type: 'string' },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+      senderUser: {
+        anyOf: [
+          bookingConversationUserSchema,
+          { type: 'null' }
+        ]
+      }
+    }
+  } as const;
+
+  const bookingFileSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'bookingId', 'messageId', 'uploadedByUserId', 'purpose', 'fileName', 'mimeType', 'storageKey', 'storageUrl', 'sizeBytes', 'createdAt', 'updatedAt', 'uploadedByUser'],
+    properties: {
+      id: { type: 'string' },
+      bookingId: { type: 'string' },
+      messageId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      uploadedByUserId: { type: 'string' },
+      purpose: { type: 'string', enum: ['CHAT_ATTACHMENT', 'PROBLEM_PHOTO', 'PAYMENT_PROOF'] },
+      fileName: { type: 'string' },
+      mimeType: { type: 'string' },
+      storageKey: { type: 'string' },
+      storageUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      sizeBytes: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+      uploadedByUser: bookingConversationUserSchema
+    }
+  } as const;
+
+  const bookingMessageInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['body'],
+    properties: {
+      body: { type: 'string' }
+    }
+  } as const;
+
+  const bookingFileInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['purpose', 'fileName', 'mimeType', 'storageKey'],
+    properties: {
+      purpose: { type: 'string', enum: ['CHAT_ATTACHMENT', 'PROBLEM_PHOTO', 'PAYMENT_PROOF'] },
+      fileName: { type: 'string' },
+      mimeType: { type: 'string' },
+      storageKey: { type: 'string' },
+      storageUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      sizeBytes: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
+      messageId: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+    }
+  } as const;
+
   const emergencyCandidateSchema = {
     type: 'object',
     additionalProperties: false,
@@ -861,6 +954,170 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             '403': { description: 'The authenticated account cannot modify this booking.' },
             '404': { description: 'Booking not found.' },
             '422': { description: 'The booking cannot transition with that action.' }
+          }
+        }
+      },
+      '/api/bookings/{bookingId}/messages': {
+        get: {
+          operationId: 'listBookingMessages',
+          summary: 'List booking messages',
+          tags: ['bookings', 'chat'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'bookingId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Booking conversation messages.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['messages'],
+                    properties: {
+                      messages: {
+                        type: 'array',
+                        items: bookingMessageSchema
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot view the booking conversation.' },
+            '404': { description: 'Booking not found.' }
+          }
+        },
+        post: {
+          operationId: 'createBookingMessage',
+          summary: 'Send booking message',
+          tags: ['bookings', 'chat'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'bookingId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: bookingMessageInputSchema
+              }
+            }
+          },
+          responses: {
+            '201': {
+              description: 'Created booking message.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['message'],
+                    properties: {
+                      message: bookingMessageSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid booking message payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot write to the booking conversation.' },
+            '404': { description: 'Booking not found.' }
+          }
+        }
+      },
+      '/api/bookings/{bookingId}/files': {
+        get: {
+          operationId: 'listBookingFiles',
+          summary: 'List booking files',
+          tags: ['bookings', 'files'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'bookingId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Booking file metadata.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['files'],
+                    properties: {
+                      files: {
+                        type: 'array',
+                        items: bookingFileSchema
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot view the booking files.' },
+            '404': { description: 'Booking not found.' }
+          }
+        },
+        post: {
+          operationId: 'createBookingFile',
+          summary: 'Register booking file',
+          tags: ['bookings', 'files'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'bookingId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: bookingFileInputSchema
+              }
+            }
+          },
+          responses: {
+            '201': {
+              description: 'Created booking file metadata.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['file'],
+                    properties: {
+                      file: bookingFileSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid booking file payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot write to the booking conversation.' },
+            '404': { description: 'Booking not found.' }
           }
         }
       },

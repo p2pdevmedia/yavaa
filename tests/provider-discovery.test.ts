@@ -101,4 +101,30 @@ describe('public discovery', () => {
     expect(findFirst).toHaveBeenCalledTimes(1);
     expect(result).toBeNull();
   });
+
+  it('falls back to demo provider discovery when the database is unreachable', async () => {
+    mockedHasDatabaseEnv.mockReturnValue(true);
+
+    const findMany = vi.fn().mockRejectedValue({
+      code: 'P1001'
+    });
+
+    mockedGetPrismaClient.mockReturnValue({
+      contractorProfile: {
+        findMany
+      }
+    } as never);
+
+    const result = await listPublicProviders({
+      category: 'home-services',
+      market: 'san-martin-de-los-andes'
+    });
+
+    expect(findMany).toHaveBeenCalledTimes(1);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]).toMatchObject({
+      contractorProfileId: '33333333-3333-3333-3333-333333333333',
+      displayName: 'Carlos Perez'
+    });
+  });
 });

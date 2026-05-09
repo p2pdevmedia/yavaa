@@ -2,6 +2,7 @@ import { UserStatus, type PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 
 import { recordAuditLog } from '@/lib/audit';
+import { createBookingSystemMessage } from '@/lib/booking-communication';
 import { hasAnyRole, hasRole, type PermissionContext } from '@/lib/permissions';
 
 export const bookingActions = ['accept', 'reject', 'cancel', 'request_reschedule'] as const;
@@ -273,6 +274,34 @@ function canModifyBookingAsContractor(actor: BookingActor, booking: { contractor
   );
 }
 
+function getBookingSystemEventAndBody(action: BookingAction): { systemEvent: string; body: string } {
+  if (action === 'accept') {
+    return {
+      systemEvent: 'booking.accepted',
+      body: 'Booking accepted by contractor.'
+    };
+  }
+
+  if (action === 'reject') {
+    return {
+      systemEvent: 'booking.rejected',
+      body: 'Booking rejected by contractor.'
+    };
+  }
+
+  if (action === 'cancel') {
+    return {
+      systemEvent: 'booking.cancelled',
+      body: 'Booking cancelled.'
+    };
+  }
+
+  return {
+    systemEvent: 'booking.reschedule_requested',
+    body: 'Reschedule requested by contractor.'
+  };
+}
+
 export async function listBookingsForActor(prisma: PrismaClient, actor: BookingActor): Promise<BookingRecord[]> {
   const rows = (await prisma.booking.findMany({
     where: isAdminActor(actor)
@@ -416,6 +445,13 @@ export async function createScheduledBooking(
       },
       select: bookingSelect
     });
+
+    await createBookingSystemMessage(
+      tx as PrismaClient,
+      booking.id,
+      'booking.created',
+      'Booking created.'
+    );
 
     await recordAuditLog({
       actorUserId: actor.userId,
@@ -607,6 +643,15 @@ export async function actOnBooking(
       data: updateData,
       select: bookingSelect
     });
+
+    const systemEvent = getBookingSystemEventAndBody(action);
+
+    await createBookingSystemMessage(
+      tx as PrismaClient,
+      booking.id,
+      systemEvent.systemEvent,
+      systemEvent.body
+    );
 
     await recordAuditLog({
       actorUserId: actor.userId,

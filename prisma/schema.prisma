@@ -58,6 +58,17 @@ enum AddressType {
   OTHER
 }
 
+enum BookingMessageKind {
+  USER
+  SYSTEM
+}
+
+enum BookingFilePurpose {
+  CHAT_ATTACHMENT
+  PROBLEM_PHOTO
+  PAYMENT_PROOF
+}
+
 model User {
   id             String     @id @default(uuid()) @db.Uuid
   email          String     @unique
@@ -72,6 +83,8 @@ model User {
   addresses                  Address[]
   roles                      UserRole[]
   bookingsAsClient           Booking[] @relation("BookingClient")
+  bookingMessagesSent        BookingMessage[] @relation("BookingMessageSender")
+  bookingFilesUploaded       BookingFile[] @relation("BookingFileUploader")
   emergencyRequestsAsClient   EmergencyRequest[] @relation("EmergencyClient")
   auditLogs                  AuditLog[] @relation("AuditActor")
   reviewedContractorProfiles  ContractorProfile[] @relation("ContractorReviewActor")
@@ -300,12 +313,59 @@ model Booking {
   contractorProfile  ContractorProfile @relation(fields: [contractorProfileId], references: [id], onDelete: Restrict)
   category           Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   address            Address           @relation(fields: [addressId], references: [id], onDelete: Restrict)
+  messages           BookingMessage[]
+  files              BookingFile[]
 
   @@index([clientUserId])
   @@index([contractorProfileId])
   @@index([status])
   @@index([scheduledFor])
   @@map("bookings")
+}
+
+model BookingMessage {
+  id           String            @id @default(uuid()) @db.Uuid
+  bookingId    String            @map("booking_id") @db.Uuid
+  senderUserId String?           @map("sender_user_id") @db.Uuid
+  kind         BookingMessageKind @default(USER)
+  systemEvent  String?           @map("system_event")
+  body         String
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+
+  booking    Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderUser User?   @relation("BookingMessageSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+  files      BookingFile[]
+
+  @@index([bookingId])
+  @@index([senderUserId])
+  @@index([kind])
+  @@map("booking_messages")
+}
+
+model BookingFile {
+  id             String           @id @default(uuid()) @db.Uuid
+  bookingId      String           @map("booking_id") @db.Uuid
+  messageId      String?          @map("message_id") @db.Uuid
+  uploadedByUserId String         @map("uploaded_by_user_id") @db.Uuid
+  purpose        BookingFilePurpose @default(CHAT_ATTACHMENT)
+  fileName       String          @map("file_name")
+  mimeType       String          @map("mime_type")
+  storageKey     String          @unique @map("storage_key")
+  storageUrl     String?         @map("storage_url")
+  sizeBytes      Int?            @map("size_bytes")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @updatedAt @map("updated_at")
+
+  booking      Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  message      BookingMessage? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  uploadedByUser User        @relation("BookingFileUploader", fields: [uploadedByUserId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([messageId])
+  @@index([uploadedByUserId])
+  @@index([purpose])
+  @@map("booking_files")
 }
 
 model EmergencyRequest {

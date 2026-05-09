@@ -1,5 +1,6 @@
 import { hasDatabaseEnv } from '@/lib/env';
 import { getPrismaClient } from '@/lib/prisma';
+import { isDatabaseUnavailableError, shouldUsePublicDemoFallback } from '@/lib/public-db-fallback';
 
 export type PublicCatalogCategory = {
   id: string;
@@ -66,25 +67,33 @@ export async function listPublicCatalogCategories(): Promise<PublicCatalogCatego
     return demoCategories;
   }
 
-  const prisma = getPrismaClient();
-  const categories = await prisma.category.findMany({
-    where: {
-      status: 'ACTIVE'
-    },
-    select: {
-      id: true,
-      slug: true,
-      name: true,
-      group: true,
-      isInitial: true
-    },
-    orderBy: [
-      { isInitial: 'desc' },
-      { name: 'asc' }
-    ]
-  });
+  try {
+    const prisma = getPrismaClient();
+    const categories = await prisma.category.findMany({
+      where: {
+        status: 'ACTIVE'
+      },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        group: true,
+        isInitial: true
+      },
+      orderBy: [
+        { isInitial: 'desc' },
+        { name: 'asc' }
+      ]
+    });
 
-  return categories;
+    return categories;
+  } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      return shouldUsePublicDemoFallback() ? demoCategories : [];
+    }
+
+    throw error;
+  }
 }
 
 export async function listPublicCatalogMarkets(): Promise<PublicCatalogMarket[]> {
@@ -92,32 +101,40 @@ export async function listPublicCatalogMarkets(): Promise<PublicCatalogMarket[]>
     return demoMarkets;
   }
 
-  const prisma = getPrismaClient();
-  const markets = await prisma.market.findMany({
-    select: {
-      id: true,
-      slug: true,
-      country: true,
-      city: true,
-      province: true,
-      isPrimary: true,
-      workZones: {
-        select: {
-          id: true,
-          slug: true,
-          name: true,
-          description: true
-        },
-        orderBy: {
-          name: 'asc'
+  try {
+    const prisma = getPrismaClient();
+    const markets = await prisma.market.findMany({
+      select: {
+        id: true,
+        slug: true,
+        country: true,
+        city: true,
+        province: true,
+        isPrimary: true,
+        workZones: {
+          select: {
+            id: true,
+            slug: true,
+            name: true,
+            description: true
+          },
+          orderBy: {
+            name: 'asc'
+          }
         }
-      }
-    },
-    orderBy: [
-      { isPrimary: 'desc' },
-      { city: 'asc' }
-    ]
-  });
+      },
+      orderBy: [
+        { isPrimary: 'desc' },
+        { city: 'asc' }
+      ]
+    });
 
-  return markets;
+    return markets;
+  } catch (error) {
+    if (isDatabaseUnavailableError(error)) {
+      return shouldUsePublicDemoFallback() ? demoMarkets : [];
+    }
+
+    throw error;
+  }
 }
