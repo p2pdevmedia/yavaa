@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { buildAuthEmailRedirectTo } from '@/lib/auth-redirect';
 import { createClient } from '@/utils/supabase/client';
 
 type AuthMode = 'sign-in' | 'sign-up';
@@ -105,7 +106,7 @@ export function AuthForm({ mode, nextPath, configured }: AuthFormProps) {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}${nextPath}`
+          emailRedirectTo: buildAuthEmailRedirectTo(nextPath, window.location.origin)
         }
       });
 
