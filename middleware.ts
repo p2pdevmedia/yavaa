@@ -9,7 +9,7 @@ function isProtectedRoute(request: NextRequest): boolean {
 }
 
 function hasPlaywrightE2eSession(request: NextRequest): boolean {
-  return process.env.PLAYWRIGHT_E2E === '1' && Boolean(request.cookies.get('yavaa-test-email')?.value);
+  return process.env.NODE_ENV !== 'production' && Boolean(request.cookies.get('yavaa-test-email')?.value);
 }
 
 export async function middleware(request: NextRequest) {

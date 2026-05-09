@@ -35,7 +35,7 @@ export async function uploadBookingFileToBlob(bookingId: string, file: File): Pr
 }> {
   const storageKey = buildBookingFileStorageKey(bookingId, file.name);
   const blob = await put(storageKey, file, {
-    access: 'public'
+    access: 'private'
   });
 
   return {

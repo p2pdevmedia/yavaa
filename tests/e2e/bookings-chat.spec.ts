@@ -12,8 +12,7 @@ async function authenticateAsSeededClient(page: Page) {
     {
       name: 'yavaa-test-email',
       value: authEmail,
-      domain: '127.0.0.1',
-      path: '/'
+      url: 'http://127.0.0.1:3000'
     }
   ]);
 }
@@ -23,6 +22,12 @@ async function openDashboard(page: Page) {
   await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: /Bookings y chat/i })).toBeVisible();
+  await expect(page.getByText('Booking created in the deterministic seed dataset.')).toBeVisible({
+    timeout: 15000
+  });
+  await expect(
+    page.getByText('La canilla sigue goteando, pero no hay olor a gas ni pérdida mayor.')
+  ).toBeVisible({ timeout: 15000 });
 }
 
 test('dashboard chat loads seeded messages and allows sending a new one', async ({ page }) => {
@@ -48,8 +53,18 @@ test('dashboard booking attachments upload to Blob and appear in the conversatio
     buffer: Buffer.from('fake-jpeg-content')
   });
 
-  await page.getByRole('button', { name: 'Subir archivo' }).click();
+  const uploadResponsePromise = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().includes('/api/bookings/') &&
+      response.url().endsWith('/files')
+  );
 
-  await expect(page.getByText('Archivo subido.')).toBeVisible();
-  await expect(page.getByText('foto-fuga.jpg')).toBeVisible();
+  await page.locator('button[type="submit"]').filter({ hasText: 'Subir archivo' }).click();
+
+  const uploadResponse = await uploadResponsePromise;
+
+  await expect(uploadResponse.status()).toBe(201);
+  await expect(page.getByText('Archivo subido.')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText('foto-fuga.jpg').first()).toBeVisible({ timeout: 15000 });
 });

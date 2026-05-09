@@ -46,7 +46,7 @@ export function buildSignInPath(nextPath: unknown): string {
 }
 
 function getPlaywrightE2eEmail(cookieStore: CookieStore): string | null {
-  if (process.env.PLAYWRIGHT_E2E !== '1') {
+  if (process.env.NODE_ENV === 'production') {
     return null;
   }
 

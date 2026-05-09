@@ -42,7 +42,7 @@ function getPlaywrightE2eIdentity(request: NextRequest): {
   id: string;
   email: string | null;
 } | null {
-  if (process.env.PLAYWRIGHT_E2E !== '1') {
+  if (process.env.NODE_ENV === 'production') {
     return null;
   }
 
