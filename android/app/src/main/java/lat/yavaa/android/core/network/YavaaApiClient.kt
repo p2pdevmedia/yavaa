@@ -8,6 +8,7 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.url
 import io.ktor.http.HttpHeaders
+import io.ktor.http.appendPathSegments
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -57,7 +58,11 @@ class YavaaApiClient(
         contractorProfileId: String
     ): PublicProviderProfileResponse {
         require(contractorProfileId.isNotBlank()) { "Contractor profile id is required" }
-        return httpClient.get("${config.backendBaseUrl}/api/providers/${contractorProfileId.trim()}").body()
+        return httpClient.get(config.backendBaseUrl) {
+            url {
+                appendPathSegments("api", "providers", contractorProfileId.trim(), encodeSlash = true)
+            }
+        }.body()
     }
 
     companion object {

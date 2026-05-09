@@ -58,6 +58,27 @@ class YavaaApiClientTest {
     }
 
     @Test
+    fun `listPublicCatalogMarkets reads markets without authorization header`() = runTest {
+        var authorizationHeader: String? = "unset"
+        var requestedUrl: String? = null
+        val engine = MockEngine { request ->
+            authorizationHeader = request.headers[HttpHeaders.Authorization]
+            requestedUrl = request.url.toString()
+            respond(
+                content = """{"markets":[{"id":"market_1","slug":"san-martin-de-los-andes","country":"AR","city":"San Martin de los Andes","province":"Neuquen","isPrimary":true,"workZones":[{"id":"zone_1","slug":"central","name":"Centro","description":"Zona central"}]}]}""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        val client = YavaaApiClient(testConfig(), testHttpClient(engine))
+
+        val response = client.listPublicCatalogMarkets()
+
+        assertEquals(null, authorizationHeader)
+        assertEquals("https://api.yavaa.lat/api/catalog/markets", requestedUrl)
+        assertEquals("Centro", response.markets.single().workZones.single().name)
+    }
+
+    @Test
     fun `listPublicProviders applies category and market query filters without authorization header`() = runTest {
         var authorizationHeader: String? = "unset"
         var requestedUrl: String? = null
@@ -95,6 +116,23 @@ class YavaaApiClientTest {
 
         assertEquals("https://api.yavaa.lat/api/providers/cp_1", requestedUrl)
         assertEquals("Centro", response.provider?.workZones?.single()?.name)
+    }
+
+    @Test
+    fun `getPublicProviderProfile encodes contractor profile id as one path segment`() = runTest {
+        var requestedUrl: String? = null
+        val engine = MockEngine { request ->
+            requestedUrl = request.url.toString()
+            respond(
+                content = """{"provider":null}""",
+                headers = headersOf(HttpHeaders.ContentType, "application/json")
+            )
+        }
+        val client = YavaaApiClient(testConfig(), testHttpClient(engine))
+
+        client.getPublicProviderProfile("cp/1?#")
+
+        assertEquals("https://api.yavaa.lat/api/providers/cp%2F1%3F%23", requestedUrl)
     }
 
     private fun testConfig(): YavaaConfig {
