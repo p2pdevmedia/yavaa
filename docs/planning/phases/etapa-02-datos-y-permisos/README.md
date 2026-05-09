@@ -1,5 +1,9 @@
 # Etapa 02 - Datos y Permisos
 
+## Estado
+
+Cerrada.
+
 ## Descripcion
 
 Esta etapa construye la base de datos funcional y la capa de permisos que protege las acciones importantes del sistema.
@@ -62,3 +66,11 @@ Ya quedaron conectados en esta etapa:
 - `GET /api/admin/categories`
 - `POST /api/admin/categories`
 - `PATCH /api/admin/contractors/[contractorProfileId]`
+
+## Cierre
+
+La etapa queda cerrada porque ya existe el baseline de Prisma, la semilla deterministica, la autorizacion server-side y la cobertura de tests necesaria para validar el acceso y el contrato de API.
+
+## Proximo paso
+
+Etapa 03 - Flujo Cliente y Contratista.
