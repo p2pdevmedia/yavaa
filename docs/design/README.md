@@ -1,18 +1,37 @@
 # Design
 
+This folder contains the product design planification for Yavaa.
+
 ## Purpose
-Define the non-implementation design plan for Yavaa so the product has a clear visual and interaction direction before UI work begins.
+
+Design in Yavaa must support:
+
+- trust-first user journeys
+- predictable role-based flows
+- permission-aware UX
+- deterministic state transitions
+- testable and auditable interactions
+- a clear visual and interaction direction before UI work begins
+
+## Current source status
+
+The external design link provided for implementation could not be fetched from this environment (`403 Forbidden` on `https://api.anthropic.com/v1/design/h/df9UbrVuEy5a4EcXmZkjCg`).
+
+To keep progress unblocked, this folder provides a project-native design planification baseline aligned with existing architecture and phase planning docs.
 
 ## Reference prototype
-This plan is based on the local prototype artifact in the repository and should be treated as a design reference, not production code.
+
+The current direction is based on the local prototype artifact in the repository and should be treated as a design reference, not production code.
 
 ## Visual direction
+
 - Mobile-first service marketplace shell with an iOS-style frame.
 - Warm, local, trust-oriented aesthetic instead of cold SaaS styling.
 - Strong use of cards, pills, and grouped surfaces.
 - Spanish-first copy with English as a mirrored secondary language.
 
 ## Design system cues
+
 - Terracotta, jade, and midnight palettes form the core theme set.
 - `Manrope` is the body face.
 - `Bricolage Grotesque` is the display face.
@@ -21,6 +40,7 @@ This plan is based on the local prototype artifact in the repository and should 
 - Status, navigation, and list treatments should stay visually quiet and highly readable.
 
 ## Scope
+
 - Establish the shared visual language for web-first screens.
 - Define reusable layout primitives and component patterns.
 - Document tokens for color, typography, spacing, radius, shadows, and motion.
@@ -29,6 +49,7 @@ This plan is based on the local prototype artifact in the repository and should 
 - Prepare the design system for future mobile reuse without implementing native UI now.
 
 ## Design principles
+
 - Simple over ornamental.
 - Predictable over surprising.
 - Explicit over hidden.
@@ -38,6 +59,7 @@ This plan is based on the local prototype artifact in the repository and should 
 - Server-driven state remains the source of truth.
 
 ## Product surfaces to plan
+
 - Public landing and discovery screens.
 - Authentication and profile switching flows.
 - Contractor onboarding and approval screens.
@@ -47,6 +69,7 @@ This plan is based on the local prototype artifact in the repository and should 
 - Admin moderation and operational dashboards.
 
 ## Layout patterns
+
 - Persistent top status area for phone-shaped previews.
 - Search-first home screen with a clear greeting and trust strip.
 - Category grid for discovery.
@@ -56,6 +79,7 @@ This plan is based on the local prototype artifact in the repository and should 
 - Bottom tab bar for the primary mobile navigation.
 
 ## Required design outputs
+
 - Brand and UI tokens document.
 - Shared component inventory.
 - Page template inventory.
@@ -65,7 +89,12 @@ This plan is based on the local prototype artifact in the repository and should 
 - Accessibility and keyboard-navigation rules.
 - Handoff notes for implementation.
 
+## Documents
+
+- `planification.md`: design planification by phase, domain, and quality gate.
+
 ## Design workflow
+
 - Start from product decisions and user-action maps.
 - Reuse the same patterns across client, contractor, support, and admin views.
 - Keep content models aligned with the API contract.
@@ -74,6 +103,7 @@ This plan is based on the local prototype artifact in the repository and should 
 - Prefer reusable prototype primitives over one-off component experiments.
 
 ## Non-goals
+
 - No UI implementation in this phase.
 - No native mobile design work yet.
 - No animation-first experimentation.
@@ -81,6 +111,7 @@ This plan is based on the local prototype artifact in the repository and should 
 - No permission shortcuts in the interface.
 
 ## Completion criteria
+
 - The design direction is documented and reviewed.
 - The phase has enough detail to guide implementation work later.
 - The plan supports deterministic, accessible, agent-friendly UI development.
