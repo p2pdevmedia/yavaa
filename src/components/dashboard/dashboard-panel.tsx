@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import type { DashboardNotification } from '@/lib/dashboard-notifications';
 import type { DashboardBooking } from '@/lib/dashboard-workspace';
 
 type DashboardUserStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
@@ -107,6 +108,7 @@ type DashboardPanelProps = {
   configured: boolean;
   categories: DashboardCategory[];
   bookings: DashboardBooking[];
+  notifications: DashboardNotification[];
 };
 
 type ProfileDraft = {
@@ -180,7 +182,18 @@ function formatName(user: DashboardUser): string {
   return namePieces.length > 0 ? namePieces.join(' ') : user.displayName ?? user.email;
 }
 
-export function DashboardPanel({ initialUser, email, configured, categories, bookings }: DashboardPanelProps) {
+function formatUtcDateTime(value: string): string {
+  return `${value.slice(0, 10)} ${value.slice(11, 16)} UTC`;
+}
+
+export function DashboardPanel({
+  initialUser,
+  email,
+  configured,
+  categories,
+  bookings,
+  notifications
+}: DashboardPanelProps) {
   const [user, setUser] = useState(initialUser);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(() => buildAddressDraft(initialUser));
@@ -813,6 +826,36 @@ export function DashboardPanel({ initialUser, email, configured, categories, boo
               {primaryAddress ? `${primaryAddress.city}, ${primaryAddress.province}` : 'No definida'}
             </p>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/70 bg-card/90 shadow-soft">
+        <CardHeader>
+          <CardTitle className="font-display text-2xl">Notificaciones</CardTitle>
+          <CardDescription>
+            {notifications.filter((notification) => !notification.isRead).length > 0
+              ? `${notifications.filter((notification) => !notification.isRead).length} sin leer.`
+              : 'No hay notificaciones pendientes.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {notifications.length > 0 ? (
+            notifications.map((notification) => (
+              <div key={notification.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant={notification.isRead ? 'outline' : 'secondary'}>{notification.typeLabel}</Badge>
+                  {!notification.isRead ? <Badge variant="default">Nueva</Badge> : null}
+                </div>
+                <p className="mt-2 font-medium text-foreground">{notification.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">{notification.body}</p>
+                <p className="mt-2 text-xs text-muted-foreground">{formatUtcDateTime(notification.createdAt)}</p>
+              </div>
+            ))
+          ) : (
+            <p className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+              La bandeja está vacía por ahora.
+            </p>
+          )}
         </CardContent>
       </Card>
 

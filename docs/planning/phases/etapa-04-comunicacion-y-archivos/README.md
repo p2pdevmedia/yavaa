@@ -34,4 +34,9 @@ Primer slice de esta etapa:
 - permisos server-side para lectura y escritura de la conversacion
 - dashboard conectado al workspace de bookings y chat
 - subida real de adjuntos a Vercel Blob
+- notificaciones basicas dentro del dashboard
 - cobertura e2e para chat y adjuntos en el flujo de booking
+
+## Estado
+
+- Etapa cerrada con el slice operativo inicial.

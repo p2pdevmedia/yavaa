@@ -120,6 +120,22 @@ function buildMockPrisma() {
             }
           : null
       }))
+    },
+    notification: {
+      create: vi.fn().mockImplementation(async ({ data }: { data: { recipientUserId: string; actorUserId: string | null; bookingId: string | null; type: string; title: string; body: string; isRead?: boolean; readAt?: Date | null } }) => ({
+        id: `notification_${data.type.toLowerCase()}`,
+        recipientUserId: data.recipientUserId,
+        actorUserId: data.actorUserId,
+        bookingId: data.bookingId,
+        type: data.type,
+        title: data.title,
+        body: data.body,
+        metadata: null,
+        isRead: data.isRead ?? false,
+        readAt: data.readAt ?? null,
+        createdAt: new Date('2026-05-09T10:00:00.000Z'),
+        updatedAt: new Date('2026-05-09T10:00:00.000Z')
+      }))
     }
   };
 
@@ -180,6 +196,7 @@ describe('bookings helpers', () => {
     expect(prisma.category.findFirst).toHaveBeenCalledTimes(1);
     expect(tx.booking.create).toHaveBeenCalledTimes(1);
     expect(tx.bookingMessage.create).toHaveBeenCalledTimes(1);
+    expect(tx.notification.create).toHaveBeenCalledTimes(2);
     expect(mockedRecordAuditLog).toHaveBeenCalledTimes(1);
     expect(booking).toMatchObject({
       id: bookingRow.id,
@@ -226,6 +243,7 @@ describe('bookings helpers', () => {
     expect(prisma.booking.findUnique).toHaveBeenCalledTimes(1);
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(tx.bookingMessage.create).toHaveBeenCalledTimes(1);
+    expect(tx.notification.create).toHaveBeenCalledTimes(2);
     expect(booking.status).toBe('ACCEPTED');
     expect(booking.acceptedAt).toBeInstanceOf(Date);
   });
@@ -254,5 +272,6 @@ describe('bookings helpers', () => {
     expect(booking.cancelledAt).toBeInstanceOf(Date);
     expect(booking.decisionReason).toBe('Admin override');
     expect(tx.bookingMessage.create).toHaveBeenCalledTimes(1);
+    expect(tx.notification.create).toHaveBeenCalledTimes(2);
   });
 });

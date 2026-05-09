@@ -631,6 +631,58 @@ async function main() {
       body: 'La canilla sigue goteando, pero no hay olor a gas ni pérdida mayor.'
     }
   });
+
+  await prisma.notification.upsert({
+    where: { id: '66666666-6666-4666-8666-666666666661' },
+    update: {
+      recipientUserId: foundationClient.id,
+      actorUserId: foundationClient.id,
+      bookingId: seededBooking.id,
+      type: 'BOOKING_CREATED',
+      title: 'Booking creado',
+      body: 'Tu booking quedó registrado y esperando respuesta.',
+      metadata: null,
+      isRead: true,
+      readAt: new Date('2026-05-09T10:30:00.000Z')
+    },
+    create: {
+      id: '66666666-6666-4666-8666-666666666661',
+      recipientUserId: foundationClient.id,
+      actorUserId: publicContractorProfile.userId,
+      bookingId: seededBooking.id,
+      type: 'BOOKING_CREATED',
+      title: 'Booking creado',
+      body: 'Tu booking quedó registrado y esperando respuesta.',
+      isRead: true,
+      readAt: new Date('2026-05-09T10:30:00.000Z')
+    }
+  });
+
+  await prisma.notification.upsert({
+    where: { id: '66666666-6666-4666-8666-666666666662' },
+    update: {
+      recipientUserId: foundationClient.id,
+      actorUserId: publicContractorProfile.userId,
+      bookingId: seededBooking.id,
+      type: 'BOOKING_STATUS_CHANGED',
+      title: 'Booking aceptado',
+      body: 'El contractor aceptó tu booking.',
+      metadata: null,
+      isRead: false,
+      readAt: null
+    },
+    create: {
+      id: '66666666-6666-4666-8666-666666666662',
+      recipientUserId: foundationClient.id,
+      actorUserId: publicContractorProfile.userId,
+      bookingId: seededBooking.id,
+      type: 'BOOKING_STATUS_CHANGED',
+      title: 'Booking aceptado',
+      body: 'El contractor aceptó tu booking.',
+      isRead: false,
+      readAt: null
+    }
+  });
 }
 
 main()

@@ -25,10 +25,8 @@ type ConversationPayload = {
 type BookingFilePurpose = 'CHAT_ATTACHMENT' | 'PROBLEM_PHOTO' | 'PAYMENT_PROOF';
 
 function formatDateTime(value: string): string {
-  return new Intl.DateTimeFormat('es-AR', {
-    dateStyle: 'medium',
-    timeStyle: 'short'
-  }).format(new Date(value));
+  const date = new Date(value);
+  return `${date.toISOString().slice(0, 10)} ${date.toISOString().slice(11, 16)} UTC`;
 }
 
 function getBookingTitle(booking: DashboardBooking): string {

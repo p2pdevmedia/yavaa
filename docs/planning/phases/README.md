@@ -15,6 +15,8 @@ Estado actual:
 - Etapa 00 cerrada.
 - Etapa 01 cerrada.
 - Etapa 02 cerrada.
+- Etapa 03 cerrada.
+- Etapa 04 cerrada.
 
 Orden recomendado:
 

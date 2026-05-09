@@ -3,6 +3,7 @@ import { z } from 'zod';
 
 import { recordAuditLog } from '@/lib/audit';
 import { createBookingSystemMessage } from '@/lib/booking-communication';
+import { createNotifications } from '@/lib/notifications';
 import { hasAnyRole, hasRole, type PermissionContext } from '@/lib/permissions';
 
 export const bookingActions = ['accept', 'reject', 'cancel', 'request_reschedule'] as const;
@@ -302,6 +303,52 @@ function getBookingSystemEventAndBody(action: BookingAction): { systemEvent: str
   };
 }
 
+function getBookingNotificationPayload(action: BookingAction): {
+  type: 'BOOKING_STATUS_CHANGED';
+  clientTitle: string;
+  clientBody: string;
+  contractorTitle: string;
+  contractorBody: string;
+} {
+  if (action === 'accept') {
+    return {
+      type: 'BOOKING_STATUS_CHANGED',
+      clientTitle: 'Booking aceptado',
+      clientBody: 'El contractor aceptó tu booking.',
+      contractorTitle: 'Booking aceptado',
+      contractorBody: 'Marcaste el booking como aceptado.'
+    };
+  }
+
+  if (action === 'reject') {
+    return {
+      type: 'BOOKING_STATUS_CHANGED',
+      clientTitle: 'Booking rechazado',
+      clientBody: 'El contractor rechazó tu booking.',
+      contractorTitle: 'Booking rechazado',
+      contractorBody: 'Marcaste el booking como rechazado.'
+    };
+  }
+
+  if (action === 'cancel') {
+    return {
+      type: 'BOOKING_STATUS_CHANGED',
+      clientTitle: 'Booking cancelado',
+      clientBody: 'El booking fue cancelado.',
+      contractorTitle: 'Booking cancelado',
+      contractorBody: 'Cancelaste el booking.'
+    };
+  }
+
+  return {
+    type: 'BOOKING_STATUS_CHANGED',
+    clientTitle: 'Reprogramación solicitada',
+    clientBody: 'Se solicitó una reprogramación del booking.',
+    contractorTitle: 'Reprogramación solicitada',
+    contractorBody: 'Pediste una reprogramación.'
+  };
+}
+
 export async function listBookingsForActor(prisma: PrismaClient, actor: BookingActor): Promise<BookingRecord[]> {
   const rows = (await prisma.booking.findMany({
     where: isAdminActor(actor)
@@ -452,6 +499,27 @@ export async function createScheduledBooking(
       'booking.created',
       'Booking created.'
     );
+
+    await createNotifications(tx as PrismaClient, [
+      {
+        recipientUserId: actor.userId,
+        actorUserId: actor.userId,
+        bookingId: booking.id,
+        type: 'BOOKING_CREATED',
+        title: 'Booking creado',
+        body: 'Tu booking quedó registrado y esperando respuesta.',
+        isRead: true,
+        readAt: new Date()
+      },
+      {
+        recipientUserId: contractorProfile.userId,
+        actorUserId: actor.userId,
+        bookingId: booking.id,
+        type: 'BOOKING_CREATED',
+        title: 'Nueva solicitud de booking',
+        body: 'Tenés una nueva solicitud de booking para revisar.'
+      }
+    ]);
 
     await recordAuditLog({
       actorUserId: actor.userId,
@@ -652,6 +720,33 @@ export async function actOnBooking(
       systemEvent.systemEvent,
       systemEvent.body
     );
+
+    const notificationPayload = getBookingNotificationPayload(action);
+    const isClientActor = actor.userId === row.client.id;
+    const isContractorActor = actor.userId === row.contractorProfile.user.id;
+
+    await createNotifications(tx as PrismaClient, [
+      {
+        recipientUserId: row.client.id,
+        actorUserId: actor.userId,
+        bookingId: booking.id,
+        type: notificationPayload.type,
+        title: notificationPayload.clientTitle,
+        body: notificationPayload.clientBody,
+        isRead: isClientActor,
+        readAt: isClientActor ? now : null
+      },
+      {
+        recipientUserId: row.contractorProfile.user.id,
+        actorUserId: actor.userId,
+        bookingId: booking.id,
+        type: notificationPayload.type,
+        title: notificationPayload.contractorTitle,
+        body: notificationPayload.contractorBody,
+        isRead: isContractorActor,
+        readAt: isContractorActor ? now : null
+      }
+    ]);
 
     await recordAuditLog({
       actorUserId: actor.userId,

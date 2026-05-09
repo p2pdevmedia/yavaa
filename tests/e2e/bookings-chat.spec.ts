@@ -22,12 +22,19 @@ async function openDashboard(page: Page) {
   await page.goto('/dashboard');
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByRole('heading', { name: /Bookings y chat/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Notificaciones/i })).toBeVisible();
   await expect(page.getByText('Booking created in the deterministic seed dataset.')).toBeVisible({
     timeout: 15000
   });
   await expect(
     page.getByText('La canilla sigue goteando, pero no hay olor a gas ni pérdida mayor.')
   ).toBeVisible({ timeout: 15000 });
+  await expect(page.getByText('Tu booking quedó registrado y esperando respuesta.')).toBeVisible({
+    timeout: 15000
+  });
+  await expect(page.getByText('El contractor aceptó tu booking.')).toBeVisible({
+    timeout: 15000
+  });
 }
 
 test('dashboard chat loads seeded messages and allows sending a new one', async ({ page }) => {

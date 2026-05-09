@@ -49,9 +49,9 @@ for (const envFile of ['.env.local', '.env']) {
 
 const databaseUrl = process.env.DATABASE_URL;
 
-test.skip(!databaseUrl, 'DATABASE_URL is required for auth login e2e.');
+test.skip(!databaseUrl, 'DATABASE_URL is required for signup e2e.');
 
-const loginPassword = 'Yavaa01!';
+const signupPassword = 'Yavaa01!';
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({
@@ -59,141 +59,72 @@ const prisma = new PrismaClient({
   })
 });
 
-async function createAuthFixture() {
-  const email = `e2e-login-${randomUUID()}@yavaa.test`;
-  const authUserId = randomUUID();
+async function waitForProvisionedUser(email: string) {
+  const timeoutMs = 30_000;
+  const deadline = Date.now() + timeoutMs;
 
-  await prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`
-      INSERT INTO auth.users (
-        instance_id,
-        id,
-        aud,
-        role,
-        email,
-        encrypted_password,
-        email_confirmed_at,
-        confirmation_token,
-        invited_at,
-        recovery_token,
-        email_change_token_current,
-        phone,
-        phone_confirmed_at,
-        phone_change,
-        phone_change_token,
-        phone_change_sent_at,
-        confirmation_sent_at,
-        email_change_confirm_status,
-        banned_until,
-        reauthentication_token,
-        reauthentication_sent_at,
-        raw_app_meta_data,
-        raw_user_meta_data,
-        is_super_admin,
-        is_sso_user,
-        is_anonymous,
-        deleted_at,
-        created_at,
-        updated_at
-      )
-      VALUES (
-        '00000000-0000-0000-0000-000000000000'::uuid,
-        ${authUserId}::uuid,
-        'authenticated',
-        'authenticated',
-        ${email},
-        crypt(${loginPassword}, gen_salt('bf')),
-        now(),
-        '',
-        null,
-        '',
-        '',
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        null,
-        '',
-        null,
-        null,
-        ${JSON.stringify({ provider: 'email', providers: ['email'] })}::jsonb,
-        ${JSON.stringify({ name: 'E2E Login' })}::jsonb,
-        false,
-        false,
-        false,
-        null,
-        now(),
-        now()
-      )
-    `;
-
-    await tx.$executeRaw`
-      UPDATE auth.users
-      SET confirmed_at = DEFAULT,
-          email_confirmed_at = now(),
-          raw_user_meta_data = ${JSON.stringify({
-            sub: authUserId,
-            email,
-            email_verified: true,
-            phone_verified: false
-          })}::jsonb,
-          updated_at = now()
-      WHERE id = ${authUserId}::uuid
-    `;
-
-    await tx.$executeRaw`
-      INSERT INTO auth.identities (
-        id,
-        provider_id,
-        user_id,
-        identity_data,
-        provider,
-        last_sign_in_at,
-        created_at,
-        updated_at
-      )
-      VALUES (
-        ${randomUUID()}::uuid,
-        ${authUserId},
-        ${authUserId}::uuid,
-        ${JSON.stringify({
-          sub: authUserId,
-          email,
-          email_verified: true,
-          phone_verified: false,
-          provider: 'email'
-        })}::jsonb,
-        'email',
-        null,
-        now(),
-        now()
-      )
-      ON CONFLICT (provider_id, provider) DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        identity_data = EXCLUDED.identity_data,
-        last_sign_in_at = NOW(),
-        updated_at = NOW()
-    `;
-  });
-
-  return {
-    email,
-    authUserId,
-    async cleanup() {
-      await prisma.$transaction(async (tx) => {
-        const appUser = await tx.user.findUnique({
-          where: { email },
-          select: { id: true }
-        });
-
-        if (appUser) {
-          await tx.user.delete({
-            where: { id: appUser.id }
-          });
+  while (Date.now() < deadline) {
+    const appUser = await prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        supabaseAuthId: true,
+        profile: {
+          select: {
+            id: true,
+            userId: true
+          }
+        },
+        roles: {
+          select: {
+            role: {
+              select: {
+                slug: true
+              }
+            }
+          }
         }
+      }
+    });
 
+    if (appUser?.supabaseAuthId && appUser.profile && appUser.roles.length > 0) {
+      return appUser;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+
+  throw new Error(`Timed out waiting for the signup trigger to provision ${email}.`);
+}
+
+async function cleanupSignup(email: string) {
+  await prisma.$transaction(async (tx) => {
+    const appUser = await tx.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        supabaseAuthId: true
+      }
+    });
+
+    const authUser = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id
+      FROM auth.users
+      WHERE email = ${email}
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+
+    if (appUser) {
+      await tx.user.delete({
+        where: { id: appUser.id }
+      });
+    }
+
+    const authUserId = appUser?.supabaseAuthId ?? authUser[0]?.id;
+
+    if (authUserId) {
       await tx.$executeRaw`
         DELETE FROM auth.identities
         WHERE user_id = ${authUserId}::uuid
@@ -203,28 +134,57 @@ async function createAuthFixture() {
         DELETE FROM auth.users
         WHERE id = ${authUserId}::uuid
       `;
-      });
     }
-  };
+  });
 }
 
 test.afterAll(async () => {
   await prisma.$disconnect();
 });
 
-test('logs in successfully with a DB-provisioned auth user', async ({ page }) => {
-  const fixture = await createAuthFixture();
+test('signs up through the UI and provisions the database records', async ({ page }) => {
+  const email = `signup-e2e-${randomUUID()}@yavaa.test`;
 
   try {
-    await page.goto('/sign-in?next=%2Fdashboard');
-    await page.getByLabel('Correo electrónico').fill(fixture.email);
-    await page.getByLabel('Contraseña').fill(loginPassword);
-    await page.getByRole('button', { name: 'Ingresar' }).click();
+    await page.goto('/sign-up?next=%2Fdashboard');
+    await page.getByLabel('Correo electrónico').fill(email);
+    await page.getByLabel('Contraseña').fill(signupPassword);
+    await page.getByRole('button', { name: 'Registrar cuenta' }).click();
 
-    await expect(page).toHaveURL(/\/dashboard$/);
-    await expect(page.getByRole('heading', { name: /Bookings y chat/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Cerrar sesión/i })).toBeVisible();
+    const confirmationMessage = page.getByText(
+      'Te enviamos un correo para confirmar tu cuenta. Después podés ingresar.'
+    );
+    const dashboardHeading = page.getByRole('heading', { name: /Bookings y chat/i });
+
+    const outcome = await Promise.any([
+      confirmationMessage
+        .waitFor({ state: 'visible', timeout: 15_000 })
+        .then(() => 'confirmation' as const),
+      page.waitForURL(/\/dashboard$/, { timeout: 15_000 }).then(() => 'dashboard' as const)
+    ]);
+
+    if (outcome === 'dashboard') {
+      await expect(page).toHaveURL(/\/dashboard$/);
+      await expect(dashboardHeading).toBeVisible();
+    } else {
+      await expect(confirmationMessage).toBeVisible();
+    }
+
+    const appUser = await waitForProvisionedUser(email);
+
+    expect(appUser.email).toBe(email);
+    expect(appUser.roles.map((entry) => entry.role.slug)).toContain('client');
+
+    const authUser = await prisma.$queryRaw<{ id: string; email: string }[]>`
+      SELECT id, email
+      FROM auth.users
+      WHERE id = ${appUser.supabaseAuthId}::uuid
+      LIMIT 1
+    `;
+
+    expect(authUser).toHaveLength(1);
+    expect(authUser[0]?.email).toBe(email);
   } finally {
-    await fixture.cleanup();
+    await cleanupSignup(email);
   }
 });

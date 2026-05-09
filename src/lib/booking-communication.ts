@@ -2,6 +2,7 @@ import { Prisma, UserStatus, type PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 
 import { recordAuditLog } from '@/lib/audit';
+import { createNotifications } from '@/lib/notifications';
 import {
   canViewBookingConversation,
   canWriteBookingConversation,
@@ -164,6 +165,30 @@ export async function createBookingSystemMessage(
   });
 }
 
+function getOtherParticipantUserId(booking: BookingAccessRow, actorUserId: string): string | null {
+  if (booking.clientUserId === actorUserId) {
+    return booking.contractorProfile.userId;
+  }
+
+  if (booking.contractorProfile.userId === actorUserId) {
+    return booking.clientUserId;
+  }
+
+  return null;
+}
+
+function getBookingFileNotificationTitle(purpose: BookingFilePurpose): string {
+  if (purpose === 'PROBLEM_PHOTO') {
+    return 'Nueva foto del problema';
+  }
+
+  if (purpose === 'PAYMENT_PROOF') {
+    return 'Nuevo comprobante';
+  }
+
+  return 'Nuevo archivo adjunto';
+}
+
 export async function sendBookingMessage(
   prisma: PrismaClient,
   actor: BookingCommunicationActor,
@@ -203,6 +228,21 @@ export async function sendBookingMessage(
       bookingId
     }
   });
+
+  const recipientUserId = getOtherParticipantUserId(booking, actor.userId);
+
+  if (recipientUserId) {
+    await createNotifications(prisma, [
+      {
+        recipientUserId,
+        actorUserId: actor.userId,
+        bookingId,
+        type: 'BOOKING_MESSAGE',
+        title: 'Nuevo mensaje',
+        body: 'Recibiste un nuevo mensaje en el booking.'
+      }
+    ]);
+  }
 
   return message;
 }
@@ -269,6 +309,21 @@ export async function registerBookingFile(
     },
     select: bookingFileSelect
   });
+
+  const recipientUserId = getOtherParticipantUserId(booking, actor.userId);
+
+  if (recipientUserId) {
+    await createNotifications(prisma, [
+      {
+        recipientUserId,
+        actorUserId: actor.userId,
+        bookingId,
+        type: 'BOOKING_FILE_UPLOADED',
+        title: getBookingFileNotificationTitle(parsed.purpose),
+        body: 'Se subió un archivo al booking.'
+      }
+    ]);
+  }
 
   await recordAuditLog({
     actorUserId: actor.userId,

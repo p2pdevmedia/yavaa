@@ -80,6 +80,21 @@ function buildMockPrisma() {
     updatedAt: Date;
   };
 
+  type MockNotificationRow = {
+    id: string;
+    recipientUserId: string;
+    actorUserId: string | null;
+    bookingId: string | null;
+    type: string;
+    title: string;
+    body: string;
+    metadata: Record<string, unknown> | null;
+    isRead: boolean;
+    readAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+
   let messages: MockMessageRow[] = [
     {
       id: 'msg_001',
@@ -109,6 +124,8 @@ function buildMockPrisma() {
       updatedAt: new Date('2026-05-09T10:05:00.000Z')
     }
   ];
+
+  let notifications: MockNotificationRow[] = [];
 
   const bookingMessageCreate = vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
     const row: MockMessageRow = {
@@ -146,6 +163,26 @@ function buildMockPrisma() {
     return row;
   });
 
+  const notificationCreate = vi.fn().mockImplementation(async ({ data }: { data: Record<string, unknown> }) => {
+    const row: MockNotificationRow = {
+      id: `notif_${notifications.length + 1}`.padEnd(8, '0'),
+      recipientUserId: data.recipientUserId as string,
+      actorUserId: (data.actorUserId as string | null | undefined) ?? null,
+      bookingId: (data.bookingId as string | null | undefined) ?? null,
+      type: data.type as string,
+      title: data.title as string,
+      body: data.body as string,
+      metadata: (data.metadata as Record<string, unknown> | null | undefined) ?? null,
+      isRead: (data.isRead as boolean | null | undefined) ?? false,
+      readAt: (data.readAt as Date | null | undefined) ?? null,
+      createdAt: new Date('2026-05-09T11:10:00.000Z'),
+      updatedAt: new Date('2026-05-09T11:10:00.000Z')
+    };
+
+    notifications = [...notifications, row];
+    return row;
+  });
+
   const prisma = {
     booking: {
       findUnique: vi.fn().mockResolvedValue(bookingAccessRow)
@@ -157,10 +194,13 @@ function buildMockPrisma() {
     bookingFile: {
       findMany: vi.fn().mockImplementation(async () => files),
       create: bookingFileCreate
+    },
+    notification: {
+      create: notificationCreate
     }
   };
 
-  return { prisma, bookingMessageCreate, bookingFileCreate };
+  return { prisma, bookingMessageCreate, bookingFileCreate, notificationCreate };
 }
 
 describe('booking communication helpers', () => {
@@ -198,7 +238,7 @@ describe('booking communication helpers', () => {
   });
 
   it('lets a participant send a text message and stores audit metadata', async () => {
-    const { prisma, bookingMessageCreate } = buildMockPrisma();
+    const { prisma, bookingMessageCreate, notificationCreate } = buildMockPrisma();
 
     const message = await sendBookingMessage(
       prisma as never,
@@ -211,6 +251,7 @@ describe('booking communication helpers', () => {
 
     expect(prisma.booking.findUnique).toHaveBeenCalledTimes(1);
     expect(bookingMessageCreate).toHaveBeenCalledTimes(1);
+    expect(notificationCreate).toHaveBeenCalledTimes(1);
     expect(mockedRecordAuditLog).toHaveBeenCalledTimes(1);
     expect(message).toMatchObject({
       kind: 'USER',
@@ -220,7 +261,7 @@ describe('booking communication helpers', () => {
   });
 
   it('lets a participant register a booking file and rejects unrelated users', async () => {
-    const { prisma, bookingFileCreate } = buildMockPrisma();
+    const { prisma, bookingFileCreate, notificationCreate } = buildMockPrisma();
 
     const file = await registerBookingFile(
       prisma as never,
@@ -238,6 +279,7 @@ describe('booking communication helpers', () => {
 
     expect(prisma.booking.findUnique).toHaveBeenCalledTimes(1);
     expect(bookingFileCreate).toHaveBeenCalledTimes(1);
+    expect(notificationCreate).toHaveBeenCalledTimes(1);
     expect(file).toMatchObject({
       purpose: 'PROBLEM_PHOTO',
       uploadedByUserId: clientActor.userId
