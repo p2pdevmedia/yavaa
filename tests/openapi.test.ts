@@ -33,6 +33,7 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/admin/users']).toBeDefined();
     expect(document.paths['/api/admin/users/{userId}']).toBeDefined();
     expect(document.paths['/api/admin/categories']).toBeDefined();
+    expect(document.paths['/api/admin/contractors']).toBeDefined();
     expect(document.paths['/api/admin/contractors/{contractorProfileId}']).toBeDefined();
     expect(document.components?.securitySchemes?.bearerAuth).toBeDefined();
   });

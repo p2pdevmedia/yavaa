@@ -32,7 +32,7 @@ export function buildAuthEmailRedirectTo(nextPath: string, windowOrigin: string)
     windowOrigin
   });
 
-  return `${baseUrl}${nextPath}`;
+  return `${baseUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`;
 }
 
 export function buildPasswordResetRedirectTo(windowOrigin: string): string {

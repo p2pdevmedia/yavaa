@@ -10,11 +10,20 @@
 
 ## Optional variables
 - `DIRECT_URL`: Direct PostgreSQL URL for workflows that need a non-pooled connection.
+- `NEXT_PUBLIC_SITE_URL`: Public web origin used in Supabase Auth email redirects. If omitted, the browser origin is used.
 - `OPENAPI_OUTPUT_PATH`: Output path used by the OpenAPI generation script.
 
 ## Supabase Auth email sender
 
 Supabase Auth email delivery is configured in the Supabase project settings, not in this app's runtime env.
+
+Auth confirmation and password recovery emails redirect through `/auth/callback`, where the app exchanges the Supabase auth code for a session cookie.
+
+In Supabase Dashboard > Authentication > URL Configuration:
+
+- set Site URL to the canonical deployed web origin, for example `https://www.yavaa.lat`
+- add the local development redirect URLs you use, for example `http://localhost:3000/**` and `http://127.0.0.1:3000/**`
+- add production or preview callback URLs intentionally, for example `https://www.yavaa.lat/auth/callback` or the approved Vercel preview pattern
 
 To send auth emails from `@yavaa.lat`:
 
