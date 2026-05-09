@@ -4,6 +4,19 @@
 
 Se inicio un scaffold SwiftUI modular en esta carpeta.
 
+## Primer corte funcional implementado
+
+El primer corte funcional de iPhone cubre:
+
+- login con Supabase Auth
+- sesion persistente en Keychain
+- resolucion de cuenta con `GET /api/me`
+- derivacion local de modos mobile desde roles del servidor
+- cambio entre cliente y contratista cuando ambos roles existen
+- action map inicial por modo
+
+El modo activo no otorga permisos. Solo decide la navegacion visible. Los endpoints del website siguen validando rol, estado, ownership y relaciones server-side.
+
 La base mobile queda preparada para conectarse a la API web de Yavaa:
 
 - entorno local por defecto: `http://localhost:3000`
@@ -12,8 +25,6 @@ La base mobile queda preparada para conectarse a la API web de Yavaa:
   - `GET /api/me`
   - `GET /api/openapi`
 - autenticacion preparada para `Authorization: Bearer <token>`
-
-La primera integracion real debe conectar Supabase Auth/Keychain para entregar el token al `APIClient`.
 
 ## Estructura inicial
 
@@ -65,14 +76,14 @@ Incluye:
 
 - protocolo para store de tokens
 - store en memoria para desarrollo
+- store de tokens en Keychain
 - proveedor de token inyectable
+- servicio de autenticacion con Supabase Auth SDK
 - controlador de sesion basado en `GET /api/me`
 
 Pendiente:
 
-- Keychain
-- Supabase Auth SDK
-- refresh real de sesion
+- pulir refresh y renovacion real de sesion
 
 ### YavaaCore
 
@@ -131,7 +142,8 @@ La app de iPhone debe cubrir las mismas funcionalidades que la app de Android.
 - modo cliente
 - modo contratista
 - cambio de modo dentro de la app
-- proteccion por permisos segun rol activo
+- navegacion visible segun modo activo
+- permisos validados por endpoints del website
 
 ### Perfil
 
@@ -225,7 +237,7 @@ La administracion operativa sigue siendo web-only.
 - implementar perfil de cliente
 - implementar perfil de contratista
 - habilitar cambio de modo
-- validar permisos por rol activo
+- mantener permisos validados server-side por rol, estado, ownership y relaciones
 
 ### Etapa 3: Descubrimiento y reservas
 
