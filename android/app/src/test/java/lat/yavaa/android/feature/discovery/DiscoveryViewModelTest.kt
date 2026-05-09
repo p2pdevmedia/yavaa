@@ -133,6 +133,49 @@ class DiscoveryViewModelTest {
     }
 
     @Test
+    fun `pending load cannot overwrite newer market reload`() = runTest(dispatcher) {
+        val categoriesResponse = CompletableDeferred<PublicCatalogCategoriesResponse>()
+        val marketsResponse = CompletableDeferred<PublicCatalogMarketsResponse>()
+        val marketResponse = CompletableDeferred<PublicProvidersResponse>()
+        val staleLoadResponse = CompletableDeferred<PublicProvidersResponse>()
+        val api = DeferredLoadDiscoveryApi(
+            categoriesResponse = categoriesResponse,
+            marketsResponse = marketsResponse,
+            providerResponses = listOf(marketResponse, staleLoadResponse)
+        )
+        val viewModel = DiscoveryViewModel(api)
+
+        viewModel.load()
+        advanceUntilIdle()
+        viewModel.selectMarket("bariloche")
+        advanceUntilIdle()
+        marketResponse.complete(PublicProvidersResponse(listOf(providerCard("cp_new"))))
+        advanceUntilIdle()
+        categoriesResponse.complete(PublicCatalogCategoriesResponse())
+        marketsResponse.complete(
+            PublicCatalogMarketsResponse(
+                markets = listOf(
+                    PublicCatalogMarket(
+                        id = "market_1",
+                        slug = "san-martin-de-los-andes",
+                        country = "AR",
+                        city = "San Martin de los Andes",
+                        province = "Neuquen",
+                        isPrimary = true
+                    )
+                )
+            )
+        )
+        advanceUntilIdle()
+        staleLoadResponse.complete(PublicProvidersResponse(listOf(providerCard("cp_old"))))
+        advanceUntilIdle()
+
+        assertEquals("bariloche", viewModel.state.value.selectedMarket)
+        assertEquals(listOf("cp_new"), viewModel.state.value.providers.map { it.contractorProfileId })
+        assertFalse(api.calls.contains("providers:null:san-martin-de-los-andes"))
+    }
+
+    @Test
     fun `provider fetch failure sets discovery error message`() = runTest(dispatcher) {
         val api = FakeDiscoveryApi(failProviders = true)
         val viewModel = DiscoveryViewModel(api)
@@ -186,7 +229,7 @@ open class FakeDiscoveryApi(
 ) : PublicDiscoveryApi {
     val calls = mutableListOf<String>()
 
-    override suspend fun listPublicCatalogCategories(): PublicCatalogCategoriesResponse {
+    open override suspend fun listPublicCatalogCategories(): PublicCatalogCategoriesResponse {
         calls += "categories"
         if (failCategories) {
             error("boom")
@@ -194,7 +237,7 @@ open class FakeDiscoveryApi(
         return PublicCatalogCategoriesResponse(categories)
     }
 
-    override suspend fun listPublicCatalogMarkets(): PublicCatalogMarketsResponse {
+    open override suspend fun listPublicCatalogMarkets(): PublicCatalogMarketsResponse {
         calls += "markets"
         return PublicCatalogMarketsResponse(markets)
     }
@@ -215,6 +258,32 @@ open class FakeDiscoveryApi(
     ): PublicProviderProfileResponse {
         calls += "profile:$contractorProfileId"
         return PublicProviderProfileResponse(provider = null)
+    }
+}
+
+private class DeferredLoadDiscoveryApi(
+    private val categoriesResponse: CompletableDeferred<PublicCatalogCategoriesResponse>,
+    private val marketsResponse: CompletableDeferred<PublicCatalogMarketsResponse>,
+    private val providerResponses: List<CompletableDeferred<PublicProvidersResponse>>
+) : FakeDiscoveryApi() {
+    private var providerIndex = 0
+
+    override suspend fun listPublicCatalogCategories(): PublicCatalogCategoriesResponse {
+        calls += "categories"
+        return categoriesResponse.await()
+    }
+
+    override suspend fun listPublicCatalogMarkets(): PublicCatalogMarketsResponse {
+        calls += "markets"
+        return marketsResponse.await()
+    }
+
+    override suspend fun listPublicProviders(
+        category: String?,
+        market: String?
+    ): PublicProvidersResponse {
+        calls += "providers:${category ?: "null"}:${market ?: "null"}"
+        return providerResponses[providerIndex++].await()
     }
 }
 

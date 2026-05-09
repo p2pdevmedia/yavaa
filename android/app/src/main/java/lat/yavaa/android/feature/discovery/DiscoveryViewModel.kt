@@ -3,6 +3,7 @@ package lat.yavaa.android.feature.discovery
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -34,12 +35,22 @@ class DiscoveryViewModel(
     private var providerReloadRequestVersion = 0
 
     fun load() {
+        val requestVersion = nextProviderReloadRequestVersion()
         viewModelScope.launch {
+            if (!isCurrentProviderReload(requestVersion)) {
+                return@launch
+            }
             _state.update { it.copy(loading = true, errorMessage = null) }
 
-            runCatching {
+            try {
                 val categories = discoveryApi.listPublicCatalogCategories().categories
+                if (!isCurrentProviderReload(requestVersion)) {
+                    return@launch
+                }
                 val markets = discoveryApi.listPublicCatalogMarkets().markets
+                if (!isCurrentProviderReload(requestVersion)) {
+                    return@launch
+                }
                 val selectedMarket = markets.firstOrNull { it.isPrimary }?.slug
                     ?: markets.firstOrNull()?.slug
 
@@ -50,14 +61,19 @@ class DiscoveryViewModel(
                         selectedMarket = selectedMarket
                     )
                 }
-                reloadProvidersInternal(nextProviderReloadRequestVersion())
-            }.onFailure {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        providers = emptyList(),
-                        errorMessage = DISCOVERY_ERROR_MESSAGE
-                    )
+                reloadProvidersInternal(requestVersion)
+            } catch (error: Throwable) {
+                if (error is CancellationException) {
+                    throw error
+                }
+                if (isCurrentProviderReload(requestVersion)) {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            providers = emptyList(),
+                            errorMessage = DISCOVERY_ERROR_MESSAGE
+                        )
+                    }
                 }
             }
         }
