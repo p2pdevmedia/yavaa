@@ -11,6 +11,19 @@
 - `DIRECT_URL`: Direct PostgreSQL URL for workflows that need a non-pooled connection.
 - `OPENAPI_OUTPUT_PATH`: Output path used by the OpenAPI generation script.
 
+## Supabase Auth email sender
+
+Supabase Auth email delivery is configured in the Supabase project settings, not in this app's runtime env.
+
+To send auth emails from `@yavaa.lat`:
+
+- configure a custom SMTP provider in Supabase
+- set the authenticated sender to something like `no-reply@yavaa.lat`
+- make sure `yavaa.lat` has SPF, DKIM, and DMARC configured
+- use a separate auth sender address from any marketing email address
+
+Recommended providers for the project's MVP email flow include Resend, Postmark, or SendGrid.
+
 ## Local workflow
 1. Copy `.env.example` to `.env.local`.
 2. Point `DATABASE_URL` at a local Postgres instance or a Supabase database.

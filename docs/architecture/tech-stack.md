@@ -141,6 +141,8 @@ For email:
 
 Recommended for MVP: Resend.
 
+For Supabase Auth specifically, configure custom SMTP so transactional emails send from a `@yavaa.lat` address, such as `no-reply@yavaa.lat`.
+
 ---
 
 ## Payments and commission debt
