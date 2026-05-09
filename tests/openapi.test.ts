@@ -19,6 +19,8 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/providers/{contractorProfileId}']).toBeDefined();
     expect(document.paths['/api/bookings']).toBeDefined();
     expect(document.paths['/api/bookings/{bookingId}']).toBeDefined();
+    expect(document.paths['/api/bookings/{bookingId}/messages']).toBeDefined();
+    expect(document.paths['/api/bookings/{bookingId}/files']).toBeDefined();
     expect(document.paths['/api/emergencies']).toBeDefined();
     expect(document.paths['/api/emergencies/{emergencyRequestId}']).toBeDefined();
     expect(document.paths['/api/emergencies/{emergencyRequestId}/response']).toBeDefined();
