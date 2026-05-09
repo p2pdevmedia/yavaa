@@ -17,6 +17,7 @@ type AuthFormProps = {
   mode: AuthMode;
   nextPath: string;
   configured: boolean;
+  initialError?: string | null;
 };
 
 const copyByMode: Record<
@@ -53,11 +54,11 @@ function getAuthErrorMessage(error: { code?: string; message: string }) {
   return error.message;
 }
 
-export function AuthForm({ mode, nextPath, configured }: AuthFormProps) {
+export function AuthForm({ mode, nextPath, configured, initialError = null }: AuthFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(initialError);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isOAuthSubmitting, setIsOAuthSubmitting] = useState(false);

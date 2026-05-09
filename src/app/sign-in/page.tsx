@@ -8,6 +8,7 @@ import { getAuthSessionState, normalizeNextPath } from '@/lib/auth';
 type SignInPageProps = {
   searchParams?: Promise<{
     next?: string | string[];
+    authError?: string | string[];
   }>;
 };
 
@@ -16,10 +17,14 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const authState = await getAuthSessionState(cookieStore);
   const resolvedSearchParams: {
     next?: string | string[];
+    authError?: string | string[];
   } = (await Promise.resolve(searchParams)) ?? {};
   const nextPath = normalizeNextPath(
     Array.isArray(resolvedSearchParams.next) ? resolvedSearchParams.next[0] : resolvedSearchParams.next
   );
+  const authError = Array.isArray(resolvedSearchParams.authError)
+    ? resolvedSearchParams.authError[0]
+    : resolvedSearchParams.authError;
 
   if (authState.authenticated) {
     redirect(nextPath as Route);
@@ -42,7 +47,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
         </div>
 
         <div className="rounded-3xl border border-border/70 bg-card/90 p-6 shadow-soft backdrop-blur">
-          <AuthForm mode="sign-in" nextPath={nextPath} configured={authState.configured} />
+          <AuthForm mode="sign-in" nextPath={nextPath} configured={authState.configured} initialError={authError ?? null} />
         </div>
       </section>
     </main>
