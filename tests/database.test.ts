@@ -23,6 +23,7 @@ suite('database foundation', () => {
           'roles',
           'user_roles',
           'audit_logs',
+          'bookings',
           'markets',
           'categories',
           'addresses',
@@ -37,6 +38,7 @@ suite('database foundation', () => {
     expect(rows.map((row) => row.table_name)).toEqual([
       'addresses',
       'audit_logs',
+      'bookings',
       'categories',
       'contractor_categories',
       'contractor_profiles',

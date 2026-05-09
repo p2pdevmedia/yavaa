@@ -87,6 +87,130 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const bookingUserProfileSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['firstName', 'lastName'],
+    properties: {
+      firstName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      lastName: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+    }
+  } as const;
+
+  const bookingUserSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'email', 'displayName', 'profile'],
+    properties: {
+      id: { type: 'string' },
+      email: { type: 'string' },
+      displayName: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      profile: {
+        anyOf: [
+          bookingUserProfileSchema,
+          { type: 'null' }
+        ]
+      }
+    }
+  } as const;
+
+  const bookingCategorySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'slug', 'name'],
+    properties: {
+      id: { type: 'string' },
+      slug: { type: 'string' },
+      name: { type: 'string' }
+    }
+  } as const;
+
+  const bookingMarketSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'slug', 'city', 'province', 'country'],
+    properties: {
+      id: { type: 'string' },
+      slug: { type: 'string' },
+      city: { type: 'string' },
+      province: { type: 'string' },
+      country: { type: 'string' }
+    }
+  } as const;
+
+  const bookingAddressSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'label', 'line1', 'line2', 'city', 'province', 'postalCode', 'market'],
+    properties: {
+      id: { type: 'string' },
+      label: { type: 'string' },
+      line1: { type: 'string' },
+      line2: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      city: { type: 'string' },
+      province: { type: 'string' },
+      postalCode: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      market: {
+        anyOf: [
+          bookingMarketSchema,
+          { type: 'null' }
+        ]
+      }
+    }
+  } as const;
+
+  const bookingRecordSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+      'id',
+      'status',
+      'scheduledFor',
+      'description',
+      'contractorNote',
+      'decisionReason',
+      'rescheduleRequestedAt',
+      'acceptedAt',
+      'rejectedAt',
+      'cancelledAt',
+      'createdAt',
+      'updatedAt',
+      'client',
+      'contractorProfile',
+      'category',
+      'address'
+    ],
+    properties: {
+      id: { type: 'string' },
+      status: {
+        type: 'string',
+        enum: ['PENDING_ACCEPTANCE', 'ACCEPTED', 'REJECTED_BY_CONTRACTOR', 'CANCELLED_BY_CLIENT', 'RESCHEDULE_REQUESTED']
+      },
+      scheduledFor: { type: 'string', format: 'date-time' },
+      description: { type: 'string' },
+      contractorNote: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      decisionReason: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      rescheduleRequestedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      acceptedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      rejectedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      cancelledAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      createdAt: { type: 'string', format: 'date-time' },
+      updatedAt: { type: 'string', format: 'date-time' },
+      client: bookingUserSchema,
+      contractorProfile: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['id', 'user'],
+        properties: {
+          id: { type: 'string' },
+          user: bookingUserSchema
+        }
+      },
+      category: bookingCategorySchema,
+      address: bookingAddressSchema
+    }
+  } as const;
+
   return {
     openapi: '3.1.0',
     info: {
@@ -512,6 +636,173 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             '404': {
               description: 'Provider not found or not visible.'
             }
+          }
+        }
+      },
+      '/api/bookings': {
+        get: {
+          operationId: 'listBookings',
+          summary: 'List bookings for the active account',
+          tags: ['bookings'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': {
+              description: 'Bookings visible to the active account.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['bookings'],
+                    properties: {
+                      bookings: {
+                        type: 'array',
+                        items: bookingRecordSchema
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account is not linked to an active Yavaa user.' }
+          }
+        },
+        post: {
+          operationId: 'createBooking',
+          summary: 'Create a scheduled booking',
+          tags: ['bookings'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['contractorProfileId', 'categoryId', 'addressId', 'scheduledFor', 'description'],
+                  properties: {
+                    contractorProfileId: { type: 'string' },
+                    categoryId: { type: 'string' },
+                    addressId: { type: 'string' },
+                    scheduledFor: { type: 'string', format: 'date-time' },
+                    description: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '201': {
+              description: 'Created booking request.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['booking'],
+                    properties: {
+                      booking: bookingRecordSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid booking payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot create bookings.' },
+            '422': { description: 'The selected contractor, address, or category is not compatible.' }
+          }
+        }
+      },
+      '/api/bookings/{bookingId}': {
+        get: {
+          operationId: 'getBooking',
+          summary: 'Get a booking by id',
+          tags: ['bookings'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'bookingId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Booking details.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['booking'],
+                    properties: {
+                      booking: bookingRecordSchema
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot view this booking.' },
+            '404': { description: 'Booking not found.' }
+          }
+        },
+        patch: {
+          operationId: 'actOnBooking',
+          summary: 'Update a booking state',
+          tags: ['bookings'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'bookingId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['action'],
+                  properties: {
+                    action: {
+                      type: 'string',
+                      enum: ['accept', 'reject', 'cancel', 'request_reschedule']
+                    },
+                    note: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Updated booking.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['booking'],
+                    properties: {
+                      booking: bookingRecordSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid booking action payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot modify this booking.' },
+            '404': { description: 'Booking not found.' },
+            '422': { description: 'The booking cannot transition with that action.' }
           }
         }
       },

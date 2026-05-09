@@ -27,6 +27,14 @@ enum ContractorApprovalStatus {
   REJECTED
 }
 
+enum BookingStatus {
+  PENDING_ACCEPTANCE
+  ACCEPTED
+  REJECTED_BY_CONTRACTOR
+  CANCELLED_BY_CLIENT
+  RESCHEDULE_REQUESTED
+}
+
 enum AddressType {
   HOME
   WORK
@@ -46,6 +54,7 @@ model User {
   contractorProfile          ContractorProfile?
   addresses                  Address[]
   roles                      UserRole[]
+  bookingsAsClient           Booking[] @relation("BookingClient")
   auditLogs                  AuditLog[] @relation("AuditActor")
   reviewedContractorProfiles  ContractorProfile[] @relation("ContractorReviewActor")
 
@@ -138,6 +147,7 @@ model Category {
   updatedAt   DateTime       @updatedAt @map("updated_at")
 
   contractorCategories ContractorCategory[]
+  bookings             Booking[]
 
   @@index([status])
   @@index([group])
@@ -164,6 +174,7 @@ model Address {
   market Market? @relation(fields: [marketId], references: [id], onDelete: SetNull)
 
   contractorProfile ContractorProfile?
+  bookings          Booking[]
 
   @@index([userId])
   @@index([marketId])
@@ -210,6 +221,7 @@ model ContractorProfile {
 
   categories ContractorCategory[]
   workZones  ContractorWorkZone[]
+  bookings   Booking[]
 
   @@index([approvalStatus])
   @@index([reviewedByUserId])
@@ -241,4 +253,34 @@ model ContractorWorkZone {
   @@id([contractorProfileId, workZoneId])
   @@index([workZoneId])
   @@map("contractor_work_zones")
+}
+
+model Booking {
+  id                  String         @id @default(uuid()) @db.Uuid
+  clientUserId        String         @map("client_user_id") @db.Uuid
+  contractorProfileId String         @map("contractor_profile_id") @db.Uuid
+  categoryId          String         @map("category_id") @db.Uuid
+  addressId           String         @map("address_id") @db.Uuid
+  scheduledFor        DateTime       @map("scheduled_for")
+  description         String
+  status              BookingStatus  @default(PENDING_ACCEPTANCE)
+  contractorNote      String?        @map("contractor_note")
+  decisionReason      String?        @map("decision_reason")
+  rescheduleRequestedAt DateTime?     @map("reschedule_requested_at")
+  acceptedAt          DateTime?      @map("accepted_at")
+  rejectedAt          DateTime?      @map("rejected_at")
+  cancelledAt         DateTime?      @map("cancelled_at")
+  createdAt           DateTime       @default(now()) @map("created_at")
+  updatedAt           DateTime       @updatedAt @map("updated_at")
+
+  client             User              @relation("BookingClient", fields: [clientUserId], references: [id], onDelete: Cascade)
+  contractorProfile  ContractorProfile @relation(fields: [contractorProfileId], references: [id], onDelete: Restrict)
+  category           Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  address            Address           @relation(fields: [addressId], references: [id], onDelete: Restrict)
+
+  @@index([clientUserId])
+  @@index([contractorProfileId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@map("bookings")
 }
