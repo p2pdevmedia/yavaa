@@ -68,6 +68,21 @@ Authorization: Bearer <supabase-access-token>
 
 Cuando el contrato movil se estabilice, el siguiente paso es agregar generacion automatica del cliente Android desde OpenAPI.
 
+## Discovery publico
+
+Android abre en discovery publico para que una persona pueda explorar categorias, mercados, proveedores y perfiles publicos sin iniciar sesion.
+
+Endpoints publicos usados por esta experiencia:
+
+- `GET /api/catalog/categories`
+- `GET /api/catalog/markets`
+- `GET /api/providers?category=&market=`
+- `GET /api/providers/{contractorProfileId}`
+
+La app no muestra calificaciones, precios, distancia, resenas ni fotos de trabajos hasta que esos campos existan en el contrato publico.
+
+El inicio de sesion con Supabase sigue disponible desde la seccion de cuenta para futuros flujos protegidos.
+
 ## Objetivo
 
 Construir la app nativa de Android de Yavaa con el mismo alcance funcional que la app de iPhone y con contrato API compartido.
