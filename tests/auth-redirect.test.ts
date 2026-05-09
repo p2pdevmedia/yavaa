@@ -4,6 +4,7 @@ import {
   buildAuthCallbackRedirectTo,
   buildAuthEmailRedirectTo,
   buildPasswordResetRedirectTo,
+  buildRootAuthCodeRedirectPath,
   getAuthRedirectBaseUrl
 } from '@/lib/auth-redirect';
 
@@ -50,6 +51,12 @@ describe('auth redirect helpers', () => {
   it('builds OAuth redirects through the auth callback', () => {
     expect(buildAuthCallbackRedirectTo('/providers', 'http://127.0.0.1:3000')).toBe(
       'http://127.0.0.1:3000/auth/callback?next=%2Fproviders'
+    );
+  });
+
+  it('recovers Supabase PKCE auth codes that land on the site root', () => {
+    expect(buildRootAuthCodeRedirectPath({ code: 'pkce-test-code' })).toBe(
+      '/auth/callback?code=pkce-test-code&next=%2Freset-password'
     );
   });
 });

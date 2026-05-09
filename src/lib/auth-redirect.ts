@@ -3,6 +3,14 @@ type AuthRedirectBaseInput = {
   windowOrigin: string;
 };
 
+type RootAuthCodeParams = {
+  code?: string | string[];
+};
+
+function firstParam(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function normalizeBaseUrl(url: string): string {
   const trimmedUrl = url.trim();
   const absoluteUrl =
@@ -41,4 +49,18 @@ export function buildAuthEmailRedirectTo(nextPath: string, windowOrigin: string)
 
 export function buildPasswordResetRedirectTo(windowOrigin: string): string {
   return buildAuthCallbackRedirectTo('/reset-password', windowOrigin);
+}
+
+export function buildRootAuthCodeRedirectPath(params: RootAuthCodeParams): string | null {
+  const code = firstParam(params.code);
+
+  if (!code) {
+    return null;
+  }
+
+  const redirectPath = new URL('/auth/callback', 'http://localhost');
+  redirectPath.searchParams.set('code', code);
+  redirectPath.searchParams.set('next', '/reset-password');
+
+  return `${redirectPath.pathname}${redirectPath.search}`;
 }

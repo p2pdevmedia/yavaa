@@ -10,10 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Separator } from '@/components/ui/separator';
 import { APP_DESCRIPTION, APP_NAME, APP_VERSION } from '@/lib/app-metadata';
 import { buildAuthErrorRedirectPath, hasAuthErrorParams, type AuthErrorParams } from '@/lib/auth-errors';
+import { buildRootAuthCodeRedirectPath } from '@/lib/auth-redirect';
 import { getAuthSessionState } from '@/lib/auth';
 
 type HomePageProps = {
-  searchParams?: Promise<AuthErrorParams>;
+  searchParams?: Promise<AuthErrorParams & {
+    code?: string | string[];
+  }>;
 };
 
 const foundationChecks = [
@@ -29,6 +32,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   if (hasAuthErrorParams(resolvedSearchParams)) {
     redirect(buildAuthErrorRedirectPath(resolvedSearchParams) as Route);
+  }
+
+  const authCodeRedirectPath = buildRootAuthCodeRedirectPath(resolvedSearchParams);
+
+  if (authCodeRedirectPath) {
+    redirect(authCodeRedirectPath as Route);
   }
 
   const cookieStore = await cookies();

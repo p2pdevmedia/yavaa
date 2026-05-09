@@ -55,6 +55,13 @@ test('expired Supabase recovery links land on the retry form', async ({ page }) 
   );
 });
 
+test('Supabase recovery codes that land on root continue to the reset callback', async ({ request }) => {
+  const response = await request.get('/?code=pkce_test_code', { maxRedirects: 0 });
+
+  expect(response.status()).toBe(307);
+  expect(response.headers().location).toBe('/auth/callback?code=pkce_test_code&next=%2Freset-password');
+});
+
 test('landing page exposes the public discovery entry point', async ({ page }) => {
   await page.goto('/');
 
