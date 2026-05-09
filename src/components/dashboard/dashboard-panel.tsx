@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
+import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import type { DashboardBooking } from '@/lib/dashboard-workspace';
 
 type DashboardUserStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
 type DashboardRoleSlug = 'client' | 'contractor' | 'admin' | 'support';
@@ -104,6 +106,7 @@ type DashboardPanelProps = {
   email: string | null;
   configured: boolean;
   categories: DashboardCategory[];
+  bookings: DashboardBooking[];
 };
 
 type ProfileDraft = {
@@ -177,7 +180,7 @@ function formatName(user: DashboardUser): string {
   return namePieces.length > 0 ? namePieces.join(' ') : user.displayName ?? user.email;
 }
 
-export function DashboardPanel({ initialUser, email, configured, categories }: DashboardPanelProps) {
+export function DashboardPanel({ initialUser, email, configured, categories, bookings }: DashboardPanelProps) {
   const [user, setUser] = useState(initialUser);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(() => buildAddressDraft(initialUser));
@@ -812,6 +815,8 @@ export function DashboardPanel({ initialUser, email, configured, categories }: D
           </div>
         </CardContent>
       </Card>
+
+      <BookingWorkspace bookings={bookings} />
     </div>
   );
 }

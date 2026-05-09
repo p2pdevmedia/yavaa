@@ -32,3 +32,6 @@ Primer slice de esta etapa:
 - mensajes de sistema para eventos de booking
 - persistencia de metadatos de archivos y comprobantes
 - permisos server-side para lectura y escritura de la conversacion
+- dashboard conectado al workspace de bookings y chat
+- subida real de adjuntos a Vercel Blob
+- cobertura e2e para chat y adjuntos en el flujo de booking

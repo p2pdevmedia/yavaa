@@ -1,7 +1,8 @@
 import { type NextRequest } from 'next/server';
-import { ZodError } from 'zod';
+import { ZodError, z } from 'zod';
 
 import { bookingFileSchema, listBookingFilesForActor, registerBookingFile } from '@/lib/booking-communication';
+import { uploadBookingFileToBlob } from '@/lib/booking-file-storage';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
 import { resolveRequestAuth } from '@/lib/request-auth';
@@ -24,6 +25,16 @@ function mapBookingFileError(error: unknown): { status: number; body: { error: s
   }
 
   if (error instanceof Error) {
+    if (error.message === 'invalid-file' || error.message === 'invalid-message-id') {
+      return {
+        status: 400,
+        body: {
+          error: 'invalid-request',
+          message: 'Booking file payload is invalid.'
+        }
+      };
+    }
+
     if (error.message === 'forbidden') {
       return {
         status: 403,
@@ -51,6 +62,38 @@ function mapBookingFileError(error: unknown): { status: number; body: { error: s
       error: 'internal-error',
       message: 'We could not process the booking file.'
     }
+  };
+}
+
+function parseMultipartBookingFileInput(formData: FormData): {
+  file: File;
+  purpose: 'CHAT_ATTACHMENT' | 'PROBLEM_PHOTO' | 'PAYMENT_PROOF';
+  messageId: string | null;
+} {
+  const messageIdSchema = z.string().uuid();
+  const rawFile = formData.get('file');
+  const rawPurpose = formData.get('purpose');
+  const rawMessageId = formData.get('messageId');
+
+  if (!(rawFile instanceof File)) {
+    throw new Error('invalid-file');
+  }
+
+  const purpose =
+    typeof rawPurpose === 'string' && ['CHAT_ATTACHMENT', 'PROBLEM_PHOTO', 'PAYMENT_PROOF'].includes(rawPurpose)
+      ? (rawPurpose as 'CHAT_ATTACHMENT' | 'PROBLEM_PHOTO' | 'PAYMENT_PROOF')
+      : 'CHAT_ATTACHMENT';
+
+  const messageIdValue = typeof rawMessageId === 'string' && rawMessageId.trim().length > 0 ? rawMessageId.trim() : null;
+
+  if (messageIdValue !== null && !messageIdSchema.safeParse(messageIdValue).success) {
+    throw new Error('invalid-message-id');
+  }
+
+  return {
+    file: rawFile,
+    purpose,
+    messageId: messageIdValue
   };
 }
 
@@ -108,21 +151,46 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
   }
 
   const { bookingId } = await params;
-  const parsedBody = bookingFileSchema.safeParse(await request.json());
-
-  if (!parsedBody.success) {
-    return jsonResponse(
-      {
-        error: 'invalid-request',
-        issues: parsedBody.error.flatten()
-      },
-      { status: 400 }
-    );
-  }
+  const contentType = request.headers.get('content-type') ?? '';
 
   const prisma = getPrismaClient();
 
   try {
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      const parsedForm = parseMultipartBookingFileInput(formData);
+      const uploadedFile = await uploadBookingFileToBlob(bookingId, parsedForm.file);
+
+      const file = await registerBookingFile(prisma, auth.permissionContext, bookingId, {
+        purpose: parsedForm.purpose,
+        fileName: parsedForm.file.name,
+        mimeType: parsedForm.file.type || 'application/octet-stream',
+        storageKey: uploadedFile.storageKey,
+        storageUrl: uploadedFile.storageUrl,
+        sizeBytes: parsedForm.file.size,
+        messageId: parsedForm.messageId
+      });
+
+      return jsonResponse(
+        {
+          file
+        },
+        { status: 201 }
+      );
+    }
+
+    const parsedBody = bookingFileSchema.safeParse(await request.json());
+
+    if (!parsedBody.success) {
+      return jsonResponse(
+        {
+          error: 'invalid-request',
+          issues: parsedBody.error.flatten()
+        },
+        { status: 400 }
+      );
+    }
+
     const file = await registerBookingFile(prisma, auth.permissionContext, bookingId, parsedBody.data);
 
     return jsonResponse(

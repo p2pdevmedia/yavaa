@@ -21,6 +21,11 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/bookings/{bookingId}']).toBeDefined();
     expect(document.paths['/api/bookings/{bookingId}/messages']).toBeDefined();
     expect(document.paths['/api/bookings/{bookingId}/files']).toBeDefined();
+    expect(
+      (document.paths['/api/bookings/{bookingId}/files']?.post?.requestBody as
+        | { content?: Record<string, unknown> }
+        | undefined)?.content?.['multipart/form-data']
+    ).toBeDefined();
     expect(document.paths['/api/emergencies']).toBeDefined();
     expect(document.paths['/api/emergencies/{emergencyRequestId}']).toBeDefined();
     expect(document.paths['/api/emergencies/{emergencyRequestId}/response']).toBeDefined();

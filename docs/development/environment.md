@@ -6,6 +6,7 @@
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`: Supabase publishable key for browser and session bootstrap calls.
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Legacy alias accepted by the helpers if present.
 - `SUPABASE_SERVICE_ROLE_KEY`: Reserved for server-only operations that need elevated access.
+- `BLOB_READ_WRITE_TOKEN`: Vercel Blob token used by booking file uploads.
 
 ## Optional variables
 - `DIRECT_URL`: Direct PostgreSQL URL for workflows that need a non-pooled connection.

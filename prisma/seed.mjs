@@ -474,6 +474,163 @@ async function main() {
       }
     });
   }
+
+  if (!homeServicesCategory) {
+    throw new Error('Home services category could not be loaded.');
+  }
+
+  const clientRole = roles.find((role) => role.slug === 'client');
+
+  const foundationClient = await prisma.user.upsert({
+    where: { email: 'foundation-client@yavaa.test' },
+    update: {
+      displayName: 'Foundation Client',
+      status: UserStatus.ACTIVE
+    },
+    create: {
+      email: 'foundation-client@yavaa.test',
+      displayName: 'Foundation Client',
+      status: UserStatus.ACTIVE
+    }
+  });
+
+  await prisma.profile.upsert({
+    where: { userId: foundationClient.id },
+    update: {
+      firstName: 'Lucia',
+      lastName: 'Gomez',
+      phone: '+54 9 2972 555222',
+      bio: 'Deterministic client account used to validate bookings and conversation flows.'
+    },
+    create: {
+      userId: foundationClient.id,
+      firstName: 'Lucia',
+      lastName: 'Gomez',
+      phone: '+54 9 2972 555222',
+      bio: 'Deterministic client account used to validate bookings and conversation flows.'
+    }
+  });
+
+  if (clientRole) {
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: foundationClient.id,
+          roleId: clientRole.id
+        }
+      },
+      update: {},
+      create: {
+        userId: foundationClient.id,
+        roleId: clientRole.id
+      }
+    });
+  }
+
+  const foundationClientAddress = await prisma.address.upsert({
+    where: {
+      id: '33333333-3333-3333-3333-333333333333'
+    },
+    update: {
+      label: 'Client home',
+      line1: 'Calle Falsa 123',
+      city: market.city,
+      province: market.province,
+      postalCode: '8370',
+      notes: 'Client address used for deterministic booking seeds.',
+      type: AddressType.HOME,
+      isDefault: true,
+      marketId: market.id
+    },
+    create: {
+      id: '33333333-3333-3333-3333-333333333333',
+      userId: foundationClient.id,
+      marketId: market.id,
+      label: 'Client home',
+      line1: 'Calle Falsa 123',
+      city: market.city,
+      province: market.province,
+      postalCode: '8370',
+      notes: 'Client address used for deterministic booking seeds.',
+      type: AddressType.HOME,
+      isDefault: true
+    }
+  });
+
+  const seededBooking = await prisma.booking.upsert({
+    where: {
+      id: '44444444-4444-4444-4444-444444444444'
+    },
+    update: {
+      clientUserId: foundationClient.id,
+      contractorProfileId: publicContractorProfile.id,
+      categoryId: homeServicesCategory.id,
+      addressId: foundationClientAddress.id,
+      scheduledFor: new Date('2026-05-10T10:00:00.000Z'),
+      description: 'Necesito reparar una canilla que gotea en la cocina.',
+      status: 'ACCEPTED',
+      contractorNote: 'Voy a pasar a primera hora de la mañana.',
+      decisionReason: null,
+      acceptedAt: new Date('2026-05-09T15:00:00.000Z'),
+      rejectedAt: null,
+      cancelledAt: null,
+      rescheduleRequestedAt: null
+    },
+    create: {
+      id: '44444444-4444-4444-4444-444444444444',
+      clientUserId: foundationClient.id,
+      contractorProfileId: publicContractorProfile.id,
+      categoryId: homeServicesCategory.id,
+      addressId: foundationClientAddress.id,
+      scheduledFor: new Date('2026-05-10T10:00:00.000Z'),
+      description: 'Necesito reparar una canilla que gotea en la cocina.',
+      status: 'ACCEPTED',
+      contractorNote: 'Voy a pasar a primera hora de la mañana.',
+      decisionReason: null,
+      acceptedAt: new Date('2026-05-09T15:00:00.000Z'),
+      rejectedAt: null,
+      cancelledAt: null,
+      rescheduleRequestedAt: null
+    }
+  });
+
+  await prisma.bookingMessage.upsert({
+    where: { id: '55555555-5555-4555-8555-555555555551' },
+    update: {
+      bookingId: seededBooking.id,
+      senderUserId: null,
+      kind: 'SYSTEM',
+      systemEvent: 'booking.seeded',
+      body: 'Booking created in the deterministic seed dataset.'
+    },
+    create: {
+      id: '55555555-5555-4555-8555-555555555551',
+      bookingId: seededBooking.id,
+      senderUserId: null,
+      kind: 'SYSTEM',
+      systemEvent: 'booking.seeded',
+      body: 'Booking created in the deterministic seed dataset.'
+    }
+  });
+
+  await prisma.bookingMessage.upsert({
+    where: { id: '55555555-5555-4555-8555-555555555552' },
+    update: {
+      bookingId: seededBooking.id,
+      senderUserId: foundationClient.id,
+      kind: 'USER',
+      systemEvent: null,
+      body: 'La canilla sigue goteando, pero no hay olor a gas ni pérdida mayor.'
+    },
+    create: {
+      id: '55555555-5555-4555-8555-555555555552',
+      bookingId: seededBooking.id,
+      senderUserId: foundationClient.id,
+      kind: 'USER',
+      systemEvent: null,
+      body: 'La canilla sigue goteando, pero no hay olor a gas ni pérdida mayor.'
+    }
+  });
 }
 
 main()

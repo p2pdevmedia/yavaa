@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { DashboardPanel } from '@/components/dashboard/dashboard-panel';
 import { buildSignInPath, getAuthSessionState } from '@/lib/auth';
 import { resolveAppUser } from '@/lib/app-user';
+import { listBookingsForActor } from '@/lib/bookings';
+import { serializeBookingsForDashboard } from '@/lib/dashboard-workspace';
+import { getPrismaClient } from '@/lib/prisma';
 import { listPublicCatalogCategories } from '@/lib/public-catalog';
 
 export default async function DashboardPage() {
@@ -38,6 +41,11 @@ export default async function DashboardPage() {
     );
   }
 
+  const prisma = getPrismaClient();
+  const bookings = appUser.permissionContext
+    ? await listBookingsForActor(prisma, appUser.permissionContext)
+    : [];
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl items-start px-4 py-8 sm:px-6 lg:px-8">
       <DashboardPanel
@@ -45,6 +53,7 @@ export default async function DashboardPage() {
         email={authState.user?.email ?? null}
         configured={authState.configured}
         categories={categories}
+        bookings={serializeBookingsForDashboard(bookings)}
       />
     </main>
   );

@@ -38,6 +38,26 @@ function getBearerToken(request: NextRequest): string {
   return authorization.slice('Bearer '.length);
 }
 
+function getPlaywrightE2eIdentity(request: NextRequest): {
+  id: string;
+  email: string | null;
+} | null {
+  if (process.env.PLAYWRIGHT_E2E !== '1') {
+    return null;
+  }
+
+  const email = request.cookies.get('yavaa-test-email')?.value ?? null;
+
+  if (!email) {
+    return null;
+  }
+
+  return {
+    id: `playwright:${email}`,
+    email
+  };
+}
+
 async function verifySupabaseCookieSession(request: NextRequest) {
   if (!hasSupabaseEnv()) {
     return {
@@ -77,6 +97,22 @@ async function verifySupabaseCookieSession(request: NextRequest) {
 }
 
 export async function resolveRequestAuth(request: NextRequest): Promise<RequestAuthState> {
+  const playwrightIdentity = getPlaywrightE2eIdentity(request);
+
+  if (playwrightIdentity) {
+    const appUser = await resolveAppUser(playwrightIdentity);
+
+    return {
+      authenticated: true,
+      configured: true,
+      reason: null,
+      identity: playwrightIdentity,
+      appUser: appUser.user,
+      matchedBy: appUser.matchedBy,
+      permissionContext: appUser.permissionContext
+    };
+  }
+
   const bearerToken = getBearerToken(request);
   const session = bearerToken
     ? await verifySupabaseBearerToken(bearerToken)

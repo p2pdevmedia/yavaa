@@ -3564,6 +3564,39 @@
         "requestBody": {
           "required": true,
           "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  },
+                  "purpose": {
+                    "type": "string",
+                    "enum": [
+                      "CHAT_ATTACHMENT",
+                      "PROBLEM_PHOTO",
+                      "PAYMENT_PROOF"
+                    ]
+                  },
+                  "messageId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            },
             "application/json": {
               "schema": {
                 "type": "object",

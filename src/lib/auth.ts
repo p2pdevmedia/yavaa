@@ -45,7 +45,28 @@ export function buildSignInPath(nextPath: unknown): string {
   return `/sign-in?next=${encodeURIComponent(safeNextPath)}`;
 }
 
+function getPlaywrightE2eEmail(cookieStore: CookieStore): string | null {
+  if (process.env.PLAYWRIGHT_E2E !== '1') {
+    return null;
+  }
+
+  return cookieStore.get('yavaa-test-email')?.value ?? null;
+}
+
 export async function getAuthSessionState(cookieStore: CookieStore): Promise<AuthSessionState> {
+  const playwrightEmail = getPlaywrightE2eEmail(cookieStore);
+
+  if (playwrightEmail) {
+    return {
+      authenticated: true,
+      configured: true,
+      user: {
+        id: `playwright:${playwrightEmail}`,
+        email: playwrightEmail
+      }
+    };
+  }
+
   const configured = hasSupabaseEnv();
 
   if (!configured) {

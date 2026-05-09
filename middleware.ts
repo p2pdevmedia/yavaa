@@ -8,12 +8,20 @@ function isProtectedRoute(request: NextRequest): boolean {
   return request.nextUrl.pathname.startsWith('/dashboard');
 }
 
+function hasPlaywrightE2eSession(request: NextRequest): boolean {
+  return process.env.PLAYWRIGHT_E2E === '1' && Boolean(request.cookies.get('yavaa-test-email')?.value);
+}
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({
     request: {
       headers: request.headers
     }
   });
+
+  if (hasPlaywrightE2eSession(request)) {
+    return response;
+  }
 
   if (!hasSupabaseEnv()) {
     if (isProtectedRoute(request) && !hasSupabaseSessionCookie(request.cookies)) {

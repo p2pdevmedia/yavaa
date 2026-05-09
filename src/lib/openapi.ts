@@ -287,6 +287,17 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const bookingFileUploadSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['file'],
+    properties: {
+      file: { type: 'string', format: 'binary' },
+      purpose: { type: 'string', enum: ['CHAT_ATTACHMENT', 'PROBLEM_PHOTO', 'PAYMENT_PROOF'] },
+      messageId: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+    }
+  } as const;
+
   const emergencyCandidateSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1093,6 +1104,9 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           requestBody: {
             required: true,
             content: {
+              'multipart/form-data': {
+                schema: bookingFileUploadSchema
+              },
               'application/json': {
                 schema: bookingFileInputSchema
               }
