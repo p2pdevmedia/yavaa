@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -80,10 +79,11 @@ fun ProviderProfileScreen(
                 }
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(if (provider.acceptsEmergencies) "Acepta urgencias" else "Sin urgencias")
+                    InfoPill(
+                        label = if (provider.acceptsEmergencies) {
+                            "Acepta urgencias"
+                        } else {
+                            "Sin urgencias"
                         }
                     )
                 }
@@ -98,7 +98,7 @@ fun ProviderProfileScreen(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     provider.categories.forEach { category ->
-                        AssistChip(onClick = {}, label = { Text(category.name) })
+                        InfoPill(label = category.name)
                     }
                 }
 
