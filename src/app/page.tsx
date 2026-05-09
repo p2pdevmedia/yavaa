@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { Route } from 'next';
 import { cookies } from 'next/headers';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
@@ -47,6 +48,9 @@ export default async function HomePage() {
                 <Button asChild>
                   <Link href="/dashboard">Ir al dashboard</Link>
                 </Button>
+                <Button variant="outline" asChild>
+                  <Link href={'/providers' as Route}>Explorar proveedores</Link>
+                </Button>
                 <Button variant="secondary" asChild>
                   <Link href="/api/openapi">Contrato OpenAPI</Link>
                 </Button>
@@ -57,6 +61,9 @@ export default async function HomePage() {
                   <Link href={{ pathname: '/sign-in', query: { next: '/dashboard' } }}>
                     Iniciar sesión
                   </Link>
+                </Button>
+                <Button variant="outline" asChild>
+                  <Link href={'/providers' as Route}>Explorar proveedores</Link>
                 </Button>
                 <Button variant="secondary" asChild>
                   <Link href={{ pathname: '/sign-up', query: { next: '/dashboard' } }}>

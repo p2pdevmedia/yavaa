@@ -1,0 +1,370 @@
+import { ContractorApprovalStatus, UserStatus } from '@prisma/client';
+
+import { hasDatabaseEnv } from '@/lib/env';
+import { getPrismaClient } from '@/lib/prisma';
+
+export type PublicProviderSearchFilters = {
+  category?: string | null;
+  market?: string | null;
+};
+
+export type PublicProviderCard = {
+  contractorProfileId: string;
+  displayName: string;
+  bio: string | null;
+  profilePhotoUrl: string | null;
+  marketSlug: string | null;
+  marketCity: string | null;
+  marketProvince: string | null;
+  categories: Array<{
+    slug: string;
+    name: string;
+    group: string | null;
+    isPrimary: boolean;
+  }>;
+};
+
+export type PublicProviderProfile = PublicProviderCard & {
+  workZones: Array<{
+    slug: string;
+    name: string;
+    description: string | null;
+  }>;
+};
+
+type PublicProviderRecord = {
+  id: string;
+  profilePhotoUrl: string | null;
+  user: {
+    displayName: string | null;
+    profile: {
+      firstName: string | null;
+      lastName: string | null;
+      bio: string | null;
+    } | null;
+  };
+  categories: Array<{
+    isPrimary: boolean;
+    category: {
+      slug: string;
+      name: string;
+      group: string | null;
+    };
+  }>;
+  workZones: Array<{
+    workZone: {
+      slug: string;
+      name: string;
+      description: string | null;
+      market: {
+        slug: string;
+        city: string;
+        province: string;
+      };
+    };
+  }>;
+};
+
+const demoPublicProviderId = '33333333-3333-3333-3333-333333333333';
+const demoPublicProvider = {
+  contractorProfileId: demoPublicProviderId,
+  displayName: 'Carlos Perez',
+  bio: 'Approved deterministic contractor used by public discovery tests.',
+  profilePhotoUrl: null,
+  marketSlug: 'san-martin-de-los-andes',
+  marketCity: 'San Martin de los Andes',
+  marketProvince: 'Neuquen',
+  categories: [
+    {
+      slug: 'home-services',
+      name: 'Home Services',
+      group: 'home services',
+      isPrimary: true
+    }
+  ],
+  workZones: [
+    {
+      slug: 'central',
+      name: 'Centro',
+      description: 'Zona central de San Martin de los Andes'
+    }
+  ]
+} as const satisfies PublicProviderProfile;
+
+function buildDisplayName(record: PublicProviderRecord): string {
+  const firstName = record.user.profile?.firstName?.trim();
+  const lastName = record.user.profile?.lastName?.trim();
+  const composedName = [firstName, lastName].filter((value): value is string => Boolean(value)).join(' ').trim();
+
+  if (composedName) {
+    return composedName;
+  }
+
+  if (record.user.displayName?.trim()) {
+    return record.user.displayName.trim();
+  }
+
+  return 'Proveedor';
+}
+
+function mapCategories(
+  categories: PublicProviderRecord['categories']
+): PublicProviderCard['categories'] {
+  return [...categories]
+    .sort((left, right) => {
+      if (left.isPrimary !== right.isPrimary) {
+        return left.isPrimary ? -1 : 1;
+      }
+
+      return left.category.name.localeCompare(right.category.name);
+    })
+    .map((link) => ({
+      slug: link.category.slug,
+      name: link.category.name,
+      group: link.category.group,
+      isPrimary: link.isPrimary
+    }));
+}
+
+function mapWorkZones(
+  workZones: PublicProviderRecord['workZones']
+): PublicProviderProfile['workZones'] {
+  return [...workZones]
+    .sort((left, right) => {
+      const marketSort = left.workZone.market.city.localeCompare(right.workZone.market.city);
+
+      if (marketSort !== 0) {
+        return marketSort;
+      }
+
+      return left.workZone.name.localeCompare(right.workZone.name);
+    })
+    .map((link) => ({
+      slug: link.workZone.slug,
+      name: link.workZone.name,
+      description: link.workZone.description
+    }));
+}
+
+function mapProviderRecord(record: PublicProviderRecord): PublicProviderCard {
+  const primarySourceWorkZone =
+    [...record.workZones]
+      .sort((left, right) => {
+        const marketSort = left.workZone.market.city.localeCompare(right.workZone.market.city);
+
+        if (marketSort !== 0) {
+          return marketSort;
+        }
+
+        return left.workZone.name.localeCompare(right.workZone.name);
+      })[0]?.workZone ?? null;
+
+  return {
+    contractorProfileId: record.id,
+    displayName: buildDisplayName(record),
+    bio: record.user.profile?.bio ?? null,
+    profilePhotoUrl: record.profilePhotoUrl,
+    marketSlug: primarySourceWorkZone ? primarySourceWorkZone.market.slug : null,
+    marketCity: primarySourceWorkZone ? primarySourceWorkZone.market.city : null,
+    marketProvince: primarySourceWorkZone ? primarySourceWorkZone.market.province : null,
+    categories: mapCategories(record.categories)
+  };
+}
+
+function mapProviderProfile(record: PublicProviderRecord): PublicProviderProfile {
+  const workZones = mapWorkZones(record.workZones);
+
+  return {
+    ...mapProviderRecord(record),
+    workZones
+  };
+}
+
+export async function listPublicProviders(
+  filters: PublicProviderSearchFilters
+): Promise<{ items: PublicProviderCard[] }> {
+  const category = filters.category?.trim() ?? null;
+  const market = filters.market?.trim() ?? null;
+
+  if (!hasDatabaseEnv()) {
+    const matchesCategory = !category || demoPublicProvider.categories.some((item) => item.slug === category);
+    const matchesMarket = !market || demoPublicProvider.marketSlug === market;
+
+    return {
+      items: matchesCategory && matchesMarket ? [demoPublicProvider] : []
+    };
+  }
+
+  const prisma = getPrismaClient();
+  const where = {
+    approvalStatus: ContractorApprovalStatus.APPROVED,
+    user: {
+      status: UserStatus.ACTIVE
+    },
+    ...(category
+      ? {
+          categories: {
+            some: {
+              category: {
+                slug: category
+              }
+            }
+          }
+        }
+      : {}),
+    ...(market
+      ? {
+          workZones: {
+            some: {
+              workZone: {
+                market: {
+                  slug: market
+                }
+              }
+            }
+          }
+        }
+      : {})
+  };
+
+  const records = (await prisma.contractorProfile.findMany({
+    where,
+    select: {
+      id: true,
+      profilePhotoUrl: true,
+      user: {
+        select: {
+          displayName: true,
+          profile: {
+            select: {
+              firstName: true,
+              lastName: true,
+              bio: true
+            }
+          }
+        }
+      },
+      categories: {
+        select: {
+          isPrimary: true,
+          category: {
+            select: {
+              slug: true,
+              name: true,
+              group: true
+            }
+          }
+        }
+      },
+      workZones: {
+        select: {
+          workZone: {
+            select: {
+              slug: true,
+              name: true,
+              description: true,
+              market: {
+                select: {
+                  slug: true,
+                  city: true,
+                  province: true
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      user: {
+        displayName: 'asc'
+      }
+    }
+  })) as PublicProviderRecord[];
+
+  if (records.length === 0 && process.env.NODE_ENV !== 'production') {
+    const matchesCategory = !category || demoPublicProvider.categories.some((item) => item.slug === category);
+    const matchesMarket = !market || demoPublicProvider.marketSlug === market;
+
+    return {
+      items: matchesCategory && matchesMarket ? [demoPublicProvider] : []
+    };
+  }
+
+  return {
+    items: records.map(mapProviderRecord)
+  };
+}
+
+export async function getPublicProviderProfile(
+  contractorProfileId: string
+): Promise<PublicProviderProfile | null> {
+  if (!hasDatabaseEnv()) {
+    return contractorProfileId === demoPublicProviderId ? demoPublicProvider : null;
+  }
+
+  const prisma = getPrismaClient();
+  const record = (await prisma.contractorProfile.findFirst({
+    where: {
+      id: contractorProfileId,
+      approvalStatus: ContractorApprovalStatus.APPROVED,
+      user: {
+        status: UserStatus.ACTIVE
+      }
+    },
+    select: {
+      id: true,
+      profilePhotoUrl: true,
+      user: {
+        select: {
+          displayName: true,
+          profile: {
+            select: {
+              firstName: true,
+              lastName: true,
+              bio: true
+            }
+          }
+        }
+      },
+      categories: {
+        select: {
+          isPrimary: true,
+          category: {
+            select: {
+              slug: true,
+              name: true,
+              group: true
+            }
+          }
+        }
+      },
+      workZones: {
+        select: {
+          workZone: {
+            select: {
+              slug: true,
+              name: true,
+              description: true,
+              market: {
+                select: {
+                  slug: true,
+                  city: true,
+                  province: true
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  })) as PublicProviderRecord | null;
+
+  if (!record) {
+    return process.env.NODE_ENV !== 'production' && contractorProfileId === demoPublicProviderId
+      ? demoPublicProvider
+      : null;
+  }
+
+  return mapProviderProfile(record);
+}

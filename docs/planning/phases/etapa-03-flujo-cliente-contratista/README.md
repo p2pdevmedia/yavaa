@@ -26,3 +26,13 @@ Esta etapa implementa el recorrido principal del producto: descubrir un servicio
 
 Un cliente puede encontrar un contractor y cerrar un pedido simple de punta a punta.
 
+## Primer corte
+
+La primera ejecucion de esta etapa cubre el flujo publico:
+
+- busqueda por categoria
+- busqueda por ubicacion
+- perfiles publicos limitados
+- entrada desde la landing page
+
+El siguiente corte de la misma etapa agrega creacion de bookings, solicitudes urgentes y transiciones de estado.

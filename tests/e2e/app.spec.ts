@@ -29,3 +29,11 @@ test('auth pages render', async ({ page }) => {
   await page.goto('/sign-up');
   await expect(page.getByRole('heading', { name: /Crear cuenta/i })).toBeVisible();
 });
+
+test('landing page exposes the public discovery entry point', async ({ page }) => {
+  await page.goto('/');
+
+  await expect(page.getByRole('link', { name: /Explorar proveedores/i })).toBeVisible();
+  await page.getByRole('link', { name: /Explorar proveedores/i }).click();
+  await expect(page).toHaveURL('/providers');
+});

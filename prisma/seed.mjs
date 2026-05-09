@@ -283,6 +283,111 @@ async function main() {
     }
   });
 
+  const publicContractor = await prisma.user.upsert({
+    where: { email: 'foundation-public-contractor@yavaa.test' },
+    update: {
+      displayName: 'Foundation Public Contractor',
+      status: UserStatus.ACTIVE
+    },
+    create: {
+      email: 'foundation-public-contractor@yavaa.test',
+      displayName: 'Foundation Public Contractor',
+      status: UserStatus.ACTIVE
+    }
+  });
+
+  await prisma.profile.upsert({
+    where: { userId: publicContractor.id },
+    update: {
+      firstName: 'Carlos',
+      lastName: 'Perez',
+      phone: '+54 9 2972 555111',
+      bio: 'Approved deterministic contractor used by public discovery tests.'
+    },
+    create: {
+      userId: publicContractor.id,
+      firstName: 'Carlos',
+      lastName: 'Perez',
+      phone: '+54 9 2972 555111',
+      bio: 'Approved deterministic contractor used by public discovery tests.'
+    }
+  });
+
+  if (contractorRole) {
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: publicContractor.id,
+          roleId: contractorRole.id
+        }
+      },
+      update: {},
+      create: {
+        userId: publicContractor.id,
+        roleId: contractorRole.id
+      }
+    });
+  }
+
+  const publicContractorAddress = await prisma.address.upsert({
+    where: {
+      id: '22222222-2222-2222-2222-222222222222'
+    },
+    update: {
+      label: 'Public workshop',
+      line1: 'Av. San Martin 456',
+      city: market.city,
+      province: market.province,
+      postalCode: '8370',
+      notes: 'Approved contractor address used for public discovery.',
+      type: AddressType.WORK,
+      isDefault: true,
+      marketId: market.id
+    },
+    create: {
+      id: '22222222-2222-2222-2222-222222222222',
+      userId: publicContractor.id,
+      marketId: market.id,
+      label: 'Public workshop',
+      line1: 'Av. San Martin 456',
+      city: market.city,
+      province: market.province,
+      postalCode: '8370',
+      notes: 'Approved contractor address used for public discovery.',
+      type: AddressType.WORK,
+      isDefault: true
+    }
+  });
+
+  const publicContractorProfile = await prisma.contractorProfile.upsert({
+    where: { userId: publicContractor.id },
+    update: {
+      addressId: publicContractorAddress.id,
+      approvalStatus: ContractorApprovalStatus.APPROVED,
+      dniNumber: '87654321',
+      dniFrontUrl: 'https://example.com/seeds/public-dni-front.jpg',
+      dniBackUrl: 'https://example.com/seeds/public-dni-back.jpg',
+      profilePhotoUrl: 'https://example.com/seeds/public-profile-photo.jpg',
+      reviewNotes: 'Approved deterministic seed contractor for public discovery.',
+      submittedAt: new Date('2026-01-01T13:00:00.000Z'),
+      reviewedAt: new Date('2026-01-01T14:00:00.000Z'),
+      reviewedByUserId: foundationAdmin.id
+    },
+    create: {
+      userId: publicContractor.id,
+      addressId: publicContractorAddress.id,
+      approvalStatus: ContractorApprovalStatus.APPROVED,
+      dniNumber: '87654321',
+      dniFrontUrl: 'https://example.com/seeds/public-dni-front.jpg',
+      dniBackUrl: 'https://example.com/seeds/public-dni-back.jpg',
+      profilePhotoUrl: 'https://example.com/seeds/public-profile-photo.jpg',
+      reviewNotes: 'Approved deterministic seed contractor for public discovery.',
+      submittedAt: new Date('2026-01-01T13:00:00.000Z'),
+      reviewedAt: new Date('2026-01-01T14:00:00.000Z'),
+      reviewedByUserId: foundationAdmin.id
+    }
+  });
+
   const homeServicesCategory = await prisma.category.findUnique({
     where: { slug: 'home-services' }
   });
@@ -326,6 +431,41 @@ async function main() {
       update: {},
       create: {
         contractorProfileId: contractorProfile.id,
+        workZoneId: workZone.id
+      }
+    });
+  }
+
+  if (homeServicesCategory) {
+    await prisma.contractorCategory.upsert({
+      where: {
+        contractorProfileId_categoryId: {
+          contractorProfileId: publicContractorProfile.id,
+          categoryId: homeServicesCategory.id
+        }
+      },
+      update: {
+        isPrimary: true
+      },
+      create: {
+        contractorProfileId: publicContractorProfile.id,
+        categoryId: homeServicesCategory.id,
+        isPrimary: true
+      }
+    });
+  }
+
+  if (workZone) {
+    await prisma.contractorWorkZone.upsert({
+      where: {
+        contractorProfileId_workZoneId: {
+          contractorProfileId: publicContractorProfile.id,
+          workZoneId: workZone.id
+        }
+      },
+      update: {},
+      create: {
+        contractorProfileId: publicContractorProfile.id,
         workZoneId: workZone.id
       }
     });

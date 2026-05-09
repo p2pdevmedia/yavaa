@@ -3,6 +3,90 @@ import type { OpenAPIV3 } from 'openapi-types';
 import { APP_NAME, APP_VERSION } from '@/lib/app-metadata';
 
 export function getOpenApiDocument(): OpenAPIV3.Document {
+  const publicProviderCategorySchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['slug', 'name', 'group', 'isPrimary'],
+    properties: {
+      slug: { type: 'string' },
+      name: { type: 'string' },
+      group: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      isPrimary: { type: 'boolean' }
+    }
+  } as const;
+
+  const publicProviderWorkZoneSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['slug', 'name', 'description'],
+    properties: {
+      slug: { type: 'string' },
+      name: { type: 'string' },
+      description: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+    }
+  } as const;
+
+  const publicProviderCardSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+      'contractorProfileId',
+      'displayName',
+      'bio',
+      'profilePhotoUrl',
+      'marketSlug',
+      'marketCity',
+      'marketProvince',
+      'categories'
+    ],
+    properties: {
+      contractorProfileId: { type: 'string' },
+      displayName: { type: 'string' },
+      bio: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      profilePhotoUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      marketSlug: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      marketCity: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      marketProvince: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      categories: {
+        type: 'array',
+        items: publicProviderCategorySchema
+      }
+    }
+  } as const;
+
+  const publicProviderProfileSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: [
+      'contractorProfileId',
+      'displayName',
+      'bio',
+      'profilePhotoUrl',
+      'marketSlug',
+      'marketCity',
+      'marketProvince',
+      'categories',
+      'workZones'
+    ],
+    properties: {
+      contractorProfileId: { type: 'string' },
+      displayName: { type: 'string' },
+      bio: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      profilePhotoUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      marketSlug: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      marketCity: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      marketProvince: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      categories: {
+        type: 'array',
+        items: publicProviderCategorySchema
+      },
+      workZones: {
+        type: 'array',
+        items: publicProviderWorkZoneSchema
+      }
+    }
+  } as const;
+
   return {
     openapi: '3.1.0',
     info: {
@@ -353,6 +437,84 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           }
         }
       },
+      '/api/providers': {
+        get: {
+          operationId: 'listPublicProviders',
+          summary: 'Public provider search',
+          tags: ['providers'],
+          parameters: [
+            {
+              name: 'category',
+              in: 'query',
+              required: false,
+              schema: { type: 'string' }
+            },
+            {
+              name: 'market',
+              in: 'query',
+              required: false,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Public provider cards.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['items'],
+                    properties: {
+                      items: {
+                        type: 'array',
+                        items: publicProviderCardSchema
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      '/api/providers/{contractorProfileId}': {
+        get: {
+          operationId: 'getPublicProviderProfile',
+          summary: 'Public provider profile',
+          tags: ['providers'],
+          parameters: [
+            {
+              name: 'contractorProfileId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Limited public profile.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['provider'],
+                    properties: {
+                      provider: {
+                        anyOf: [publicProviderProfileSchema, { type: 'null' }]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '404': {
+              description: 'Provider not found or not visible.'
+            }
+          }
+        }
+      },
       '/api/admin/categories': {
         get: {
           operationId: 'adminListCategories',
@@ -410,5 +572,5 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
         }
       }
     }
-  } as OpenAPIV3.Document;
+  } as unknown as OpenAPIV3.Document;
 }

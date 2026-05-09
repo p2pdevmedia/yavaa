@@ -15,6 +15,8 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/me/contractor-profile']).toBeDefined();
     expect(document.paths['/api/catalog/categories']).toBeDefined();
     expect(document.paths['/api/catalog/markets']).toBeDefined();
+    expect(document.paths['/api/providers']).toBeDefined();
+    expect(document.paths['/api/providers/{contractorProfileId}']).toBeDefined();
     expect(document.paths['/api/admin/categories']).toBeDefined();
     expect(document.paths['/api/admin/contractors/{contractorProfileId}']).toBeDefined();
     expect(document.components?.securitySchemes?.bearerAuth).toBeDefined();
