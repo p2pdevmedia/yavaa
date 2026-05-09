@@ -1,5 +1,3 @@
-import { CategoryStatus } from '@prisma/client';
-
 import { hasDatabaseEnv } from '@/lib/env';
 import { getPrismaClient } from '@/lib/prisma';
 
@@ -71,7 +69,7 @@ export async function listPublicCatalogCategories(): Promise<PublicCatalogCatego
   const prisma = getPrismaClient();
   const categories = await prisma.category.findMany({
     where: {
-      status: CategoryStatus.ACTIVE
+      status: 'ACTIVE'
     },
     select: {
       id: true,

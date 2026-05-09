@@ -1,4 +1,3 @@
-import { CategoryStatus } from '@prisma/client';
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -104,13 +103,13 @@ export async function POST(request: NextRequest) {
     update: {
       name: data.name,
       group: data.group ?? null,
-      status: (data.status ?? CategoryStatus.PENDING_REVIEW) as CategoryStatus
+      status: data.status ?? 'PENDING_REVIEW'
     },
     create: {
       slug: data.slug,
       name: data.name,
       group: data.group ?? null,
-      status: (data.status ?? CategoryStatus.PENDING_REVIEW) as CategoryStatus,
+      status: data.status ?? 'PENDING_REVIEW',
       isInitial: false
     },
     select: {
