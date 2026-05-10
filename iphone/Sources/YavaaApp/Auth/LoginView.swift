@@ -19,15 +19,18 @@ public struct LoginView: View {
                 TextField("Email", text: $email)
                     .textContentType(.emailAddress)
                     .autocorrectionDisabled()
+                    .accessibilityIdentifier("login.email")
 
                 SecureField("Password", text: $password)
                     .textContentType(.password)
+                    .accessibilityIdentifier("login.password")
             }
 
             if let errorMessage {
                 Section {
                     Text(errorMessage)
                         .foregroundStyle(YavaaColor.warning)
+                        .accessibilityIdentifier("login.error")
                 }
             }
 
@@ -44,6 +47,7 @@ public struct LoginView: View {
                     }
                 }
                 .disabled(isSubmitDisabled)
+                .accessibilityIdentifier("login.submit")
             }
         }
         .navigationTitle("Ingresar")

@@ -194,6 +194,7 @@ public struct YavaaRootView: View {
                     .font(.headline)
                 Text("Autenticada")
                     .foregroundStyle(.secondary)
+                    .accessibilityIdentifier("session.status.authenticated")
             }
 
             if let account = container.sessionState.account,

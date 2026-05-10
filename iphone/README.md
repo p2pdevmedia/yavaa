@@ -134,6 +134,22 @@ El scheme de desarrollo inyecta las variables runtime que necesita el login:
 - `YAVAA_SUPABASE_URL`
 - `YAVAA_SUPABASE_PUBLISHABLE_KEY`
 
+E2E de login en iPhone Simulator:
+
+```sh
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer \
+  xcodebuild test \
+  -project iphone.xcodeproj \
+  -scheme YavaaIPhone \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -only-testing:YavaaIPhoneUITests/YavaaLoginUITests/testConfiguredUserCanSignIn \
+  CODE_SIGNING_ALLOWED=NO \
+  YAVAA_E2E_EMAIL='usuario@example.com' \
+  YAVAA_E2E_PASSWORD='password'
+```
+
+Si `YAVAA_E2E_EMAIL` o `YAVAA_E2E_PASSWORD` no estan configurados, el test se salta. Si Supabase rechaza el login, el test falla mostrando el mensaje visible de la app.
+
 Nota: en esta maquina `swift build` compila correctamente. `swift test` queda bloqueado por el toolchain local porque no expone `XCTest`; debe correrse desde un entorno Xcode completo o ajustarse cuando se cree el proyecto `.xcodeproj`.
 
 ## Objetivo

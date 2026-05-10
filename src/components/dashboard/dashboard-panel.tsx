@@ -2,7 +2,6 @@
 
 import { useState, type FormEvent } from 'react';
 
-import { SignOutButton } from '@/components/auth/sign-out-button';
 import { AdminPanel } from '@/components/dashboard/admin-panel';
 import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
+import type { DashboardView } from '@/lib/dashboard-routes';
 import type { DashboardNotification } from '@/lib/dashboard-notifications';
 import type { DashboardAdminData } from '@/lib/dashboard-admin';
 import type { DashboardBooking } from '@/lib/dashboard-workspace';
@@ -105,9 +105,9 @@ type UserEnvelope = {
 };
 
 type DashboardPanelProps = {
+  view: DashboardView;
   initialUser: DashboardUser;
   email: string | null;
-  configured: boolean;
   categories: DashboardCategory[];
   bookings: DashboardBooking[];
   notifications: DashboardNotification[];
@@ -190,9 +190,9 @@ function formatUtcDateTime(value: string): string {
 }
 
 export function DashboardPanel({
+  view,
   initialUser,
   email,
-  configured,
   categories,
   bookings,
   notifications,
@@ -443,13 +443,29 @@ export function DashboardPanel({
               Urgencias: {user.contractorProfile?.acceptsEmergencies ? 'activa' : 'inactiva'}
             </p>
           </div>
-          {configured ? <SignOutButton /> : null}
         </div>
       </div>
 
-      {adminData ? <AdminPanel initialData={adminData} /> : null}
+      {view === 'admin' ? (
+        adminData ? (
+          <AdminPanel initialData={adminData} />
+        ) : (
+          <Card className="border-border/70 bg-card/90 shadow-soft">
+            <CardHeader>
+              <CardTitle className="font-display text-2xl">Administración</CardTitle>
+              <CardDescription>Esta vista está reservada para usuarios con permisos administrativos.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Si necesitás operar el marketplace, pedile a un administrador que revise tus roles.
+              </p>
+            </CardContent>
+          </Card>
+        )
+      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1fr]">
+      {view === 'perfil' ? (
+      <div className="grid gap-6">
         <Card className="border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
             <CardTitle className="font-display text-2xl">Perfil personal</CardTitle>
@@ -543,7 +559,10 @@ export function DashboardPanel({
             </form>
           </CardContent>
         </Card>
+      </div>
+      ) : null}
 
+      {view === 'direcciones' ? (
         <Card className="border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
             <CardTitle className="font-display text-2xl">Direcciones</CardTitle>
@@ -705,8 +724,9 @@ export function DashboardPanel({
             </form>
           </CardContent>
         </Card>
-      </div>
+      ) : null}
 
+      {view === 'urgencias' ? (
       <Card className="border-border/70 bg-card/90 shadow-soft">
         <CardHeader>
           <CardTitle className="font-display text-2xl">Urgencias</CardTitle>
@@ -811,7 +831,9 @@ export function DashboardPanel({
           ) : null}
         </CardContent>
       </Card>
+      ) : null}
 
+      {view === 'perfil' ? (
       <Card className="border-border/70 bg-card/90 shadow-soft">
         <CardHeader>
           <CardTitle className="font-display text-2xl">Contractor y acceso</CardTitle>
@@ -834,7 +856,9 @@ export function DashboardPanel({
           </div>
         </CardContent>
       </Card>
+      ) : null}
 
+      {view === 'notificaciones' ? (
       <Card className="border-border/70 bg-card/90 shadow-soft">
         <CardHeader>
           <CardTitle className="font-display text-2xl">Notificaciones</CardTitle>
@@ -864,8 +888,9 @@ export function DashboardPanel({
           )}
         </CardContent>
       </Card>
+      ) : null}
 
-      <BookingWorkspace bookings={bookings} />
+      {view === 'bookings' ? <BookingWorkspace bookings={bookings} /> : null}
     </div>
   );
 }

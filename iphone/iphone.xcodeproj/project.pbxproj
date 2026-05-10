@@ -9,12 +9,26 @@
 /* Begin PBXBuildFile section */
 		6A0E76042B00000100ABC001 /* YavaaIPhoneRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0E76032B00000100ABC001 /* YavaaIPhoneRunner.swift */; };
 		6A0E76062B00000100ABC001 /* YavaaApp in Frameworks */ = {isa = PBXBuildFile; productRef = 6A0E76052B00000100ABC001 /* YavaaApp */; };
+		6A0E76202B00000100ABC001 /* YavaaLoginUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0E761F2B00000100ABC001 /* YavaaLoginUITests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		6A0E76212B00000100ABC001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6A0E760F2B00000100ABC001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6A0E760B2B00000100ABC001;
+			remoteInfo = YavaaIPhone;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		6A0E76022B00000100ABC001 /* Yavaa.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Yavaa.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A0E76032B00000100ABC001 /* YavaaIPhoneRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YavaaIPhoneRunner.swift; sourceTree = "<group>"; };
 		6A0E76162B00000100ABC001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6A0E761E2B00000100ABC001 /* YavaaIPhoneUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = YavaaIPhoneUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6A0E761F2B00000100ABC001 /* YavaaLoginUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YavaaLoginUITests.swift; sourceTree = "<group>"; };
+		6A0E762B2B00000100ABC001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -26,6 +40,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6A0E76232B00000100ABC001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -33,6 +54,7 @@
 			isa = PBXGroup;
 			children = (
 				6A0E76092B00000100ABC001 /* YavaaIPhoneRunner */,
+				6A0E76242B00000100ABC001 /* YavaaIPhoneUITests */,
 				6A0E760A2B00000100ABC001 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -46,10 +68,20 @@
 			path = YavaaIPhoneRunner;
 			sourceTree = "<group>";
 		};
+		6A0E76242B00000100ABC001 /* YavaaIPhoneUITests */ = {
+			isa = PBXGroup;
+			children = (
+				6A0E762B2B00000100ABC001 /* Info.plist */,
+				6A0E761F2B00000100ABC001 /* YavaaLoginUITests.swift */,
+			);
+			path = YavaaIPhoneUITests;
+			sourceTree = "<group>";
+		};
 		6A0E760A2B00000100ABC001 /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				6A0E76022B00000100ABC001 /* Yavaa.app */,
+				6A0E761E2B00000100ABC001 /* YavaaIPhoneUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -77,6 +109,24 @@
 			productReference = 6A0E76022B00000100ABC001 /* Yavaa.app */;
 			productType = "com.apple.product-type.application";
 		};
+		6A0E76252B00000100ABC001 /* YavaaIPhoneUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6A0E76262B00000100ABC001 /* Build configuration list for PBXNativeTarget "YavaaIPhoneUITests" */;
+			buildPhases = (
+				6A0E76272B00000100ABC001 /* Sources */,
+				6A0E76232B00000100ABC001 /* Frameworks */,
+				6A0E76282B00000100ABC001 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6A0E76222B00000100ABC001 /* PBXTargetDependency */,
+			);
+			name = YavaaIPhoneUITests;
+			productName = YavaaIPhoneUITests;
+			productReference = 6A0E761E2B00000100ABC001 /* YavaaIPhoneUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -89,6 +139,10 @@
 				TargetAttributes = {
 					6A0E760B2B00000100ABC001 = {
 						CreatedOnToolsVersion = 26.4.1;
+					};
+					6A0E76252B00000100ABC001 = {
+						CreatedOnToolsVersion = 26.4.1;
+						TestTargetID = 6A0E760B2B00000100ABC001;
 					};
 				};
 			};
@@ -111,12 +165,20 @@
 			projectRoot = "";
 			targets = (
 				6A0E760B2B00000100ABC001 /* YavaaIPhone */,
+				6A0E76252B00000100ABC001 /* YavaaIPhoneUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		6A0E760E2B00000100ABC001 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6A0E76282B00000100ABC001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -134,7 +196,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		6A0E76272B00000100ABC001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6A0E76202B00000100ABC001 /* YavaaLoginUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6A0E76222B00000100ABC001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 6A0E760B2B00000100ABC001 /* YavaaIPhone */;
+			targetProxy = 6A0E76212B00000100ABC001 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		6A0E76122B00000100ABC001 /* Debug */ = {
@@ -326,6 +404,50 @@
 			};
 			name = Release;
 		};
+		6A0E76292B00000100ABC001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = YavaaIPhoneUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = lat.yavaa.iphone.ui-tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = YavaaIPhone;
+			};
+			name = Debug;
+		};
+		6A0E762A2B00000100ABC001 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = YavaaIPhoneUITests/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = lat.yavaa.iphone.ui-tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = YavaaIPhone;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -343,6 +465,15 @@
 			buildConfigurations = (
 				6A0E76122B00000100ABC001 /* Debug */,
 				6A0E76132B00000100ABC001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		6A0E76262B00000100ABC001 /* Build configuration list for PBXNativeTarget "YavaaIPhoneUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6A0E76292B00000100ABC001 /* Debug */,
+				6A0E762A2B00000100ABC001 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

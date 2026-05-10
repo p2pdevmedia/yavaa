@@ -5,10 +5,20 @@
          <BuildActionEntry buildForTesting='YES' buildForRunning='YES' buildForProfiling='YES' buildForArchiving='YES' buildForAnalyzing='YES'>
             <BuildableReference BuildableIdentifier='primary' BlueprintIdentifier='6A0E760B2B00000100ABC001' BuildableName='Yavaa.app' BlueprintName='YavaaIPhone' ReferencedContainer='container:iphone.xcodeproj'/>
          </BuildActionEntry>
+         <BuildActionEntry buildForTesting='YES' buildForRunning='NO' buildForProfiling='NO' buildForArchiving='NO' buildForAnalyzing='NO'>
+            <BuildableReference BuildableIdentifier='primary' BlueprintIdentifier='6A0E76252B00000100ABC001' BuildableName='YavaaIPhoneUITests.xctest' BlueprintName='YavaaIPhoneUITests' ReferencedContainer='container:iphone.xcodeproj'/>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction buildConfiguration='Debug' selectedDebuggerIdentifier='Xcode.DebuggerFoundation.Debugger.LLDB' selectedLauncherIdentifier='Xcode.DebuggerFoundation.Launcher.LLDB' shouldUseLaunchSchemeArgsEnv='YES'>
-      <Testables/>
+      <Testables>
+         <TestableReference skipped='NO'>
+            <BuildableReference BuildableIdentifier='primary' BlueprintIdentifier='6A0E76252B00000100ABC001' BuildableName='YavaaIPhoneUITests.xctest' BlueprintName='YavaaIPhoneUITests' ReferencedContainer='container:iphone.xcodeproj'/>
+         </TestableReference>
+      </Testables>
+      <MacroExpansion>
+         <BuildableReference BuildableIdentifier='primary' BlueprintIdentifier='6A0E760B2B00000100ABC001' BuildableName='Yavaa.app' BlueprintName='YavaaIPhone' ReferencedContainer='container:iphone.xcodeproj'/>
+      </MacroExpansion>
    </TestAction>
    <LaunchAction buildConfiguration='Debug' selectedDebuggerIdentifier='Xcode.DebuggerFoundation.Debugger.LLDB' selectedLauncherIdentifier='Xcode.DebuggerFoundation.Launcher.LLDB' launchStyle='0' useCustomWorkingDirectory='NO' ignoresPersistentStateOnLaunch='NO' debugDocumentVersioning='YES' debugServiceExtension='internal' allowLocationSimulation='YES'>
       <BuildableProductRunnable runnableDebuggingMode='0'>
