@@ -1,0 +1,70 @@
+import type { Route } from 'next';
+import type { LucideIcon } from 'lucide-react';
+import { BriefcaseBusiness, Home, House, Siren, UserRound, UsersRound } from 'lucide-react';
+
+export type AppShellMode = 'guest' | 'jefe' | 'trabajador';
+
+export type UrgenciesIntent = 'draft-before-auth' | 'publish-emergency' | 'browse-emergencies';
+
+export type AppShellNavigationItem = {
+  href: Route;
+  label: string;
+  icon: LucideIcon;
+};
+
+const guestNavigationItems: AppShellNavigationItem[] = [
+  { href: '/' as Route, label: 'Inicio', icon: Home },
+  { href: '/urgencias' as Route, label: 'Urgencias', icon: Siren },
+  { href: '/sign-in' as Route, label: 'Perfil', icon: UserRound }
+];
+
+const jefeNavigationItems: AppShellNavigationItem[] = [
+  { href: '/dashboard/jefe' as Route, label: 'Inicio', icon: Home },
+  { href: '/dashboard/jefe/urgencias' as Route, label: 'Urgencias', icon: Siren },
+  { href: '/dashboard/jefe/mis-casas' as Route, label: 'Mis Casas', icon: House },
+  { href: '/dashboard/jefe/trabajadores' as Route, label: 'Trabajadores', icon: UsersRound },
+  { href: '/dashboard/jefe/perfil' as Route, label: 'Perfil', icon: UserRound }
+];
+
+const trabajadorNavigationItems: AppShellNavigationItem[] = [
+  { href: '/dashboard/trabajador' as Route, label: 'Inicio', icon: Home },
+  { href: '/dashboard/trabajador/urgencias' as Route, label: 'Urgencias', icon: Siren },
+  { href: '/dashboard/trabajador/mis-clientes' as Route, label: 'Mis Clientes', icon: BriefcaseBusiness },
+  { href: '/dashboard/trabajador/perfil' as Route, label: 'Perfil', icon: UserRound }
+];
+
+export function getShellNavigationItems(mode: AppShellMode): AppShellNavigationItem[] {
+  if (mode === 'jefe') {
+    return jefeNavigationItems;
+  }
+
+  if (mode === 'trabajador') {
+    return trabajadorNavigationItems;
+  }
+
+  return guestNavigationItems;
+}
+
+export function getDefaultShellPath(mode: AppShellMode): Route {
+  if (mode === 'jefe') {
+    return '/dashboard/jefe' as Route;
+  }
+
+  if (mode === 'trabajador') {
+    return '/dashboard/trabajador' as Route;
+  }
+
+  return '/' as Route;
+}
+
+export function getUrgenciesIntent(mode: AppShellMode): UrgenciesIntent {
+  if (mode === 'jefe') {
+    return 'publish-emergency';
+  }
+
+  if (mode === 'trabajador') {
+    return 'browse-emergencies';
+  }
+
+  return 'draft-before-auth';
+}

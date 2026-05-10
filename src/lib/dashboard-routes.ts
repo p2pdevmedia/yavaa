@@ -8,7 +8,7 @@ export type DashboardNavigationItem = {
   view: DashboardView;
 };
 
-export const dashboardDefaultPath = '/dashboard/perfil' as Route;
+export const dashboardDefaultPath = '/dashboard/seleccionar-modo' as Route;
 export const dashboardProfilePath = '/dashboard/perfil' as Route;
 export const dashboardNotificationPath = '/dashboard/notificaciones' as Route;
 

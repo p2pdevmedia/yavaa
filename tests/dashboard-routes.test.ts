@@ -17,7 +17,7 @@ describe('dashboard routes', () => {
   });
 
   test('keeps profile and notifications as header actions', () => {
-    expect(dashboardDefaultPath).toBe('/dashboard/perfil');
+    expect(dashboardDefaultPath).toBe('/dashboard/seleccionar-modo');
     expect(dashboardProfilePath).toBe('/dashboard/perfil');
     expect(dashboardNotificationPath).toBe('/dashboard/notificaciones');
   });
