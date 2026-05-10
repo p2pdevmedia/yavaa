@@ -817,6 +817,55 @@
       }
     },
     "/api/me/profile": {
+      "get": {
+        "operationId": "getMeProfilePhoto",
+        "summary": "Read the authenticated user private profile photo",
+        "tags": [
+          "me"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private profile photo stream.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "304": {
+            "description": "Profile photo was not modified."
+          },
+          "401": {
+            "description": "Missing or invalid session token."
+          },
+          "403": {
+            "description": "The authenticated user is suspended or blocked."
+          },
+          "404": {
+            "description": "Profile photo not found."
+          }
+        }
+      },
       "patch": {
         "operationId": "updateMeProfile",
         "summary": "Update personal profile",
@@ -828,6 +877,111 @@
             "bearerAuth": []
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "firstName": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "lastName": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "phone": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "bio": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "avatarFile": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Private profile photo upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB."
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "displayName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "firstName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "lastName": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "phone": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 5,
+                        "maxLength": 40
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "bio": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Updated profile state."
@@ -7057,6 +7211,220 @@
       }
     },
     "/api/admin/users/{userId}": {
+      "get": {
+        "operationId": "adminGetUser",
+        "summary": "Inspect a user for admin operations",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User detail for admin inspection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "user"
+                  ],
+                  "properties": {
+                    "user": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "email",
+                            "displayName",
+                            "status",
+                            "createdAt",
+                            "updatedAt",
+                            "profile",
+                            "roles"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "displayName": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "ACTIVE",
+                                "SUSPENDED",
+                                "BLOCKED"
+                              ]
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "profile": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "firstName",
+                                    "lastName",
+                                    "phone"
+                                  ],
+                                  "properties": {
+                                    "firstName": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "lastName": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "phone": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    }
+                                  }
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "roles": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "slug",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "slug": {
+                                    "type": "string",
+                                    "enum": [
+                                      "client",
+                                      "contractor",
+                                      "admin",
+                                      "support"
+                                    ]
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": [
+                            "contractorProfile",
+                            "bookingsAsClient",
+                            "bookingsAsContractor",
+                            "auditLogs"
+                          ],
+                          "properties": {
+                            "contractorProfile": {
+                              "anyOf": [
+                                {
+                                  "type": "object"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "bookingsAsClient": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "bookingsAsContractor": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "auditLogs": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid session token."
+          },
+          "403": {
+            "description": "Only active admins can manage users."
+          },
+          "404": {
+            "description": "User not found."
+          }
+        }
+      },
       "patch": {
         "operationId": "adminUpdateUserStatus",
         "summary": "Update user operational status",
@@ -7946,6 +8314,253 @@
           },
           "422": {
             "description": "Initial categories cannot be paused."
+          }
+        }
+      }
+    },
+    "/api/admin/categories/{categoryId}": {
+      "patch": {
+        "operationId": "adminUpdateCategory",
+        "summary": "Update a category by id",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "slug",
+                  "name"
+                ],
+                "properties": {
+                  "slug": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 120,
+                    "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 120
+                  },
+                  "group": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVE",
+                      "INACTIVE",
+                      "PENDING_REVIEW"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Category updated.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "category"
+                  ],
+                  "properties": {
+                    "category": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "slug",
+                        "name",
+                        "group",
+                        "status",
+                        "isInitial"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "group": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "ACTIVE",
+                            "INACTIVE",
+                            "PENDING_REVIEW"
+                          ]
+                        },
+                        "isInitial": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid category payload."
+          },
+          "401": {
+            "description": "Missing or invalid session token."
+          },
+          "403": {
+            "description": "Only active admins can manage categories."
+          },
+          "404": {
+            "description": "Category not found."
+          },
+          "422": {
+            "description": "Initial categories cannot be paused."
+          }
+        }
+      },
+      "delete": {
+        "operationId": "adminDeleteCategory",
+        "summary": "Delete an unused category by id",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "category"
+                  ],
+                  "properties": {
+                    "category": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "id",
+                        "slug",
+                        "name",
+                        "group",
+                        "status",
+                        "isInitial"
+                      ],
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "slug": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "group": {
+                          "anyOf": [
+                            {
+                              "type": "string"
+                            },
+                            {
+                              "type": "null"
+                            }
+                          ]
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "ACTIVE",
+                            "INACTIVE",
+                            "PENDING_REVIEW"
+                          ]
+                        },
+                        "isInitial": {
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid session token."
+          },
+          "403": {
+            "description": "Only active admins can manage categories."
+          },
+          "404": {
+            "description": "Category not found."
+          },
+          "409": {
+            "description": "Category has durable marketplace references."
+          },
+          "422": {
+            "description": "Initial categories cannot be deleted."
           }
         }
       }

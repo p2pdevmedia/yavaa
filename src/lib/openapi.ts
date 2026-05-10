@@ -265,6 +265,35 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const profileUpdateJsonSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      displayName: { anyOf: [{ type: 'string', minLength: 1, maxLength: 120 }, { type: 'null' }] },
+      firstName: { anyOf: [{ type: 'string', minLength: 1, maxLength: 120 }, { type: 'null' }] },
+      lastName: { anyOf: [{ type: 'string', minLength: 1, maxLength: 120 }, { type: 'null' }] },
+      phone: { anyOf: [{ type: 'string', minLength: 5, maxLength: 40 }, { type: 'null' }] },
+      bio: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] }
+    }
+  } as const;
+
+  const profileUpdateMultipartSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      displayName: { type: 'string', maxLength: 120 },
+      firstName: { type: 'string', maxLength: 120 },
+      lastName: { type: 'string', maxLength: 120 },
+      phone: { type: 'string', maxLength: 40 },
+      bio: { type: 'string', maxLength: 1000 },
+      avatarFile: {
+        type: 'string',
+        format: 'binary',
+        description: 'Private profile photo upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB.'
+      }
+    }
+  } as const;
+
   const bookingMessageSchema = {
     type: 'object',
     additionalProperties: false,
@@ -961,11 +990,42 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
         }
       },
       '/api/me/profile': {
+        get: {
+          operationId: 'getMeProfilePhoto',
+          summary: 'Read the authenticated user private profile photo',
+          tags: ['me'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': {
+              description: 'Private profile photo stream.',
+              content: {
+                'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+                'image/png': { schema: { type: 'string', format: 'binary' } },
+                'image/webp': { schema: { type: 'string', format: 'binary' } }
+              }
+            },
+            '304': { description: 'Profile photo was not modified.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated user is suspended or blocked.' },
+            '404': { description: 'Profile photo not found.' }
+          }
+        },
         patch: {
           operationId: 'updateMeProfile',
           summary: 'Update personal profile',
           tags: ['me'],
           security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'multipart/form-data': {
+                schema: profileUpdateMultipartSchema
+              },
+              'application/json': {
+                schema: profileUpdateJsonSchema
+              }
+            }
+          },
           responses: {
             '200': { description: 'Updated profile state.' },
             '401': { description: 'Missing or invalid session token.' },

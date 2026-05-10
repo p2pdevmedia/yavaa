@@ -101,4 +101,11 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('Disponibilidad para urgencias');
     expect(dashboardPanelSource).not.toContain("(user.roles.includes('contractor') || user.contractorProfile) ? (");
   });
+
+  test('keeps admin pages inside a bottom navigation shell', () => {
+    const adminLayoutSource = readFileSync(join(process.cwd(), 'src/app/dashboard/admin/layout.tsx'), 'utf8');
+
+    expect(adminLayoutSource).toContain('JefeShell');
+    expect(adminLayoutSource).toContain('<JefeShell isAdmin>');
+  });
 });

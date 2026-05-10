@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { Ban, Eye, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 
@@ -141,7 +142,7 @@ export function AdminUsersPanel({ users: initialUsers }: AdminUsersPanelProps) {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Button asChild type="button" size="sm" variant="outline">
-                  <Link href={`/dashboard/admin/usuarios/${user.id}`}>
+                  <Link href={`/dashboard/admin/usuarios/${user.id}` as Route}>
                     <Eye size={16} aria-hidden="true" />
                     Ver
                   </Link>
