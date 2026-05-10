@@ -12,8 +12,8 @@ describe('mode shell routes', () => {
     const source = readProjectFile('src/app/dashboard/seleccionar-modo/page.tsx');
 
     expect(source).toContain('Que modo queres usar');
-    expect(source).toContain('/dashboard/jefe');
-    expect(source).toContain('/dashboard/trabajador');
+    expect(source).toContain("getModeSelectionPath('jefe'");
+    expect(source).toContain("getModeSelectionPath('trabajador'");
   });
 
   test('jefe and trabajador route groups use separate shells', () => {

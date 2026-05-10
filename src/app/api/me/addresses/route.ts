@@ -17,9 +17,24 @@ const addressSchema = z.object({
   province: z.string().trim().min(1).max(120),
   postalCode: z.string().trim().max(30).nullable().optional(),
   notes: z.string().trim().max(500).nullable().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
   type: z.enum(['HOME', 'WORK', 'OTHER']).default('HOME'),
   isDefault: z.boolean().optional().default(false),
   marketId: z.string().uuid().nullable().optional()
+}).superRefine((data, context) => {
+  const hasLatitudeField = data.latitude !== undefined;
+  const hasLongitudeField = data.longitude !== undefined;
+  const hasLatitudeValue = data.latitude !== undefined && data.latitude !== null;
+  const hasLongitudeValue = data.longitude !== undefined && data.longitude !== null;
+
+  if (hasLatitudeField !== hasLongitudeField || hasLatitudeValue !== hasLongitudeValue) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Latitude and longitude must be provided together.',
+      path: hasLatitudeField ? ['longitude'] : ['latitude']
+    });
+  }
 });
 
 export async function GET(request: NextRequest) {
@@ -104,6 +119,8 @@ export async function POST(request: NextRequest) {
         province: data.province,
         postalCode: data.postalCode ?? null,
         notes: data.notes ?? null,
+        latitude: data.latitude ?? null,
+        longitude: data.longitude ?? null,
         type: data.type,
         isDefault: data.isDefault
       },
@@ -120,6 +137,7 @@ export async function POST(request: NextRequest) {
     entityId: createdAddress.id,
     metadata: {
       isDefault: data.isDefault,
+      hasGeolocation: data.latitude !== null && data.latitude !== undefined && data.longitude !== null && data.longitude !== undefined,
       type: data.type
     }
   });

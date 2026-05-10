@@ -261,6 +261,8 @@ model Address {
   province   String
   postalCode String?     @map("postal_code")
   notes      String?
+  latitude   Float?
+  longitude  Float?
   type       AddressType @default(HOME) @map("address_type")
   isDefault  Boolean     @default(false) @map("is_default")
   createdAt  DateTime    @default(now()) @map("created_at")

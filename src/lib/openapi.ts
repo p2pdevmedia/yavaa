@@ -294,6 +294,54 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const addressGeolocationSchema = {
+    anyOf: [
+      {
+        type: 'number',
+        minimum: -90,
+        maximum: 90
+      },
+      { type: 'null' }
+    ]
+  } as const;
+
+  const addressLongitudeSchema = {
+    anyOf: [
+      {
+        type: 'number',
+        minimum: -180,
+        maximum: 180
+      },
+      { type: 'null' }
+    ]
+  } as const;
+
+  const addressCreateJsonSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['label', 'line1', 'city', 'province'],
+    properties: {
+      label: { type: 'string', minLength: 1, maxLength: 120 },
+      line1: { type: 'string', minLength: 1, maxLength: 180 },
+      line2: { anyOf: [{ type: 'string', maxLength: 180 }, { type: 'null' }] },
+      city: { type: 'string', minLength: 1, maxLength: 120 },
+      province: { type: 'string', minLength: 1, maxLength: 120 },
+      postalCode: { anyOf: [{ type: 'string', maxLength: 30 }, { type: 'null' }] },
+      notes: { anyOf: [{ type: 'string', maxLength: 500 }, { type: 'null' }] },
+      latitude: addressGeolocationSchema,
+      longitude: addressLongitudeSchema,
+      type: { type: 'string', enum: ['HOME', 'WORK', 'OTHER'], default: 'HOME' },
+      isDefault: { type: 'boolean', default: false },
+      marketId: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] }
+    }
+  } as const;
+
+  const addressPatchJsonSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: addressCreateJsonSchema.properties
+  } as const;
+
   const contractorProfileUpdateJsonSchema = {
     type: 'object',
     additionalProperties: false,
@@ -472,6 +520,27 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       lastName: { anyOf: [{ type: 'string', minLength: 1, maxLength: 120 }, { type: 'null' }] },
       phone: { anyOf: [{ type: 'string', minLength: 5, maxLength: 40 }, { type: 'null' }] },
       bio: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] }
+    }
+  } as const;
+
+  const adminUserDeleteInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['reason'],
+    properties: {
+      reason: { type: 'string', minLength: 8, maxLength: 1000 }
+    }
+  } as const;
+
+  const adminUserDeletionSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'email', 'supabaseAuthId', 'deletedFromSupabaseAuth'],
+    properties: {
+      id: { type: 'string' },
+      email: { type: 'string' },
+      supabaseAuthId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      deletedFromSupabaseAuth: { type: 'boolean' }
     }
   } as const;
 
@@ -1010,7 +1079,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
                                 items: {
                                   type: 'object',
                                   additionalProperties: false,
-                                  required: ['id', 'label', 'line1', 'line2', 'city', 'province', 'postalCode', 'notes', 'type', 'isDefault', 'market'],
+                                  required: ['id', 'label', 'line1', 'line2', 'city', 'province', 'postalCode', 'notes', 'latitude', 'longitude', 'type', 'isDefault', 'market'],
                                   properties: {
                                     id: { type: 'string' },
                                     label: { type: 'string' },
@@ -1020,6 +1089,8 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
                                     province: { type: 'string' },
                                     postalCode: { anyOf: [{ type: 'string' }, { type: 'null' }] },
                                     notes: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+                                    latitude: addressGeolocationSchema,
+                                    longitude: addressLongitudeSchema,
                                     type: { type: 'string' },
                                     isDefault: { type: 'boolean' },
                                     market: {
@@ -1145,6 +1216,14 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           summary: 'Create personal address',
           tags: ['me'],
           security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: addressCreateJsonSchema
+              }
+            }
+          },
           responses: {
             '201': { description: 'Created address and refreshed user state.' },
             '400': { description: 'Invalid address payload.' },
@@ -1167,6 +1246,14 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
               schema: { type: 'string' }
             }
           ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: addressPatchJsonSchema
+              }
+            }
+          },
           responses: {
             '200': { description: 'Updated address and refreshed user state.' },
             '400': { description: 'Invalid address payload.' },
@@ -2068,6 +2155,51 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             '403': { description: 'Only active admins can manage users.' },
             '404': { description: 'User not found.' },
             '422': { description: 'The requested status change is not allowed.' }
+          }
+        },
+        delete: {
+          operationId: 'adminDeleteUser',
+          summary: 'Permanently delete a user, associated local data, and Supabase Auth user',
+          tags: ['admin'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'userId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: adminUserDeleteInputSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Deleted user summary.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['user'],
+                    properties: {
+                      user: adminUserDeletionSchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid deletion payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can manage users.' },
+            '404': { description: 'User not found.' },
+            '422': { description: 'Admins cannot delete their own account.' },
+            '502': { description: 'Supabase Auth user could not be deleted.' }
           }
         }
       },

@@ -17,9 +17,22 @@ const addressPatchSchema = z.object({
   province: z.string().trim().min(1).max(120).optional(),
   postalCode: z.string().trim().max(30).nullable().optional(),
   notes: z.string().trim().max(500).nullable().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
   type: z.enum(['HOME', 'WORK', 'OTHER']).optional(),
   isDefault: z.boolean().optional(),
   marketId: z.string().uuid().nullable().optional()
+}).superRefine((data, context) => {
+  const hasLatitude = data.latitude !== undefined && data.latitude !== null;
+  const hasLongitude = data.longitude !== undefined && data.longitude !== null;
+
+  if (hasLatitude !== hasLongitude) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Latitude and longitude must be provided together.',
+      path: hasLatitude ? ['longitude'] : ['latitude']
+    });
+  }
 });
 
 function prismaErrorCode(error: unknown): string | null {

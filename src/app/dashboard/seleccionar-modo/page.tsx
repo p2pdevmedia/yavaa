@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import type { Route } from 'next';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +8,7 @@ import {
   DashboardDatabaseUnavailableState,
   DashboardUnlinkedUserState
 } from '@/components/dashboard/dashboard-states';
+import { getModeSelectionPath } from '@/lib/dashboard-routes';
 
 export default async function SelectModePage() {
   const context = await getDashboardPageContext('/dashboard/seleccionar-modo');
@@ -20,6 +20,9 @@ export default async function SelectModePage() {
   if (context.kind === 'unlinked-user') {
     return <DashboardUnlinkedUserState email={context.authState.user?.email ?? null} />;
   }
+
+  const jefeModePath = getModeSelectionPath('jefe', context.appUser.user);
+  const trabajadorModePath = getModeSelectionPath('trabajador', context.appUser.user);
 
   return (
     <main className="min-h-screen bg-background text-foreground">
@@ -41,7 +44,7 @@ export default async function SelectModePage() {
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full">
-                  <Link href={'/dashboard/jefe' as Route}>Entrar como Jefe</Link>
+                  <Link href={jefeModePath}>Entrar como Jefe</Link>
                 </Button>
               </CardContent>
             </Card>
@@ -53,7 +56,7 @@ export default async function SelectModePage() {
               </CardHeader>
               <CardContent>
                 <Button asChild className="w-full" variant="outline">
-                  <Link href={'/dashboard/trabajador' as Route}>Entrar como Trabajador</Link>
+                  <Link href={trabajadorModePath}>Entrar como Trabajador</Link>
                 </Button>
               </CardContent>
             </Card>

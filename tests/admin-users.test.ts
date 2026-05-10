@@ -2,6 +2,7 @@ import { UserStatus, type PrismaClient } from '@prisma/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  deleteUserForAdmin,
   getUserForAdmin,
   listUserAuditLogsForAdmin,
   listUsersForAdmin,
@@ -178,6 +179,181 @@ describe('admin user operations', () => {
         reason: 'Testing self lockout.'
       })
     ).rejects.toThrow('self-status-change-forbidden');
+  });
+
+  it('deletes a user from Supabase Auth and removes local associated records in order', async () => {
+    const existingUser = {
+      id: 'user_001',
+      email: 'worker@yavaa.test',
+      supabaseAuthId: 'auth-user-001',
+      displayName: 'Worker User',
+      status: UserStatus.ACTIVE,
+      contractorProfile: {
+        id: 'contractor_001'
+      }
+    };
+    const findUnique = vi.fn().mockResolvedValue(existingUser);
+    const deleteUser = vi.fn().mockResolvedValue({ data: { user: {} }, error: null });
+    const deletedModels: string[] = [];
+    const tx = {
+      booking: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: 'booking_client_001' },
+          { id: 'booking_contractor_001' }
+        ]),
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('booking');
+          return { count: 2 };
+        })
+      },
+      emergencyRequest: {
+        findMany: vi.fn().mockResolvedValue([{ id: 'emergency_001' }]),
+        updateMany: vi.fn(),
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('emergencyRequest');
+          return { count: 1 };
+        })
+      },
+      emergencyRequestCandidate: {
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('emergencyRequestCandidate');
+          return { count: 1 };
+        })
+      },
+      bookingFile: {
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('bookingFile');
+          return { count: 2 };
+        })
+      },
+      bookingMessage: {
+        findMany: vi.fn().mockResolvedValue([{ id: 'message_001' }]),
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('bookingMessage');
+          return { count: 3 };
+        })
+      },
+      notification: {
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('notification');
+          return { count: 2 };
+        })
+      },
+      contractorCategory: {
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('contractorCategory');
+          return { count: 1 };
+        })
+      },
+      contractorWorkZone: {
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('contractorWorkZone');
+          return { count: 1 };
+        })
+      },
+      commissionDebt: {
+        updateMany: vi.fn(async () => {
+          deletedModels.push('commissionDebtCreator');
+          return { count: 1 };
+        })
+      },
+      userDebtLimit: {
+        deleteMany: vi.fn(async () => {
+          deletedModels.push('userDebtLimit');
+          return { count: 2 };
+        })
+      },
+      auditLog: {
+        updateMany: vi.fn(async () => {
+          deletedModels.push('auditLogActor');
+          return { count: 1 };
+        })
+      },
+      user: {
+        delete: vi.fn(async () => {
+          deletedModels.push('user');
+          return { id: 'user_001' };
+        })
+      }
+    };
+    const transaction = vi.fn(async (callback: (transactionClient: typeof tx) => Promise<unknown>) => callback(tx));
+
+    const result = await deleteUserForAdmin(
+      buildPrismaMock({
+        user: {
+          findUnique
+        },
+        $transaction: transaction
+      } as unknown as PrismaClient),
+      activeAdmin,
+      'user_001',
+      {
+        reason: 'Solicitud administrativa documentada.',
+        supabaseAuthAdmin: {
+          deleteUser
+        }
+      }
+    );
+
+    expect(deleteUser).toHaveBeenCalledWith('auth-user-001', false);
+    expect(tx.booking.findMany).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { clientUserId: 'user_001' },
+          { contractorProfileId: 'contractor_001' }
+        ]
+      },
+      select: { id: true }
+    });
+    expect(tx.bookingFile.deleteMany).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { uploadedByUserId: 'user_001' },
+          { bookingId: { in: ['booking_client_001', 'booking_contractor_001'] } },
+          { messageId: { in: ['message_001'] } }
+        ]
+      }
+    });
+    expect(tx.emergencyRequest.updateMany).toHaveBeenCalledWith({
+      where: { assignedContractorProfileId: 'contractor_001' },
+      data: { assignedContractorProfileId: null }
+    });
+    expect(tx.user.delete).toHaveBeenCalledWith({
+      where: { id: 'user_001' },
+      select: { id: true }
+    });
+    expect(deletedModels.at(-1)).toBe('user');
+    expect(recordAuditLog).toHaveBeenCalledWith({
+      actorUserId: activeAdmin.userId,
+      action: 'user.deleted',
+      entityType: 'user',
+      entityId: 'user_001',
+      metadata: {
+        email: 'worker@yavaa.test',
+        displayName: 'Worker User',
+        previousStatus: UserStatus.ACTIVE,
+        supabaseAuthId: 'auth-user-001',
+        supabaseAuthDeleted: true,
+        reason: 'Solicitud administrativa documentada.'
+      }
+    });
+    expect(result).toEqual({
+      id: 'user_001',
+      email: 'worker@yavaa.test',
+      supabaseAuthId: 'auth-user-001',
+      deletedFromSupabaseAuth: true
+    });
+  });
+
+  it('prevents admins from deleting their own account', async () => {
+    await expect(
+      deleteUserForAdmin(buildPrismaMock(), activeAdmin, activeAdmin.userId, {
+        reason: 'Testing self deletion.',
+        supabaseAuthAdmin: {
+          deleteUser: vi.fn()
+        }
+      })
+    ).rejects.toThrow('self-delete-forbidden');
   });
 
   it('returns a user inspection detail without loading audit activity', async () => {

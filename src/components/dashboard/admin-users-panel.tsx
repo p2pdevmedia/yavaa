@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { Route } from 'next';
-import { Ban, Eye, RotateCcw } from 'lucide-react';
+import { Ban, Eye, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -96,6 +96,49 @@ export function AdminUsersPanel({ users: initialUsers }: AdminUsersPanelProps) {
     }
   }
 
+  async function deleteUser(userId: string, label: string) {
+    setStatusMessage(null);
+    setErrorMessage(null);
+
+    const reason = window.prompt('Motivo operativo del borrado definitivo')?.trim() ?? '';
+
+    if (reason.length < 8) {
+      setErrorMessage('El motivo debe tener al menos 8 caracteres.');
+      return;
+    }
+
+    if (
+      !window.confirm(
+        `Confirmar borrado definitivo de ${label}. Se elimina el usuario local, sus datos asociados y su usuario de Supabase Auth.`
+      )
+    ) {
+      return;
+    }
+
+    setBusyKey(`delete:${userId}`);
+
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason })
+      });
+      const payload = await readPayload(response);
+
+      if (!response.ok) {
+        setErrorMessage(readError(payload, 'No pudimos borrar el usuario.'));
+        return;
+      }
+
+      setUsers((current) => current.filter((user) => user.id !== userId));
+      setStatusMessage('Usuario borrado definitivamente.');
+    } catch {
+      setErrorMessage('No pudimos borrar el usuario.');
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
   return (
     <section className="space-y-6" aria-labelledby="admin-users-title">
       <div className="rounded-lg border border-border/70 bg-card/90 p-6 shadow-soft">
@@ -176,6 +219,16 @@ export function AdminUsersPanel({ users: initialUsers }: AdminUsersPanelProps) {
                 >
                   <Ban size={16} aria-hidden="true" />
                   Bloquear
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="destructive"
+                  disabled={busyKey === `delete:${user.id}`}
+                  onClick={() => deleteUser(user.id, user.displayName ?? user.email)}
+                >
+                  <Trash2 size={16} aria-hidden="true" />
+                  Borrar
                 </Button>
               </div>
             </div>

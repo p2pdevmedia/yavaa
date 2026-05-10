@@ -61,6 +61,8 @@ describe('app user resolver', () => {
           notes: null,
           type: 'HOME',
           isDefault: true,
+          latitude: -40.1579,
+          longitude: -71.3534,
           market: {
             id: 'market_001',
             slug: 'san-martin-de-los-andes',
@@ -97,6 +99,10 @@ describe('app user resolver', () => {
     expect(result.permissionContext?.roles).toEqual(['admin']);
     expect(result.user?.profile?.firstName).toBe('Foundation');
     expect(result.user?.addresses).toHaveLength(1);
+    expect(result.user?.addresses[0]).toMatchObject({
+      latitude: -40.1579,
+      longitude: -71.3534
+    });
   });
 
   it('falls back to matching by email when the auth id is not linked yet', async () => {

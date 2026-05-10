@@ -31,6 +31,8 @@ export type AppUserAddress = {
   province: string;
   postalCode: string | null;
   notes: string | null;
+  latitude: number | null;
+  longitude: number | null;
   type: string;
   isDefault: boolean;
   market: {
@@ -127,6 +129,8 @@ type AppUserRecordQuery = {
     province: string;
     postalCode: string | null;
     notes: string | null;
+    latitude: number | null;
+    longitude: number | null;
     type: string;
     isDefault: boolean;
     market: {
@@ -217,6 +221,8 @@ function mapAppUserRecord(record: AppUserRecordQuery | null): AppUserSummary | n
     province: address.province,
     postalCode: address.postalCode,
     notes: address.notes,
+    latitude: address.latitude,
+    longitude: address.longitude,
     type: address.type,
     isDefault: address.isDefault,
     market: address.market
@@ -332,6 +338,8 @@ export async function resolveAppUser(identity: AppUserIdentity): Promise<Resolve
           province: true,
           postalCode: true,
           notes: true,
+          latitude: true,
+          longitude: true,
           type: true,
           isDefault: true,
           market: {
@@ -463,6 +471,8 @@ export async function resolveAppUser(identity: AppUserIdentity): Promise<Resolve
           province: true,
           postalCode: true,
           notes: true,
+          latitude: true,
+          longitude: true,
           type: true,
           isDefault: true,
           market: {

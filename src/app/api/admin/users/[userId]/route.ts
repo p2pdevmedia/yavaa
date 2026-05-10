@@ -2,6 +2,8 @@ import { type NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 
 import {
+  deleteAdminUserSchema,
+  deleteUserForAdmin,
   getUserForAdmin,
   updateAdminUserProfileSchema,
   updateAdminUserStatusSchema,
@@ -11,6 +13,7 @@ import {
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
 import { resolveRequestAuth } from '@/lib/request-auth';
+import { getSupabaseServiceClient } from '@/lib/supabase';
 
 type RouteParams = {
   params: Promise<{
@@ -69,6 +72,26 @@ function mapAdminUserError(error: unknown): { status: number; body: { error: str
         }
       };
     }
+
+    if (error.message === 'self-delete-forbidden') {
+      return {
+        status: 422,
+        body: {
+          error: 'self-delete-forbidden',
+          message: 'Admins cannot delete their own account.'
+        }
+      };
+    }
+
+    if (error.message === 'supabase-auth-delete-failed') {
+      return {
+        status: 502,
+        body: {
+          error: 'supabase-auth-delete-failed',
+          message: 'Supabase Auth user could not be deleted.'
+        }
+      };
+    }
   }
 
   return {
@@ -78,6 +101,14 @@ function mapAdminUserError(error: unknown): { status: number; body: { error: str
       message: 'We could not update the user status.'
     }
   };
+}
+
+async function readOptionalJsonBody(request: NextRequest): Promise<unknown> {
+  try {
+    return await request.json();
+  } catch {
+    return {};
+  }
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
@@ -106,6 +137,57 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return jsonResponse(
       {
         user
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    const mapped = mapAdminUserError(error);
+
+    return jsonResponse(mapped.body, { status: mapped.status });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const auth = await resolveRequestAuth(request);
+
+  if (!auth.authenticated) {
+    return jsonResponse(auth, { status: 401 });
+  }
+
+  if (!auth.permissionContext) {
+    return jsonResponse(
+      {
+        error: 'forbidden',
+        message: 'Only active admins can manage users.'
+      },
+      { status: 403 }
+    );
+  }
+
+  const parsedBody = deleteAdminUserSchema.safeParse(await readOptionalJsonBody(request));
+
+  if (!parsedBody.success) {
+    return jsonResponse(
+      {
+        error: 'invalid-request',
+        issues: parsedBody.error.flatten()
+      },
+      { status: 400 }
+    );
+  }
+
+  const { userId } = await params;
+  const prisma = getPrismaClient();
+
+  try {
+    const deletion = await deleteUserForAdmin(prisma, auth.permissionContext, userId, {
+      ...parsedBody.data,
+      supabaseAuthAdmin: getSupabaseServiceClient().auth.admin
+    });
+
+    return jsonResponse(
+      {
+        user: deletion
       },
       { status: 200 }
     );

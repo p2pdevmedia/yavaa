@@ -1,4 +1,4 @@
-import { UserStatus, type PrismaClient } from '@prisma/client';
+import { Prisma, UserStatus, type PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 
 import { recordAuditLog } from '@/lib/audit';
@@ -18,6 +18,21 @@ export const updateAdminUserProfileSchema = z.object({
   phone: z.string().trim().min(5).max(40).nullable().optional(),
   bio: z.string().trim().max(1000).nullable().optional()
 });
+
+export const deleteAdminUserSchema = z.object({
+  reason: z.string().trim().min(8).max(1000)
+});
+
+export type SupabaseAuthAdminDeletionClient = {
+  deleteUser(
+    id: string,
+    shouldSoftDelete?: boolean
+  ): Promise<{
+    error: {
+      message: string;
+    } | null;
+  }>;
+};
 
 export type AdminUserSummary = {
   id: string;
@@ -111,6 +126,13 @@ export type AdminUserBookingActivity = {
     slug: string;
     name: string;
   };
+};
+
+export type AdminUserDeletionResult = {
+  id: string;
+  email: string;
+  supabaseAuthId: string | null;
+  deletedFromSupabaseAuth: boolean;
 };
 
 type AdminUserRow = {
@@ -232,6 +254,17 @@ type AdminUserAuditLogRow = {
   entityId: string | null;
   metadata: unknown;
   createdAt: Date;
+};
+
+type AdminUserDeletionRow = {
+  id: string;
+  email: string;
+  supabaseAuthId: string | null;
+  displayName: string | null;
+  status: UserStatus;
+  contractorProfile: {
+    id: string;
+  } | null;
 };
 
 const adminUserSelect = {
@@ -762,4 +795,254 @@ export async function updateUserProfileForAdmin(
   }
 
   return getUserForAdmin(prisma, actor, userId);
+}
+
+function buildScopedOr<T>(conditions: T[]): { OR: T[] } {
+  return {
+    OR: conditions
+  };
+}
+
+async function deleteLocalUserGraph(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  contractorProfileId: string | null
+): Promise<void> {
+  const bookingConditions = contractorProfileId
+    ? [
+        { clientUserId: userId },
+        { contractorProfileId }
+      ]
+    : [{ clientUserId: userId }];
+  const bookingRows = await tx.booking.findMany({
+    where: buildScopedOr(bookingConditions),
+    select: {
+      id: true
+    }
+  });
+  const bookingIds = bookingRows.map((booking) => booking.id);
+
+  const emergencyRows = await tx.emergencyRequest.findMany({
+    where: {
+      clientUserId: userId
+    },
+    select: {
+      id: true
+    }
+  });
+  const emergencyRequestIds = emergencyRows.map((emergencyRequest) => emergencyRequest.id);
+
+  const bookingMessageConditions =
+    bookingIds.length > 0
+      ? [
+          { senderUserId: userId },
+          { bookingId: { in: bookingIds } }
+        ]
+      : [{ senderUserId: userId }];
+  const bookingMessageRows = await tx.bookingMessage.findMany({
+    where: buildScopedOr(bookingMessageConditions),
+    select: {
+      id: true
+    }
+  });
+  const bookingMessageIds = bookingMessageRows.map((message) => message.id);
+
+  if (contractorProfileId) {
+    await tx.emergencyRequest.updateMany({
+      where: {
+        assignedContractorProfileId: contractorProfileId
+      },
+      data: {
+        assignedContractorProfileId: null
+      }
+    });
+  }
+
+  const emergencyCandidateConditions: Prisma.EmergencyRequestCandidateWhereInput[] = [];
+  if (contractorProfileId) {
+    emergencyCandidateConditions.push({ contractorProfileId });
+  }
+  if (emergencyRequestIds.length > 0) {
+    emergencyCandidateConditions.push({ emergencyRequestId: { in: emergencyRequestIds } });
+  }
+  if (emergencyCandidateConditions.length > 0) {
+    await tx.emergencyRequestCandidate.deleteMany({
+      where: buildScopedOr(emergencyCandidateConditions)
+    });
+  }
+
+  const bookingFileConditions: Prisma.BookingFileWhereInput[] = [{ uploadedByUserId: userId }];
+  if (bookingIds.length > 0) {
+    bookingFileConditions.push({ bookingId: { in: bookingIds } });
+  }
+  if (bookingMessageIds.length > 0) {
+    bookingFileConditions.push({ messageId: { in: bookingMessageIds } });
+  }
+  await tx.bookingFile.deleteMany({
+    where: buildScopedOr(bookingFileConditions)
+  });
+
+  if (bookingMessageIds.length > 0) {
+    await tx.bookingMessage.deleteMany({
+      where: {
+        id: {
+          in: bookingMessageIds
+        }
+      }
+    });
+  }
+
+  const notificationConditions: Prisma.NotificationWhereInput[] = [
+    { recipientUserId: userId },
+    { actorUserId: userId }
+  ];
+  if (bookingIds.length > 0) {
+    notificationConditions.push({ bookingId: { in: bookingIds } });
+  }
+  await tx.notification.deleteMany({
+    where: buildScopedOr(notificationConditions)
+  });
+
+  if (bookingIds.length > 0) {
+    await tx.booking.deleteMany({
+      where: {
+        id: {
+          in: bookingIds
+        }
+      }
+    });
+  }
+
+  if (emergencyRequestIds.length > 0) {
+    await tx.emergencyRequest.deleteMany({
+      where: {
+        id: {
+          in: emergencyRequestIds
+        }
+      }
+    });
+  }
+
+  if (contractorProfileId) {
+    await tx.contractorCategory.deleteMany({
+      where: {
+        contractorProfileId
+      }
+    });
+    await tx.contractorWorkZone.deleteMany({
+      where: {
+        contractorProfileId
+      }
+    });
+  }
+
+  await tx.commissionDebt.updateMany({
+    where: {
+      createdByUserId: userId
+    },
+    data: {
+      createdByUserId: null
+    }
+  });
+
+  await tx.userDebtLimit.deleteMany({
+    where: buildScopedOr([
+      { userId },
+      { setByUserId: userId }
+    ])
+  });
+
+  await tx.auditLog.updateMany({
+    where: {
+      actorUserId: userId
+    },
+    data: {
+      actorUserId: null
+    }
+  });
+
+  await tx.user.delete({
+    where: {
+      id: userId
+    },
+    select: {
+      id: true
+    }
+  });
+}
+
+export async function deleteUserForAdmin(
+  prisma: PrismaClient,
+  actor: AdminUserActor,
+  userId: string,
+  input: z.infer<typeof deleteAdminUserSchema> & {
+    supabaseAuthAdmin: SupabaseAuthAdminDeletionClient;
+  }
+): Promise<AdminUserDeletionResult> {
+  assertCanManageUsers(actor);
+
+  const parsed = deleteAdminUserSchema.parse(input);
+
+  if (actor.userId === userId) {
+    throw new Error('self-delete-forbidden');
+  }
+
+  const currentUser = (await prisma.user.findUnique({
+    where: {
+      id: userId
+    },
+    select: {
+      id: true,
+      email: true,
+      supabaseAuthId: true,
+      displayName: true,
+      status: true,
+      contractorProfile: {
+        select: {
+          id: true
+        }
+      }
+    }
+  })) as AdminUserDeletionRow | null;
+
+  if (!currentUser) {
+    throw new Error('user-not-found');
+  }
+
+  let deletedFromSupabaseAuth = false;
+  if (currentUser.supabaseAuthId) {
+    const { error } = await input.supabaseAuthAdmin.deleteUser(currentUser.supabaseAuthId, false);
+
+    if (error) {
+      throw new Error('supabase-auth-delete-failed');
+    }
+
+    deletedFromSupabaseAuth = true;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await deleteLocalUserGraph(tx, userId, currentUser.contractorProfile?.id ?? null);
+  });
+
+  await recordAuditLog({
+    actorUserId: actor.userId,
+    action: 'user.deleted',
+    entityType: 'user',
+    entityId: userId,
+    metadata: {
+      email: currentUser.email,
+      displayName: currentUser.displayName,
+      previousStatus: currentUser.status,
+      supabaseAuthId: currentUser.supabaseAuthId,
+      supabaseAuthDeleted: deletedFromSupabaseAuth,
+      reason: parsed.reason
+    }
+  });
+
+  return {
+    id: currentUser.id,
+    email: currentUser.email,
+    supabaseAuthId: currentUser.supabaseAuthId,
+    deletedFromSupabaseAuth
+  };
 }

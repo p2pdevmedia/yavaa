@@ -17,6 +17,22 @@ describe('openapi foundation', () => {
         | undefined)?.content?.['multipart/form-data']
     ).toBeDefined();
     expect(document.paths['/api/me/addresses']).toBeDefined();
+    expect(
+      (document.paths['/api/me/addresses']?.post?.requestBody as
+        | {
+            content?: {
+              'application/json'?: {
+                schema?: {
+                  properties?: Record<string, unknown>;
+                };
+              };
+            };
+          }
+        | undefined)?.content?.['application/json']?.schema?.properties
+    ).toMatchObject({
+      latitude: expect.any(Object),
+      longitude: expect.any(Object)
+    });
     expect(document.paths['/api/me/addresses/{addressId}']).toBeDefined();
     expect(document.paths['/api/me/addresses/{addressId}']?.patch).toBeDefined();
     expect(document.paths['/api/me/addresses/{addressId}']?.delete).toBeDefined();
@@ -45,6 +61,12 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/admin/emergencies/{emergencyRequestId}/reassign']).toBeDefined();
     expect(document.paths['/api/admin/users']).toBeDefined();
     expect(document.paths['/api/admin/users/{userId}']).toBeDefined();
+    expect(document.paths['/api/admin/users/{userId}']?.delete).toBeDefined();
+    expect(
+      (document.paths['/api/admin/users/{userId}']?.delete?.requestBody as
+        | { content?: Record<string, unknown> }
+        | undefined)?.content?.['application/json']
+    ).toBeDefined();
     expect(document.paths['/api/admin/users/{userId}/audit-logs']).toBeDefined();
     expect(document.paths['/api/admin/bookings/{bookingId}/correction']).toBeDefined();
     expect(document.paths['/api/admin/categories']).toBeDefined();

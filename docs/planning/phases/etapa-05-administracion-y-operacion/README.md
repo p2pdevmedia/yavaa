@@ -151,4 +151,5 @@ Criterio de salida:
 - Etapa 05.3 implementada a nivel API, filtros por estado, validacion de slugs, proteccion de categorias iniciales, audit log, OpenAPI y tests unitarios.
 - Etapa 05.4 implementada a nivel API, correccion admin de bookings por cancelacion con motivo obligatorio, mensajes/notificaciones del flujo durable, audit log especifico, OpenAPI y tests unitarios.
 - Etapa 05.5 implementada con panel administrativo web minimo para usuarios, contractors, categorias y bookings, conectado a las APIs admin con confirmaciones para acciones sensibles.
+- Usuarios admin permite borrado definitivo con limpieza de datos asociados locales, borrado de Supabase Auth y audit log operativo.
 - Etapa 05 completa en su alcance MVP inicial.

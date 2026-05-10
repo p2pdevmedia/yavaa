@@ -45,6 +45,13 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).not.toContain("view === 'direcciones'");
   });
 
+  test('does not expose contractor access API metadata on the profile page', () => {
+    expect(dashboardPanelSource).not.toContain('Contractor y acceso');
+    expect(dashboardPanelSource).not.toContain('Esto refleja los datos que ya expone la API protegida de etapa 02.');
+    expect(dashboardPanelSource).not.toContain('Estado contractor');
+    expect(dashboardPanelSource).not.toContain('Supabase auth ID');
+  });
+
   test('hides saved address management while the active mode is trabajador', () => {
     const savedAddressesIndex = dashboardPanelSource.indexOf('Direcciones guardadas');
     const conditionStart = dashboardPanelSource.lastIndexOf("{view === 'perfil'", savedAddressesIndex);
@@ -71,6 +78,15 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('id="city"');
     expect(dashboardPanelSource).not.toContain('<Input\n                    id="city"');
     expect(dashboardPanelSource).not.toContain('<Input\n                    id="province"');
+  });
+
+  test('lets users attach geolocation to saved addresses', () => {
+    expect(dashboardPanelSource).toContain('handleAddressGeolocation');
+    expect(dashboardPanelSource).toContain('Cargar geolocalización');
+    expect(dashboardPanelSource).toContain('id="address-latitude"');
+    expect(dashboardPanelSource).toContain('id="address-longitude"');
+    expect(dashboardPanelSource).toContain('latitude: addressLatitude');
+    expect(dashboardPanelSource).toContain('longitude: addressLongitude');
   });
 
   test('uses the editable dashboard profile inside each mode profile route', () => {

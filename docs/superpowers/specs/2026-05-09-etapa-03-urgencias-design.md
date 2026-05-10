@@ -183,13 +183,19 @@ If no compatible contractors remain:
 
 - the request becomes `EXPIRED`
 
-### 4. Client cancel
+### 4. Client republish
+
+The client can republish their own expired request.
+
+Republishing creates a new emergency request with the same category, address, and description. The expired request stays immutable for auditability. A republished request has a shorter activity window of 2 hours from the republication moment.
+
+### 5. Client cancel
 
 The client can cancel an open or dispatching request.
 
 That transitions the request to `CANCELLED_BY_CLIENT` and stops any pending candidate rows from being actionable.
 
-### 5. Admin reassignment
+### 6. Admin reassignment
 
 Admin can force a reassignment when the automatic flow stalls.
 

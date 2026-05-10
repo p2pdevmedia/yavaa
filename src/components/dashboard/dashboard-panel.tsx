@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { CheckCircle2, Pencil, RefreshCcw, Trash2, X } from 'lucide-react';
+import { CheckCircle2, MapPin, Pencil, RefreshCcw, Trash2, X } from 'lucide-react';
 
 import { AdminPanel } from '@/components/dashboard/admin-panel';
 import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
@@ -43,6 +43,8 @@ type DashboardUser = {
     province: string;
     postalCode: string | null;
     notes: string | null;
+    latitude: number | null;
+    longitude: number | null;
     type: string;
     isDefault: boolean;
     market: {
@@ -133,6 +135,8 @@ type AddressDraft = {
   province: string;
   postalCode: string;
   notes: string;
+  latitude: string;
+  longitude: string;
   type: 'HOME' | 'WORK' | 'OTHER';
 };
 
@@ -214,8 +218,25 @@ function buildAddressDraft(user: DashboardUser): AddressDraft {
     province: fallbackAddress?.province ?? '',
     postalCode: fallbackAddress?.postalCode ?? '',
     notes: '',
+    latitude: '',
+    longitude: '',
     type: 'HOME'
   };
+}
+
+function formatCoordinate(value: number | null | undefined): string {
+  return value === null || value === undefined ? '' : String(value);
+}
+
+function parseCoordinateInput(value: string): number | null {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
 }
 
 function buildEmergencyDraft(user: DashboardUser, categories: DashboardCategory[]): EmergencyDraft {
@@ -343,6 +364,7 @@ export function DashboardPanel({
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingContractorProfile, setIsSavingContractorProfile] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [isLoadingAddressGeolocation, setIsLoadingAddressGeolocation] = useState(false);
   const [acceptsEmergencies, setAcceptsEmergencies] = useState(
     initialUser.contractorProfile?.acceptsEmergencies ?? false
   );
@@ -471,6 +493,38 @@ export function DashboardPanel({
     void saveContractorProfile(false);
   }
 
+  function handleAddressGeolocation() {
+    setAddressError(null);
+    setAddressStatus(null);
+
+    if (!navigator.geolocation) {
+      setAddressError('Este navegador no permite cargar geolocalización.');
+      return;
+    }
+
+    setIsLoadingAddressGeolocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setAddressDraft((current) => ({
+          ...current,
+          latitude: position.coords.latitude.toFixed(6),
+          longitude: position.coords.longitude.toFixed(6)
+        }));
+        setAddressStatus('Geolocalización cargada.');
+        setIsLoadingAddressGeolocation(false);
+      },
+      () => {
+        setAddressError('No pudimos cargar la geolocalización.');
+        setIsLoadingAddressGeolocation(false);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 60_000,
+        timeout: 10_000
+      }
+    );
+  }
+
   async function handleAddressSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setAddressError(null);
@@ -478,6 +532,30 @@ export function DashboardPanel({
     setIsSavingAddress(true);
 
     try {
+      const addressLatitude = parseCoordinateInput(addressDraft.latitude);
+      const addressLongitude = parseCoordinateInput(addressDraft.longitude);
+
+      if (
+        (addressLatitude !== null && Number.isNaN(addressLatitude)) ||
+        (addressLongitude !== null && Number.isNaN(addressLongitude))
+      ) {
+        setAddressError('La geolocalización debe usar números válidos.');
+        return;
+      }
+
+      if ((addressLatitude === null) !== (addressLongitude === null)) {
+        setAddressError('Cargá latitud y longitud juntas, o dejá ambas vacías.');
+        return;
+      }
+
+      if (
+        (addressLatitude !== null && (addressLatitude < -90 || addressLatitude > 90)) ||
+        (addressLongitude !== null && (addressLongitude < -180 || addressLongitude > 180))
+      ) {
+        setAddressError('La latitud debe estar entre -90 y 90, y la longitud entre -180 y 180.');
+        return;
+      }
+
       const response = await fetch('/api/me/addresses', {
         method: 'POST',
         headers: {
@@ -491,6 +569,8 @@ export function DashboardPanel({
           province: addressDraft.province,
           postalCode: addressDraft.postalCode || null,
           notes: addressDraft.notes || null,
+          latitude: addressLatitude,
+          longitude: addressLongitude,
           type: addressDraft.type,
           isDefault: true,
           ...(selectedAddressMarket ? { marketId: selectedAddressMarket.id } : {})
@@ -1142,6 +1222,11 @@ export function DashboardPanel({
                         Mercado: {address.market.city}, {address.market.province}
                       </p>
                     ) : null}
+                    {address.latitude !== null && address.longitude !== null ? (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Geo: {formatCoordinate(address.latitude)}, {formatCoordinate(address.longitude)}
+                      </p>
+                    ) : null}
                   </div>
                 ))
               ) : (
@@ -1276,6 +1361,57 @@ export function DashboardPanel({
                         onChange={(event) => setAddressDraft((current) => ({ ...current, line2: event.target.value }))}
                         placeholder="Opcional"
                       />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 rounded-lg border border-border/70 bg-muted/20 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <Label htmlFor="address-latitude">Geolocalización</Label>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleAddressGeolocation}
+                        disabled={isLoadingAddressGeolocation}
+                      >
+                        <MapPin className="mr-2 h-4 w-4" aria-hidden="true" />
+                        {isLoadingAddressGeolocation ? 'Cargando...' : 'Cargar geolocalización'}
+                      </Button>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Input
+                          id="address-latitude"
+                          type="number"
+                          inputMode="decimal"
+                          min="-90"
+                          max="90"
+                          step="0.000001"
+                          value={addressDraft.latitude}
+                          onChange={(event) =>
+                            setAddressDraft((current) => ({ ...current, latitude: event.target.value }))
+                          }
+                          placeholder="-24.7821"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="address-longitude" className="sr-only">
+                          Longitud
+                        </Label>
+                        <Input
+                          id="address-longitude"
+                          type="number"
+                          inputMode="decimal"
+                          min="-180"
+                          max="180"
+                          step="0.000001"
+                          value={addressDraft.longitude}
+                          onChange={(event) =>
+                            setAddressDraft((current) => ({ ...current, longitude: event.target.value }))
+                          }
+                          placeholder="-65.4232"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -1580,31 +1716,6 @@ export function DashboardPanel({
           </Card>
           ) : null}
         </>
-      ) : null}
-
-      {view === 'perfil' ? (
-      <Card className="border-border/70 bg-card/90 shadow-soft">
-        <CardHeader>
-          <CardTitle className="font-display text-2xl">Contractor y acceso</CardTitle>
-          <CardDescription>Esto refleja los datos que ya expone la API protegida de etapa 02.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
-            <p className="text-sm text-muted-foreground">Estado contractor</p>
-            <p className="mt-1 font-mono text-foreground">{user.contractorProfile?.approvalStatus ?? 'no aplica'}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
-            <p className="text-sm text-muted-foreground">Supabase auth ID</p>
-            <p className="mt-1 font-mono text-foreground">{user.supabaseAuthId ?? 'sin vincular'}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
-            <p className="text-sm text-muted-foreground">Dirección principal</p>
-            <p className="mt-1 text-foreground">
-              {primaryAddress ? `${primaryAddress.city}, ${primaryAddress.province}` : 'No definida'}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
       ) : null}
 
       {view === 'bookings' ? <BookingWorkspace bookings={bookings} /> : null}
