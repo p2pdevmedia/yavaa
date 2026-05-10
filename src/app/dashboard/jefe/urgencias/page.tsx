@@ -1,17 +1,20 @@
-import { ModePlaceholderCard, ProtectedModePage } from '@/app/dashboard/protected-mode-page';
+import {
+  DashboardViewPageFallback,
+  DashboardViewPageShell,
+  getDashboardViewPageState
+} from '@/app/dashboard/dashboard-view-page';
+import { DashboardPanelClient } from '@/components/dashboard/dashboard-panel-client';
 
-export default function JefeEmergenciesPage() {
+export default async function JefeEmergenciesPage() {
+  const state = await getDashboardViewPageState({ view: 'urgencias', nextPath: '/dashboard/jefe/urgencias' });
+
+  if (state.kind !== 'ready') {
+    return <DashboardViewPageFallback state={state} />;
+  }
+
   return (
-    <ProtectedModePage
-      nextPath="/dashboard/jefe/urgencias"
-      eyebrow="Urgencias"
-      title="Publicar urgencia"
-      description="En modo Jefe, Urgencias sirve para cargar y enviar pedidos urgentes."
-    >
-      <ModePlaceholderCard
-        title="Pedido urgente"
-        description="Este modulo va a retomar borradores publicos guardados antes del login y confirmar el envio con permisos server-side."
-      />
-    </ProtectedModePage>
+    <DashboardViewPageShell>
+      <DashboardPanelClient {...state.panelProps} initialMode="client" />
+    </DashboardViewPageShell>
   );
 }

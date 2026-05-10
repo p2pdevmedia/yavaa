@@ -153,6 +153,10 @@ public final class APIClient: @unchecked Sendable {
         try await send(APIRequest(path: "/api/catalog/categories", method: .get))
     }
 
+    public func fetchCatalogMarkets() async throws -> CatalogMarketsResponse {
+        try await send(APIRequest(path: "/api/catalog/markets", method: .get))
+    }
+
     public func searchProviders(category: String? = nil) async throws -> PublicProvidersResponse {
         try await send(APIRequest.providerSearch(category: category))
     }
@@ -349,12 +353,33 @@ public struct CatalogCategoriesResponse: Decodable, Equatable, Sendable {
     public let categories: [CatalogCategory]
 }
 
+public struct CatalogMarketsResponse: Decodable, Equatable, Sendable {
+    public let markets: [CatalogMarket]
+}
+
 public struct CatalogCategory: Decodable, Equatable, Identifiable, Sendable {
     public let id: String
     public let slug: String
     public let name: String
     public let group: String?
     public let isInitial: Bool
+}
+
+public struct CatalogMarket: Decodable, Equatable, Identifiable, Sendable {
+    public let id: String
+    public let slug: String
+    public let country: String
+    public let city: String
+    public let province: String
+    public let isPrimary: Bool
+    public let workZones: [CatalogWorkZone]
+}
+
+public struct CatalogWorkZone: Decodable, Equatable, Identifiable, Sendable {
+    public let id: String
+    public let slug: String
+    public let name: String
+    public let description: String?
 }
 
 public struct PublicProvidersResponse: Decodable, Equatable, Sendable {

@@ -10,7 +10,8 @@ import { getDashboardAdminData } from '@/lib/dashboard-admin';
 import { serializeNotificationsForDashboard } from '@/lib/dashboard-notifications';
 import { getDashboardPageContext } from '@/lib/dashboard-page-data';
 import type { DashboardView } from '@/lib/dashboard-routes';
-import { serializeBookingsForDashboard } from '@/lib/dashboard-workspace';
+import { serializeBookingsForDashboard, serializeEmergenciesForDashboard } from '@/lib/dashboard-workspace';
+import { listEmergencyRequestsForActor } from '@/lib/emergencies';
 import { listNotificationsForUser } from '@/lib/notifications';
 import { getPrismaClient } from '@/lib/prisma';
 import { listPublicCatalogCategories } from '@/lib/public-catalog';
@@ -54,6 +55,7 @@ export async function getDashboardViewPageState({
 
   let categories: Awaited<ReturnType<typeof listPublicCatalogCategories>> = [];
   let bookings: Awaited<ReturnType<typeof listBookingsForActor>> = [];
+  let emergencies: Awaited<ReturnType<typeof listEmergencyRequestsForActor>> = [];
   let notifications: Awaited<ReturnType<typeof listNotificationsForUser>> = [];
   let adminData: Awaited<ReturnType<typeof getDashboardAdminData>> = null;
 
@@ -62,6 +64,7 @@ export async function getDashboardViewPageState({
 
     if (view === 'urgencias') {
       categories = await listPublicCatalogCategories();
+      emergencies = await listEmergencyRequestsForActor(prisma, context.appUser.permissionContext);
     }
 
     if (view === 'bookings') {
@@ -89,6 +92,7 @@ export async function getDashboardViewPageState({
       email: context.authState.user?.email ?? null,
       categories,
       bookings: serializeBookingsForDashboard(bookings),
+      emergencies: serializeEmergenciesForDashboard(emergencies),
       notifications: serializeNotificationsForDashboard(notifications),
       adminData
     }

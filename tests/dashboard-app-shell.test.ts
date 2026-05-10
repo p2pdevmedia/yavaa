@@ -69,4 +69,11 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('Cerrar sesión');
     expect(dashboardPanelSource).toContain('variant="destructive"');
   });
+
+  test('shows client emergency creation and existing requests in the urgencies view', () => {
+    expect(dashboardPanelSource).toContain('Crear nueva urgencia');
+    expect(dashboardPanelSource).toContain('Mis urgencias creadas');
+    expect(dashboardPanelSource).toContain('emergencies.map');
+    expect(dashboardPanelSource).toContain('initialEmergencies');
+  });
 });

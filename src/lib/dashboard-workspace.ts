@@ -1,5 +1,6 @@
 import { type BookingFileRecord, type BookingMessageRecord } from '@/lib/booking-communication';
 import { type BookingRecord } from '@/lib/bookings';
+import { type EmergencyRequestRecord } from '@/lib/emergencies';
 
 type WorkspaceUserLike = {
   id: string;
@@ -71,6 +72,22 @@ export type DashboardBookingFile = {
   createdAt: string;
   updatedAt: string;
   uploadedByUser: DashboardWorkspaceUser | null;
+};
+
+export type DashboardEmergency = {
+  id: string;
+  status: EmergencyRequestRecord['status'];
+  dispatchRound: number;
+  expiresAt: string;
+  description: string;
+  acceptedAt: string | null;
+  cancelledAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  category: EmergencyRequestRecord['category'];
+  address: EmergencyRequestRecord['address'];
+  assignedContractorName: string | null;
+  candidateCount: number;
 };
 
 function serializeWorkspaceUser(user: WorkspaceUserLike): DashboardWorkspaceUser {
@@ -146,4 +163,30 @@ export function serializeBookingFileForDashboard(file: BookingFileRecord): Dashb
 
 export function serializeBookingsForDashboard(bookings: BookingRecord[]): DashboardBooking[] {
   return bookings.map(serializeBookingForDashboard);
+}
+
+export function serializeEmergencyForDashboard(emergency: EmergencyRequestRecord): DashboardEmergency {
+  const assignedContractor = emergency.assignedContractorProfile
+    ? serializeWorkspaceUser(emergency.assignedContractorProfile.user)
+    : null;
+
+  return {
+    id: emergency.id,
+    status: emergency.status,
+    dispatchRound: emergency.dispatchRound,
+    expiresAt: emergency.expiresAt.toISOString(),
+    description: emergency.description,
+    acceptedAt: emergency.acceptedAt?.toISOString() ?? null,
+    cancelledAt: emergency.cancelledAt?.toISOString() ?? null,
+    createdAt: emergency.createdAt.toISOString(),
+    updatedAt: emergency.updatedAt.toISOString(),
+    category: emergency.category,
+    address: emergency.address,
+    assignedContractorName: assignedContractor ? assignedContractor.displayName ?? assignedContractor.email : null,
+    candidateCount: emergency.candidates.length
+  };
+}
+
+export function serializeEmergenciesForDashboard(emergencies: EmergencyRequestRecord[]): DashboardEmergency[] {
+  return emergencies.map(serializeEmergencyForDashboard);
 }

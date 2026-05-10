@@ -100,6 +100,7 @@ public struct MobileModeShellView: View {
                 currentMode: effectiveMode,
                 availableModes: container.sessionState.account?.availableModes ?? [],
                 loadProfile: container.loadProfile,
+                loadAddressMarkets: container.loadAddressMarkets,
                 updateProfile: container.updateProfile,
                 createAddress: container.createAddress,
                 updateAddress: container.updateAddress,
@@ -783,6 +784,7 @@ private struct ProfileWorkspaceView: View {
     let currentMode: AppMode?
     let availableModes: [AppMode]
     let loadProfile: () async throws -> WebsiteAppUser?
+    let loadAddressMarkets: () async throws -> [CatalogMarket]
     let updateProfile: (ProfileUpdateInput) async throws -> Void
     let createAddress: (AddressInput) async throws -> Void
     let updateAddress: (String, AddressPatchInput) async throws -> Void
@@ -797,9 +799,10 @@ private struct ProfileWorkspaceView: View {
     @State private var phone = ""
     @State private var bio = ""
     @State private var editingAddress: WebsiteAddress?
+    @State private var addressMarkets: [CatalogMarket] = []
+    @State private var selectedAddressMarketId = ""
     @State private var addressLabel = ""
     @State private var addressLine1 = ""
-    @State private var addressCity = ""
     @State private var addressProvince = ""
     @State private var isDefaultAddress = false
     @State private var isLoading = false
@@ -851,8 +854,30 @@ private struct ProfileWorkspaceView: View {
 
                 TextField("Etiqueta", text: $addressLabel)
                 TextField("Direccion", text: $addressLine1)
-                TextField("Ciudad", text: $addressCity)
-                TextField("Provincia", text: $addressProvince)
+
+                Picker("Provincia", selection: $addressProvince) {
+                    ForEach(addressProvinces, id: \.self) { province in
+                        Text(province).tag(province)
+                    }
+                }
+                .disabled(addressProvinces.isEmpty)
+                .onChange(of: addressProvince) { _, _ in
+                    ensureAddressMarketSelection()
+                }
+
+                Picker("Ciudad", selection: $selectedAddressMarketId) {
+                    ForEach(marketsForSelectedProvince) { market in
+                        Text(market.city).tag(market.id)
+                    }
+                }
+                .disabled(marketsForSelectedProvince.isEmpty)
+
+                if addressMarkets.isEmpty {
+                    Text("No pudimos cargar zonas disponibles.")
+                        .font(.caption)
+                        .foregroundStyle(YavaaColor.warning)
+                }
+
                 Toggle("Predeterminada", isOn: $isDefaultAddress)
 
                 Button(editingAddress == nil ? "Crear direccion" : "Guardar direccion") {
@@ -909,16 +934,32 @@ private struct ProfileWorkspaceView: View {
     private var canSaveAddress: Bool {
         !addressLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !addressLine1.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !addressCity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && !addressProvince.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && selectedAddressMarket != nil
+    }
+
+    private var addressProvinces: [String] {
+        Array(Set(addressMarkets.map(\.province))).sorted()
+    }
+
+    private var marketsForSelectedProvince: [CatalogMarket] {
+        addressMarkets
+            .filter { $0.province == addressProvince }
+            .sorted { $0.city.localizedCaseInsensitiveCompare($1.city) == .orderedAscending }
+    }
+
+    private var selectedAddressMarket: CatalogMarket? {
+        addressMarkets.first { $0.id == selectedAddressMarketId }
     }
 
     private func reload() async {
         isLoading = true
         statusMessage = nil
         do {
+            let loadedMarkets = try await loadAddressMarkets()
             let user = try await loadProfile()
+            addressMarkets = loadedMarkets
             apply(user)
+            ensureAddressMarketSelection()
         } catch {
             statusMessage = "No se pudo cargar /api/me."
         }
@@ -946,6 +987,11 @@ private struct ProfileWorkspaceView: View {
     }
 
     private func saveAddress() async {
+        guard let selectedAddressMarket else {
+            statusMessage = "Elegí una provincia y ciudad disponibles."
+            return
+        }
+
         isLoading = true
         do {
             if let editingAddress {
@@ -954,9 +1000,10 @@ private struct ProfileWorkspaceView: View {
                     AddressPatchInput(
                         label: addressLabel,
                         line1: addressLine1,
-                        city: addressCity,
-                        province: addressProvince,
-                        isDefault: isDefaultAddress
+                        city: selectedAddressMarket.city,
+                        province: selectedAddressMarket.province,
+                        isDefault: isDefaultAddress,
+                        marketId: selectedAddressMarket.id
                     )
                 )
             } else {
@@ -964,9 +1011,10 @@ private struct ProfileWorkspaceView: View {
                     AddressInput(
                         label: addressLabel,
                         line1: addressLine1,
-                        city: addressCity,
-                        province: addressProvince,
-                        isDefault: isDefaultAddress
+                        city: selectedAddressMarket.city,
+                        province: selectedAddressMarket.province,
+                        isDefault: isDefaultAddress,
+                        marketId: selectedAddressMarket.id
                     )
                 )
             }
@@ -1004,18 +1052,36 @@ private struct ProfileWorkspaceView: View {
         editingAddress = address
         addressLabel = address.label
         addressLine1 = address.line1
-        addressCity = address.city
-        addressProvince = address.province
+        addressProvince = address.market?.province ?? address.province
+        selectedAddressMarketId = address.market?.id
+            ?? addressMarkets.first {
+                $0.city.localizedCaseInsensitiveCompare(address.city) == .orderedSame
+                    && $0.province.localizedCaseInsensitiveCompare(address.province) == .orderedSame
+            }?.id
+            ?? ""
         isDefaultAddress = address.isDefault
+        ensureAddressMarketSelection()
     }
 
     private func clearAddressForm() {
         editingAddress = nil
         addressLabel = ""
         addressLine1 = ""
-        addressCity = ""
         addressProvince = ""
+        selectedAddressMarketId = ""
         isDefaultAddress = false
+    }
+
+    private func ensureAddressMarketSelection() {
+        if addressProvince.isEmpty {
+            addressProvince = addressProvinces.first ?? ""
+        }
+
+        guard !marketsForSelectedProvince.contains(where: { $0.id == selectedAddressMarketId }) else {
+            return
+        }
+
+        selectedAddressMarketId = marketsForSelectedProvince.first?.id ?? ""
     }
 }
 

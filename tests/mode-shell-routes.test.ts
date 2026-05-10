@@ -23,7 +23,8 @@ describe('mode shell routes', () => {
 
   test('jefe shell owns its mode pages', () => {
     expect(readProjectFile('src/app/dashboard/jefe/page.tsx')).toContain('Inicio Jefe');
-    expect(readProjectFile('src/app/dashboard/jefe/urgencias/page.tsx')).toContain('Publicar urgencia');
+    expect(readProjectFile('src/app/dashboard/jefe/urgencias/page.tsx')).toContain("view: 'urgencias'");
+    expect(readProjectFile('src/app/dashboard/jefe/urgencias/page.tsx')).toContain('initialMode="client"');
     expect(readProjectFile('src/app/dashboard/jefe/mis-casas/page.tsx')).toContain('Historial de arreglos');
     expect(readProjectFile('src/app/dashboard/jefe/trabajadores/page.tsx')).toContain('Buscar, favoritos e historial');
     expect(readProjectFile('src/app/dashboard/jefe/perfil/page.tsx')).toContain('initialMode="client"');

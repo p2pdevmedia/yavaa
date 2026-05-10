@@ -130,6 +130,37 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(response.categories.first?.slug, "home-services")
     }
 
+    func testDecodesCatalogMarketsResponseForAddressSelectors() throws {
+        let json = """
+        {
+          "markets": [
+            {
+              "id": "99999999-9999-4999-8999-999999999999",
+              "slug": "salta",
+              "country": "Argentina",
+              "city": "Salta",
+              "province": "Salta",
+              "isPrimary": true,
+              "workZones": [
+                {
+                  "id": "zone_001",
+                  "slug": "centro",
+                  "name": "Centro",
+                  "description": "Zona centro"
+                }
+              ]
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(CatalogMarketsResponse.self, from: json)
+
+        XCTAssertEqual(response.markets.first?.province, "Salta")
+        XCTAssertEqual(response.markets.first?.city, "Salta")
+        XCTAssertEqual(response.markets.first?.workZones.first?.name, "Centro")
+    }
+
     func testEncodesBookingAcceptActionForNextAPI() throws {
         let input = BookingActionInput(action: .accept)
         let data = try JSONEncoder().encode(input)

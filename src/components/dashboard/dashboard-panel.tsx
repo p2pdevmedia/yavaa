@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { dashboardProfilePath, type DashboardView } from '@/lib/dashboard-routes';
 import type { DashboardNotification } from '@/lib/dashboard-notifications';
 import type { DashboardAdminData } from '@/lib/dashboard-admin';
-import type { DashboardBooking } from '@/lib/dashboard-workspace';
+import type { DashboardBooking, DashboardEmergency } from '@/lib/dashboard-workspace';
 
 type DashboardUserStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
 type DashboardRoleSlug = 'client' | 'contractor' | 'admin' | 'support';
@@ -116,6 +116,7 @@ export type DashboardPanelProps = {
   email: string | null;
   categories: DashboardCategory[];
   bookings: DashboardBooking[];
+  emergencies: DashboardEmergency[];
   notifications: DashboardNotification[];
   adminData: DashboardAdminData | null;
 };
@@ -144,6 +145,22 @@ type EmergencyDraft = {
   categoryId: string;
   addressId: string;
   description: string;
+};
+
+type EmergencyEnvelope = {
+  request?: EmergencyApiRequest;
+};
+
+type EmergencyApiRequest = Omit<DashboardEmergency, 'assignedContractorName' | 'candidateCount'> & {
+  assignedContractorName?: string | null;
+  candidateCount?: number;
+  candidates?: unknown[];
+  assignedContractorProfile?: {
+    user?: {
+      displayName?: string | null;
+      email?: string | null;
+    } | null;
+  } | null;
 };
 
 type DashboardMode = 'client' | 'contractor';
@@ -197,6 +214,41 @@ function formatUtcDateTime(value: string): string {
   return `${value.slice(0, 10)} ${value.slice(11, 16)} UTC`;
 }
 
+function formatEmergencyStatus(status: DashboardEmergency['status']): string {
+  const labels: Record<DashboardEmergency['status'], string> = {
+    OPEN: 'Abierta',
+    DISPATCHING: 'Buscando trabajador',
+    ACCEPTED: 'Aceptada',
+    CANCELLED_BY_CLIENT: 'Cancelada',
+    REASSIGNMENT_NEEDED: 'Reasignar',
+    EXPIRED: 'Expirada'
+  };
+
+  return labels[status];
+}
+
+function toDashboardEmergencyFromApi(request: EmergencyApiRequest): DashboardEmergency {
+  return {
+    id: request.id,
+    status: request.status,
+    dispatchRound: request.dispatchRound,
+    expiresAt: request.expiresAt,
+    description: request.description,
+    acceptedAt: request.acceptedAt,
+    cancelledAt: request.cancelledAt,
+    createdAt: request.createdAt,
+    updatedAt: request.updatedAt,
+    category: request.category,
+    address: request.address,
+    assignedContractorName:
+      request.assignedContractorName ??
+      request.assignedContractorProfile?.user?.displayName ??
+      request.assignedContractorProfile?.user?.email ??
+      null,
+    candidateCount: request.candidateCount ?? request.candidates?.length ?? 0
+  };
+}
+
 function isAdminUser(user: DashboardUser): boolean {
   return user.roles.includes('admin');
 }
@@ -228,6 +280,7 @@ export function DashboardPanel({
   email,
   categories,
   bookings,
+  emergencies: initialEmergencies,
   notifications,
   adminData
 }: DashboardPanelProps) {
@@ -238,6 +291,7 @@ export function DashboardPanel({
   const [emergencyDraft, setEmergencyDraft] = useState<EmergencyDraft>(() =>
     buildEmergencyDraft(initialUser, categories)
   );
+  const [emergencies, setEmergencies] = useState<DashboardEmergency[]>(initialEmergencies);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
@@ -258,9 +312,9 @@ export function DashboardPanel({
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
   const [notificationPopoverOpen, setNotificationPopoverOpen] = useState(false);
 
-  async function parseEnvelope(response: Response): Promise<UserEnvelope | null> {
+  async function parseEnvelope<TEnvelope = UserEnvelope>(response: Response): Promise<TEnvelope | null> {
     try {
-      return (await response.json()) as UserEnvelope;
+      return (await response.json()) as TEnvelope;
     } catch {
       return null;
     }
@@ -390,7 +444,7 @@ export function DashboardPanel({
         })
       });
 
-      const payload = await parseEnvelope(response);
+      const payload = await parseEnvelope<EmergencyEnvelope>(response);
 
       if (!response.ok) {
         setEmergencyError(
@@ -402,6 +456,9 @@ export function DashboardPanel({
       }
 
       setEmergencyStatus('Urgencia creada y enviada a contractors elegibles.');
+      if (payload?.request) {
+        setEmergencies((current) => [toDashboardEmergencyFromApi(payload.request as EmergencyApiRequest), ...current]);
+      }
       setEmergencyDraft((current) => ({
         ...current,
         description: ''
@@ -1047,12 +1104,48 @@ export function DashboardPanel({
       ) : null}
 
       {view === 'urgencias' ? (
-      <Card className="border-border/70 bg-card/90 shadow-soft">
-        <CardHeader>
-          <CardTitle className="font-display text-2xl">Urgencias</CardTitle>
-          <CardDescription>Dispará una solicitud urgente o marcate como disponible para responderlas.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        <>
+          <Card className="border-border/70 bg-card/90 shadow-soft">
+            <CardHeader>
+              <CardTitle className="font-display text-2xl">Mis urgencias creadas</CardTitle>
+              <CardDescription>Seguimiento de los pedidos urgentes que podés ver con tu cuenta.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {emergencies.length > 0 ? (
+                emergencies.map((emergency) => (
+                  <article key={emergency.id} className="rounded-lg border border-border/70 bg-muted/20 p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="secondary">{formatEmergencyStatus(emergency.status)}</Badge>
+                      <Badge variant="outline">{emergency.category.name}</Badge>
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-foreground">{emergency.description}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {emergency.address.label} · {emergency.address.city}, {emergency.address.province}
+                    </p>
+                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                      <span>Creada: {formatUtcDateTime(emergency.createdAt)}</span>
+                      <span>Vence: {formatUtcDateTime(emergency.expiresAt)}</span>
+                      <span>Candidatos: {emergency.candidateCount}</span>
+                    </div>
+                    {emergency.assignedContractorName ? (
+                      <p className="mt-2 text-sm text-foreground">Trabajador: {emergency.assignedContractorName}</p>
+                    ) : null}
+                  </article>
+                ))
+              ) : (
+                <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+                  Todavía no creaste urgencias.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/70 bg-card/90 shadow-soft">
+            <CardHeader>
+              <CardTitle className="font-display text-2xl">Crear nueva urgencia</CardTitle>
+              <CardDescription>Dispará una solicitud urgente para tus direcciones guardadas.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
           <form className="space-y-4" onSubmit={handleEmergencySubmit}>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
@@ -1123,7 +1216,7 @@ export function DashboardPanel({
               type="submit"
               disabled={isSavingEmergency || categories.length === 0 || user.addresses.length === 0}
             >
-              {isSavingEmergency ? 'Enviando...' : 'Crear urgencia'}
+              {isSavingEmergency ? 'Enviando...' : 'Crear nueva urgencia'}
             </Button>
           </form>
 
@@ -1149,8 +1242,9 @@ export function DashboardPanel({
               </div>
             </>
           ) : null}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </>
       ) : null}
 
       {view === 'perfil' ? (
