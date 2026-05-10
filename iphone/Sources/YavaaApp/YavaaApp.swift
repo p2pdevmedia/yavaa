@@ -199,8 +199,8 @@ public final class AppContainer: ObservableObject {
         return response.appUser
     }
 
-    public func loadAddressMarkets() async throws -> [CatalogMarket] {
-        try await apiClient.fetchCatalogMarkets().markets
+    public func loadAddressCatalog() async throws -> CatalogMarketsResponse {
+        try await apiClient.fetchCatalogMarkets()
     }
 
     public func updateProfile(_ input: ProfileUpdateInput) async throws {

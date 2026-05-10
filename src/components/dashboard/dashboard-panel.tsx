@@ -1220,7 +1220,7 @@ export function DashboardPanel({
             </Button>
           </form>
 
-          {(user.roles.includes('contractor') || user.contractorProfile) ? (
+          {activeMode === 'contractor' ? (
             <>
               <Separator />
               <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">

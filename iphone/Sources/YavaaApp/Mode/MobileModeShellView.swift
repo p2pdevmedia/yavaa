@@ -100,7 +100,7 @@ public struct MobileModeShellView: View {
                 currentMode: effectiveMode,
                 availableModes: container.sessionState.account?.availableModes ?? [],
                 loadProfile: container.loadProfile,
-                loadAddressMarkets: container.loadAddressMarkets,
+                loadAddressCatalog: container.loadAddressCatalog,
                 updateProfile: container.updateProfile,
                 createAddress: container.createAddress,
                 updateAddress: container.updateAddress,
@@ -784,7 +784,7 @@ private struct ProfileWorkspaceView: View {
     let currentMode: AppMode?
     let availableModes: [AppMode]
     let loadProfile: () async throws -> WebsiteAppUser?
-    let loadAddressMarkets: () async throws -> [CatalogMarket]
+    let loadAddressCatalog: () async throws -> CatalogMarketsResponse
     let updateProfile: (ProfileUpdateInput) async throws -> Void
     let createAddress: (AddressInput) async throws -> Void
     let updateAddress: (String, AddressPatchInput) async throws -> Void
@@ -800,7 +800,8 @@ private struct ProfileWorkspaceView: View {
     @State private var bio = ""
     @State private var editingAddress: WebsiteAddress?
     @State private var addressMarkets: [CatalogMarket] = []
-    @State private var selectedAddressMarketId = ""
+    @State private var addressLocations: [CatalogLocation] = []
+    @State private var selectedAddressLocationId = ""
     @State private var addressLabel = ""
     @State private var addressLine1 = ""
     @State private var addressProvince = ""
@@ -865,12 +866,12 @@ private struct ProfileWorkspaceView: View {
                     ensureAddressMarketSelection()
                 }
 
-                Picker("Ciudad", selection: $selectedAddressMarketId) {
-                    ForEach(marketsForSelectedProvince) { market in
-                        Text(market.city).tag(market.id)
+                Picker("Ciudad", selection: $selectedAddressLocationId) {
+                    ForEach(locationsForSelectedProvince) { location in
+                        Text(location.cityName).tag(location.id)
                     }
                 }
-                .disabled(marketsForSelectedProvince.isEmpty)
+                .disabled(locationsForSelectedProvince.isEmpty)
 
                 if addressMarkets.isEmpty {
                     Text("No pudimos cargar zonas disponibles.")
@@ -934,30 +935,42 @@ private struct ProfileWorkspaceView: View {
     private var canSaveAddress: Bool {
         !addressLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             && !addressLine1.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            && selectedAddressMarket != nil
+            && selectedAddressLocation != nil
     }
 
     private var addressProvinces: [String] {
-        Array(Set(addressMarkets.map(\.province))).sorted()
+        Array(Set(addressLocations.map(\.provinceName))).sorted()
     }
 
-    private var marketsForSelectedProvince: [CatalogMarket] {
-        addressMarkets
-            .filter { $0.province == addressProvince }
-            .sorted { $0.city.localizedCaseInsensitiveCompare($1.city) == .orderedAscending }
+    private var locationsForSelectedProvince: [CatalogLocation] {
+        addressLocations
+            .filter { $0.provinceName == addressProvince }
+            .sorted { $0.cityName.localizedCaseInsensitiveCompare($1.cityName) == .orderedAscending }
+    }
+
+    private var selectedAddressLocation: CatalogLocation? {
+        addressLocations.first { $0.id == selectedAddressLocationId }
     }
 
     private var selectedAddressMarket: CatalogMarket? {
-        addressMarkets.first { $0.id == selectedAddressMarketId }
+        guard let selectedAddressLocation else {
+            return nil
+        }
+
+        return addressMarkets.first {
+            $0.city.localizedCaseInsensitiveCompare(selectedAddressLocation.cityName) == .orderedSame
+                && $0.province.localizedCaseInsensitiveCompare(selectedAddressLocation.provinceName) == .orderedSame
+        }
     }
 
     private func reload() async {
         isLoading = true
         statusMessage = nil
         do {
-            let loadedMarkets = try await loadAddressMarkets()
+            let addressCatalog = try await loadAddressCatalog()
             let user = try await loadProfile()
-            addressMarkets = loadedMarkets
+            addressMarkets = addressCatalog.markets
+            addressLocations = addressCatalog.locations
             apply(user)
             ensureAddressMarketSelection()
         } catch {
@@ -987,7 +1000,7 @@ private struct ProfileWorkspaceView: View {
     }
 
     private func saveAddress() async {
-        guard let selectedAddressMarket else {
+        guard let selectedAddressLocation else {
             statusMessage = "Elegí una provincia y ciudad disponibles."
             return
         }
@@ -1000,10 +1013,10 @@ private struct ProfileWorkspaceView: View {
                     AddressPatchInput(
                         label: addressLabel,
                         line1: addressLine1,
-                        city: selectedAddressMarket.city,
-                        province: selectedAddressMarket.province,
+                        city: selectedAddressLocation.cityName,
+                        province: selectedAddressLocation.provinceName,
                         isDefault: isDefaultAddress,
-                        marketId: selectedAddressMarket.id
+                        marketId: selectedAddressMarket?.id
                     )
                 )
             } else {
@@ -1011,10 +1024,10 @@ private struct ProfileWorkspaceView: View {
                     AddressInput(
                         label: addressLabel,
                         line1: addressLine1,
-                        city: selectedAddressMarket.city,
-                        province: selectedAddressMarket.province,
+                        city: selectedAddressLocation.cityName,
+                        province: selectedAddressLocation.provinceName,
                         isDefault: isDefaultAddress,
-                        marketId: selectedAddressMarket.id
+                        marketId: selectedAddressMarket?.id
                     )
                 )
             }
@@ -1053,11 +1066,7 @@ private struct ProfileWorkspaceView: View {
         addressLabel = address.label
         addressLine1 = address.line1
         addressProvince = address.market?.province ?? address.province
-        selectedAddressMarketId = address.market?.id
-            ?? addressMarkets.first {
-                $0.city.localizedCaseInsensitiveCompare(address.city) == .orderedSame
-                    && $0.province.localizedCaseInsensitiveCompare(address.province) == .orderedSame
-            }?.id
+        selectedAddressLocationId = locationId(city: address.city, province: addressProvince)
             ?? ""
         isDefaultAddress = address.isDefault
         ensureAddressMarketSelection()
@@ -1068,7 +1077,7 @@ private struct ProfileWorkspaceView: View {
         addressLabel = ""
         addressLine1 = ""
         addressProvince = ""
-        selectedAddressMarketId = ""
+        selectedAddressLocationId = ""
         isDefaultAddress = false
     }
 
@@ -1077,11 +1086,18 @@ private struct ProfileWorkspaceView: View {
             addressProvince = addressProvinces.first ?? ""
         }
 
-        guard !marketsForSelectedProvince.contains(where: { $0.id == selectedAddressMarketId }) else {
+        guard !locationsForSelectedProvince.contains(where: { $0.id == selectedAddressLocationId }) else {
             return
         }
 
-        selectedAddressMarketId = marketsForSelectedProvince.first?.id ?? ""
+        selectedAddressLocationId = locationsForSelectedProvince.first?.id ?? ""
+    }
+
+    private func locationId(city: String, province: String) -> String? {
+        addressLocations.first {
+            $0.cityName.localizedCaseInsensitiveCompare(city) == .orderedSame
+                && $0.provinceName.localizedCaseInsensitiveCompare(province) == .orderedSame
+        }?.id
     }
 }
 

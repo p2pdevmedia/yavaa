@@ -1,6 +1,6 @@
 import type { Route } from 'next';
 import type { LucideIcon } from 'lucide-react';
-import { BriefcaseBusiness, Home, House, Siren, UserRound, UsersRound } from 'lucide-react';
+import { BriefcaseBusiness, Home, House, ShieldCheck, Siren, UserRound, UsersRound } from 'lucide-react';
 
 export type AppShellMode = 'guest' | 'jefe' | 'trabajador';
 
@@ -10,6 +10,16 @@ export type AppShellNavigationItem = {
   href: Route;
   label: string;
   icon: LucideIcon;
+};
+
+export type AppShellNavigationOptions = {
+  isAdmin?: boolean;
+};
+
+const adminNavigationItem: AppShellNavigationItem = {
+  href: '/dashboard/admin' as Route,
+  label: 'ADMIN',
+  icon: ShieldCheck
 };
 
 const guestNavigationItems: AppShellNavigationItem[] = [
@@ -33,13 +43,33 @@ const trabajadorNavigationItems: AppShellNavigationItem[] = [
   { href: '/dashboard/trabajador/perfil' as Route, label: 'Perfil', icon: UserRound }
 ];
 
-export function getShellNavigationItems(mode: AppShellMode): AppShellNavigationItem[] {
+function withAdminNavigationItem(
+  items: AppShellNavigationItem[],
+  options: AppShellNavigationOptions
+): AppShellNavigationItem[] {
+  if (!options.isAdmin) {
+    return items;
+  }
+
+  const profileIndex = items.findIndex((item) => item.label === 'Perfil');
+
+  if (profileIndex === -1) {
+    return [...items, adminNavigationItem];
+  }
+
+  return [...items.slice(0, profileIndex), adminNavigationItem, ...items.slice(profileIndex)];
+}
+
+export function getShellNavigationItems(
+  mode: AppShellMode,
+  options: AppShellNavigationOptions = {}
+): AppShellNavigationItem[] {
   if (mode === 'jefe') {
-    return jefeNavigationItems;
+    return withAdminNavigationItem(jefeNavigationItems, options);
   }
 
   if (mode === 'trabajador') {
-    return trabajadorNavigationItems;
+    return withAdminNavigationItem(trabajadorNavigationItems, options);
   }
 
   return guestNavigationItems;

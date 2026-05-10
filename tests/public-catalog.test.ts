@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { hasDatabaseEnv } from '@/lib/env';
 import { getPrismaClient } from '@/lib/prisma';
-import { listPublicCatalogCategories, listPublicCatalogMarkets } from '@/lib/public-catalog';
+import { listPublicCatalogCategories, listPublicCatalogLocations, listPublicCatalogMarkets } from '@/lib/public-catalog';
 
 vi.mock('@/lib/env', () => ({
   hasDatabaseEnv: vi.fn()
@@ -60,5 +60,27 @@ describe('public catalog', () => {
       slug: 'san-martin-de-los-andes',
       city: 'San Martin de los Andes'
     });
+  });
+
+  it('uses Argentina municipality data for address selectors', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const locations = await listPublicCatalogLocations([]);
+    const provinceNames = new Set(locations.map((location) => location.provinceName));
+    const salta = locations.find((location) => location.provinceName === 'Salta' && location.cityName === 'Salta');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(provinceNames.size).toBe(24);
+    expect(locations.length).toBeGreaterThan(2000);
+    expect(salta).toMatchObject({
+      provinceId: '66',
+      provinceName: 'Salta',
+      cityName: 'Salta'
+    });
+    expect(salta?.latitude).toEqual(expect.any(Number));
+    expect(salta?.longitude).toEqual(expect.any(Number));
+
+    vi.unstubAllGlobals();
   });
 });

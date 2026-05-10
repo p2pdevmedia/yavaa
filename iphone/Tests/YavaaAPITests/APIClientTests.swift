@@ -150,6 +150,20 @@ final class APIClientTests: XCTestCase {
                 }
               ]
             }
+          ],
+          "locations": [
+            {
+              "provinceId": "66",
+              "provinceName": "Salta",
+              "cityId": "660028",
+              "cityName": "Salta"
+            },
+            {
+              "provinceId": "58",
+              "provinceName": "Neuquén",
+              "cityId": "580105",
+              "cityName": "San Martín de los Andes"
+            }
           ]
         }
         """.data(using: .utf8)!
@@ -159,6 +173,7 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(response.markets.first?.province, "Salta")
         XCTAssertEqual(response.markets.first?.city, "Salta")
         XCTAssertEqual(response.markets.first?.workZones.first?.name, "Centro")
+        XCTAssertEqual(response.locations.map(\.provinceName), ["Salta", "Neuquén"])
     }
 
     func testEncodesBookingAcceptActionForNextAPI() throws {

@@ -76,4 +76,10 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('emergencies.map');
     expect(dashboardPanelSource).toContain('initialEmergencies');
   });
+
+  test('shows emergency availability only while the active mode is trabajador', () => {
+    expect(dashboardPanelSource).toContain("activeMode === 'contractor'");
+    expect(dashboardPanelSource).toContain('Disponibilidad para urgencias');
+    expect(dashboardPanelSource).not.toContain("(user.roles.includes('contractor') || user.contractorProfile) ? (");
+  });
 });

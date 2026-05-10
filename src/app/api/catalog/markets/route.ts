@@ -1,10 +1,13 @@
 import { jsonResponse } from '@/lib/http';
-import { listPublicCatalogMarkets } from '@/lib/public-catalog';
+import { listPublicCatalogLocations, listPublicCatalogMarkets } from '@/lib/public-catalog';
 
 export async function GET() {
+  const markets = await listPublicCatalogMarkets();
+
   return jsonResponse(
     {
-      markets: await listPublicCatalogMarkets()
+      markets,
+      locations: await listPublicCatalogLocations(markets)
     },
     { status: 200 }
   );

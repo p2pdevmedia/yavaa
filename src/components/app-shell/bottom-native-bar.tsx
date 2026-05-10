@@ -12,11 +12,12 @@ import { cn } from '@/lib/utils';
 
 type BottomNativeBarProps = {
   mode: AppShellMode;
+  isAdmin?: boolean;
 };
 
-export function BottomNativeBar({ mode }: BottomNativeBarProps) {
+export function BottomNativeBar({ mode, isAdmin = false }: BottomNativeBarProps) {
   const pathname = usePathname();
-  const items = getShellNavigationItems(mode);
+  const items = getShellNavigationItems(mode, { isAdmin });
   const activeHref = getActiveShellNavigationHref(pathname, items);
 
   return (

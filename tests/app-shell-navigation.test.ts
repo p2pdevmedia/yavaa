@@ -20,6 +20,16 @@ describe('app shell navigation', () => {
     }
   );
 
+  test.each([
+    ['jefe', ['Inicio', 'Urgencias', 'Mis Casas', 'Trabajadores', 'ADMIN', 'Perfil']],
+    ['trabajador', ['Inicio', 'Urgencias', 'Mis Clientes', 'ADMIN', 'Perfil']]
+  ] satisfies Array<[AppShellMode, string[]]>)(
+    'adds the admin tab before profile for %s administrators',
+    (mode, labels) => {
+      expect(getShellNavigationItems(mode, { isAdmin: true }).map((item) => item.label)).toEqual(labels);
+    }
+  );
+
   test('keeps each mode in its own route namespace', () => {
     expect(getDefaultShellPath('guest')).toBe('/');
     expect(getDefaultShellPath('jefe')).toBe('/dashboard/jefe');

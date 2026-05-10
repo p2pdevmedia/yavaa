@@ -17,8 +17,10 @@ describe('mode shell routes', () => {
   });
 
   test('jefe and trabajador route groups use separate shells', () => {
-    expect(readProjectFile('src/app/dashboard/jefe/layout.tsx')).toContain('<JefeShell>');
-    expect(readProjectFile('src/app/dashboard/trabajador/layout.tsx')).toContain('<TrabajadorShell>');
+    expect(readProjectFile('src/app/dashboard/jefe/layout.tsx')).toContain('<JefeShell isAdmin={isAdmin}>');
+    expect(readProjectFile('src/app/dashboard/trabajador/layout.tsx')).toContain(
+      '<TrabajadorShell isAdmin={isAdmin}>'
+    );
   });
 
   test('jefe shell owns its mode pages', () => {

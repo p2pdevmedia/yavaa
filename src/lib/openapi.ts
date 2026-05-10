@@ -195,6 +195,50 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const catalogWorkZoneSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'slug', 'name', 'description'],
+    properties: {
+      id: { type: 'string' },
+      slug: { type: 'string' },
+      name: { type: 'string' },
+      description: { anyOf: [{ type: 'string' }, { type: 'null' }] }
+    }
+  } as const;
+
+  const catalogMarketSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'slug', 'country', 'city', 'province', 'isPrimary', 'workZones'],
+    properties: {
+      id: { type: 'string' },
+      slug: { type: 'string' },
+      country: { type: 'string' },
+      city: { type: 'string' },
+      province: { type: 'string' },
+      isPrimary: { type: 'boolean' },
+      workZones: {
+        type: 'array',
+        items: catalogWorkZoneSchema
+      }
+    }
+  } as const;
+
+  const catalogLocationSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['provinceId', 'provinceName', 'cityId', 'cityName', 'latitude', 'longitude'],
+    properties: {
+      provinceId: { type: 'string' },
+      provinceName: { type: 'string' },
+      cityId: { type: 'string' },
+      cityName: { type: 'string' },
+      latitude: { anyOf: [{ type: 'number' }, { type: 'null' }] },
+      longitude: { anyOf: [{ type: 'number' }, { type: 'null' }] }
+    }
+  } as const;
+
   const bookingConversationUserSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1020,10 +1064,31 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       '/api/catalog/markets': {
         get: {
           operationId: 'listCatalogMarkets',
-          summary: 'Public markets and work zones',
+          summary: 'Public markets, work zones, and Argentina address locations',
           tags: ['catalog'],
           responses: {
-            '200': { description: 'Public market catalog.' }
+            '200': {
+              description: 'Public market catalog and Argentina province/city selector data.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['markets', 'locations'],
+                    properties: {
+                      markets: {
+                        type: 'array',
+                        items: catalogMarketSchema
+                      },
+                      locations: {
+                        type: 'array',
+                        items: catalogLocationSchema
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       },

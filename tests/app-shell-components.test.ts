@@ -17,9 +17,22 @@ describe('app shell components', () => {
   test('uses one shared native-style bottom bar primitive', () => {
     const source = readProjectFile('src/components/app-shell/bottom-native-bar.tsx');
 
-    expect(source).toContain('getShellNavigationItems(mode)');
+    expect(source).toContain('getShellNavigationItems(mode, { isAdmin })');
     expect(source).toContain('usePathname()');
     expect(source).toContain('aria-label="Navegación principal"');
     expect(source).toContain('env(safe-area-inset-bottom)');
+  });
+
+  test('passes server-resolved admin navigation into authenticated mode shells', () => {
+    expect(readProjectFile('src/app/dashboard/jefe/layout.tsx')).toContain(
+      'getCurrentUserCanSeeAdminNavigation()'
+    );
+    expect(readProjectFile('src/app/dashboard/jefe/layout.tsx')).toContain('<JefeShell isAdmin={isAdmin}>');
+    expect(readProjectFile('src/app/dashboard/trabajador/layout.tsx')).toContain(
+      'getCurrentUserCanSeeAdminNavigation()'
+    );
+    expect(readProjectFile('src/app/dashboard/trabajador/layout.tsx')).toContain(
+      '<TrabajadorShell isAdmin={isAdmin}>'
+    );
   });
 });

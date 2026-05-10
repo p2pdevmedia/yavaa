@@ -355,6 +355,7 @@ public struct CatalogCategoriesResponse: Decodable, Equatable, Sendable {
 
 public struct CatalogMarketsResponse: Decodable, Equatable, Sendable {
     public let markets: [CatalogMarket]
+    public let locations: [CatalogLocation]
 }
 
 public struct CatalogCategory: Decodable, Equatable, Identifiable, Sendable {
@@ -380,6 +381,19 @@ public struct CatalogWorkZone: Decodable, Equatable, Identifiable, Sendable {
     public let slug: String
     public let name: String
     public let description: String?
+}
+
+public struct CatalogLocation: Decodable, Equatable, Identifiable, Sendable {
+    public let provinceId: String
+    public let provinceName: String
+    public let cityId: String
+    public let cityName: String
+    public let latitude: Double?
+    public let longitude: Double?
+
+    public var id: String {
+        "\(provinceId)-\(cityId)"
+    }
 }
 
 public struct PublicProvidersResponse: Decodable, Equatable, Sendable {

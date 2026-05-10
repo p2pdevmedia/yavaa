@@ -1,4 +1,5 @@
 import { hasDatabaseEnv } from '@/lib/env';
+import { listArgentinaLocations, type ArgentinaLocation } from '@/lib/argentina-locations';
 import { getPrismaClient } from '@/lib/prisma';
 import { isDatabaseUnavailableError, shouldUsePublicDemoFallback } from '@/lib/public-db-fallback';
 
@@ -25,6 +26,8 @@ export type PublicCatalogMarket = {
   }>;
 };
 
+export type PublicCatalogLocation = ArgentinaLocation;
+
 const demoCategories: PublicCatalogCategory[] = [
   { id: 'demo-category-construction', slug: 'construction', name: 'Construction', group: 'construction', isInitial: true },
   { id: 'demo-category-home-services', slug: 'home-services', name: 'Home Services', group: 'home services', isInitial: true },
@@ -42,6 +45,17 @@ const demoCategories: PublicCatalogCategory[] = [
   { id: 'demo-category-errands', slug: 'errands', name: 'Errands', group: 'assistance', isInitial: true },
   { id: 'demo-category-technology', slug: 'technology', name: 'Technology', group: 'technology', isInitial: true }
 ];
+
+function locationsFromMarkets(markets: PublicCatalogMarket[]): PublicCatalogLocation[] {
+  return markets.map((market) => ({
+    provinceId: market.province,
+    provinceName: market.province,
+    cityId: market.id,
+    cityName: market.city,
+    latitude: null,
+    longitude: null
+  }));
+}
 
 const demoMarkets: PublicCatalogMarket[] = [
   {
@@ -137,4 +151,9 @@ export async function listPublicCatalogMarkets(): Promise<PublicCatalogMarket[]>
 
     throw error;
   }
+}
+
+export async function listPublicCatalogLocations(markets: PublicCatalogMarket[]): Promise<PublicCatalogLocation[]> {
+  const locations = listArgentinaLocations();
+  return locations.length > 0 ? locations : locationsFromMarkets(markets);
 }
