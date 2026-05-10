@@ -92,8 +92,11 @@ describe('dashboard app shell', () => {
   test('shows client emergency creation and existing requests in the urgencies view', () => {
     expect(dashboardPanelSource).toContain('Crear nueva urgencia');
     expect(dashboardPanelSource).toContain('Mis urgencias creadas');
-    expect(dashboardPanelSource).toContain('emergencies.map');
+    expect(dashboardPanelSource).toContain('visibleEmergencies.map');
     expect(dashboardPanelSource).toContain('initialEmergencies');
+    expect(dashboardPanelSource).toContain('Editar urgencia');
+    expect(dashboardPanelSource).toContain('Borrar urgencia');
+    expect(dashboardPanelSource).toContain('Marcar resuelta');
   });
 
   test('shows emergency availability only while the active mode is trabajador', () => {

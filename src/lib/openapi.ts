@@ -655,6 +655,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       'description',
       'acceptedAt',
       'cancelledAt',
+      'resolvedAt',
       'createdAt',
       'updatedAt',
       'client',
@@ -667,13 +668,22 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       id: { type: 'string' },
       status: {
         type: 'string',
-        enum: ['OPEN', 'DISPATCHING', 'ACCEPTED', 'CANCELLED_BY_CLIENT', 'REASSIGNMENT_NEEDED', 'EXPIRED']
+        enum: [
+          'OPEN',
+          'DISPATCHING',
+          'ACCEPTED',
+          'CANCELLED_BY_CLIENT',
+          'RESOLVED_BY_CLIENT',
+          'REASSIGNMENT_NEEDED',
+          'EXPIRED'
+        ]
       },
       dispatchRound: { type: 'integer' },
       expiresAt: { type: 'string', format: 'date-time' },
       description: { type: 'string' },
       acceptedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
       cancelledAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
+      resolvedAt: { anyOf: [{ type: 'string', format: 'date-time' }, { type: 'null' }] },
       createdAt: { type: 'string', format: 'date-time' },
       updatedAt: { type: 'string', format: 'date-time' },
       client: bookingUserSchema,
@@ -698,6 +708,30 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
         items: emergencyCandidateSchema
       }
     }
+  } as const;
+
+  const emergencyOwnerPatchRequestSchema = {
+    oneOf: [
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['action', 'categoryId', 'addressId', 'description'],
+        properties: {
+          action: { type: 'string', enum: ['update'] },
+          categoryId: { type: 'string', format: 'uuid' },
+          addressId: { type: 'string', format: 'uuid' },
+          description: { type: 'string', minLength: 8, maxLength: 1000 }
+        }
+      },
+      {
+        type: 'object',
+        additionalProperties: false,
+        required: ['action'],
+        properties: {
+          action: { type: 'string', enum: ['resolve', 'cancel'] }
+        }
+      }
+    ]
   } as const;
 
   return {
@@ -1711,8 +1745,8 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           }
         },
         patch: {
-          operationId: 'cancelEmergencyRequest',
-          summary: 'Cancel an emergency request',
+          operationId: 'mutateOwnEmergencyRequest',
+          summary: 'Update, cancel, or resolve an owned emergency request',
           tags: ['emergencies'],
           security: [{ bearerAuth: [] }],
           parameters: [
@@ -1723,9 +1757,17 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
               schema: { type: 'string' }
             }
           ],
+          requestBody: {
+            required: false,
+            content: {
+              'application/json': {
+                schema: emergencyOwnerPatchRequestSchema
+              }
+            }
+          },
           responses: {
             '200': {
-              description: 'Cancelled emergency request.',
+              description: 'Updated emergency request.',
               content: {
                 'application/json': {
                   schema: {
@@ -1740,9 +1782,44 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
               }
             },
             '401': { description: 'Missing or invalid session token.' },
-            '403': { description: 'The authenticated account cannot cancel this emergency request.' },
+            '403': { description: 'The authenticated account cannot change this emergency request.' },
             '404': { description: 'Emergency request not found.' },
-            '422': { description: 'The emergency request cannot be cancelled in its current state.' }
+            '422': { description: 'The emergency request cannot be changed in its current state.' }
+          }
+        },
+        delete: {
+          operationId: 'deleteOwnEmergencyRequest',
+          summary: 'Delete an owned emergency request by cancelling it',
+          tags: ['emergencies'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'emergencyRequestId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Deleted emergency request.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['request'],
+                    properties: {
+                      request: emergencyRequestSchema
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated account cannot delete this emergency request.' },
+            '404': { description: 'Emergency request not found.' },
+            '422': { description: 'The emergency request cannot be deleted in its current state.' }
           }
         }
       },

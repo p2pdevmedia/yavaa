@@ -40,6 +40,7 @@ enum EmergencyRequestStatus {
   DISPATCHING
   ACCEPTED
   CANCELLED_BY_CLIENT
+  RESOLVED_BY_CLIENT
   REASSIGNMENT_NEEDED
   EXPIRED
 }
@@ -468,6 +469,7 @@ model EmergencyRequest {
   expiresAt                DateTime              @map("expires_at")
   acceptedAt               DateTime?             @map("accepted_at")
   cancelledAt              DateTime?             @map("cancelled_at")
+  resolvedAt               DateTime?             @map("resolved_at")
   createdAt                DateTime              @default(now()) @map("created_at")
   updatedAt                DateTime              @updatedAt @map("updated_at")
 

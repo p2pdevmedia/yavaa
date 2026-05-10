@@ -1,7 +1,13 @@
 import { type NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 
-import { cancelEmergencyRequest, loadEmergencyRequest } from '@/lib/emergencies';
+import {
+  cancelEmergencyRequest,
+  emergencyOwnerPatchSchema,
+  loadEmergencyRequest,
+  resolveEmergencyRequest,
+  updateEmergencyRequest
+} from '@/lib/emergencies';
 import { canViewEmergencyRequest } from '@/lib/permissions';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
@@ -13,8 +19,8 @@ type RouteContext = {
   }>;
 };
 
-function mapEmergencyCancelError(error: unknown): { status: number; body: { error: string; message: string } } {
-  if (error instanceof ZodError) {
+function mapEmergencyMutationError(error: unknown): { status: number; body: { error: string; message: string } } {
+  if (error instanceof ZodError || error instanceof SyntaxError) {
     return {
       status: 400,
       body: {
@@ -30,7 +36,7 @@ function mapEmergencyCancelError(error: unknown): { status: number; body: { erro
         status: 403,
         body: {
           error: 'forbidden',
-          message: 'You cannot cancel this emergency request.'
+          message: 'You cannot change this emergency request.'
         }
       };
     }
@@ -50,7 +56,17 @@ function mapEmergencyCancelError(error: unknown): { status: number; body: { erro
         status: 422,
         body: {
           error: 'invalid-state',
-          message: 'The emergency request cannot be cancelled in its current state.'
+          message: 'The emergency request cannot be changed in its current state.'
+        }
+      };
+    }
+
+    if (error.message === 'invalid-address' || error.message === 'invalid-category') {
+      return {
+        status: 422,
+        body: {
+          error: error.message,
+          message: 'The selected emergency context is not valid.'
         }
       };
     }
@@ -141,6 +157,54 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const prisma = getPrismaClient();
 
   try {
+    const rawBody = await request.text();
+    const parsedBody = rawBody.trim().length > 0
+      ? emergencyOwnerPatchSchema.parse(JSON.parse(rawBody) as unknown)
+      : { action: 'cancel' as const };
+    const requestRecord = parsedBody.action === 'update'
+      ? await updateEmergencyRequest(prisma, auth.permissionContext, emergencyRequestId, {
+          categoryId: parsedBody.categoryId,
+          addressId: parsedBody.addressId,
+          description: parsedBody.description
+        })
+      : parsedBody.action === 'resolve'
+        ? await resolveEmergencyRequest(prisma, auth.permissionContext, emergencyRequestId)
+        : await cancelEmergencyRequest(prisma, auth.permissionContext, emergencyRequestId);
+
+    return jsonResponse(
+      {
+        request: requestRecord
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    const mapped = mapEmergencyMutationError(error);
+
+    return jsonResponse(mapped.body, { status: mapped.status });
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
+  const auth = await resolveRequestAuth(request);
+
+  if (!auth.authenticated) {
+    return jsonResponse(auth, { status: 401 });
+  }
+
+  if (!auth.permissionContext) {
+    return jsonResponse(
+      {
+        error: 'forbidden',
+        message: 'You need an active linked account to delete emergency requests.'
+      },
+      { status: 403 }
+    );
+  }
+
+  const { emergencyRequestId } = await params;
+  const prisma = getPrismaClient();
+
+  try {
     const requestRecord = await cancelEmergencyRequest(prisma, auth.permissionContext, emergencyRequestId);
 
     return jsonResponse(
@@ -150,7 +214,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       { status: 200 }
     );
   } catch (error) {
-    const mapped = mapEmergencyCancelError(error);
+    const mapped = mapEmergencyMutationError(error);
 
     return jsonResponse(mapped.body, { status: mapped.status });
   }

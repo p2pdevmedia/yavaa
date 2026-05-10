@@ -82,6 +82,7 @@ export type DashboardEmergency = {
   description: string;
   acceptedAt: string | null;
   cancelledAt: string | null;
+  resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
   category: EmergencyRequestRecord['category'];
@@ -178,6 +179,7 @@ export function serializeEmergencyForDashboard(emergency: EmergencyRequestRecord
     description: emergency.description,
     acceptedAt: emergency.acceptedAt?.toISOString() ?? null,
     cancelledAt: emergency.cancelledAt?.toISOString() ?? null,
+    resolvedAt: emergency.resolvedAt?.toISOString() ?? null,
     createdAt: emergency.createdAt.toISOString(),
     updatedAt: emergency.updatedAt.toISOString(),
     category: emergency.category,

@@ -7,12 +7,10 @@ import {
 } from '@/components/dashboard/dashboard-states';
 import { listBookingsForActor } from '@/lib/bookings';
 import { getDashboardAdminData } from '@/lib/dashboard-admin';
-import { serializeNotificationsForDashboard } from '@/lib/dashboard-notifications';
 import { getDashboardPageContext } from '@/lib/dashboard-page-data';
 import type { DashboardView } from '@/lib/dashboard-routes';
 import { serializeBookingsForDashboard, serializeEmergenciesForDashboard } from '@/lib/dashboard-workspace';
 import { listEmergencyRequestsForActor, type EmergencyListMode } from '@/lib/emergencies';
-import { listNotificationsForUser } from '@/lib/notifications';
 import { getPrismaClient } from '@/lib/prisma';
 import {
   listPublicCatalogCategories,
@@ -62,7 +60,6 @@ export async function getDashboardViewPageState({
   let categories: Awaited<ReturnType<typeof listPublicCatalogCategories>> = [];
   let bookings: Awaited<ReturnType<typeof listBookingsForActor>> = [];
   let emergencies: Awaited<ReturnType<typeof listEmergencyRequestsForActor>> = [];
-  let notifications: Awaited<ReturnType<typeof listNotificationsForUser>> = [];
   let adminData: Awaited<ReturnType<typeof getDashboardAdminData>> = null;
   let addressMarkets: Awaited<ReturnType<typeof listPublicCatalogMarkets>> = [];
   let addressLocations: Awaited<ReturnType<typeof listPublicCatalogLocations>> = [];
@@ -84,8 +81,6 @@ export async function getDashboardViewPageState({
       bookings = await listBookingsForActor(prisma, context.appUser.permissionContext);
     }
 
-    notifications = await listNotificationsForUser(prisma, context.appUser.user.id, 20);
-
     if (view === 'admin') {
       adminData = await getDashboardAdminData(prisma, context.appUser.permissionContext);
     }
@@ -102,11 +97,9 @@ export async function getDashboardViewPageState({
     panelProps: {
       view,
       initialUser: context.appUser.user,
-      email: context.authState.user?.email ?? null,
       categories,
       bookings: serializeBookingsForDashboard(bookings),
       emergencies: serializeEmergenciesForDashboard(emergencies),
-      notifications: serializeNotificationsForDashboard(notifications),
       adminData,
       addressMarkets,
       addressLocations
@@ -117,7 +110,7 @@ export async function getDashboardViewPageState({
 export function DashboardViewPageShell({ children }: { children: ReactNode }) {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex w-full max-w-6xl items-start px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl items-start px-4 pb-8 pt-20 sm:px-6 sm:pt-8 lg:px-8">
         {children}
       </div>
     </main>

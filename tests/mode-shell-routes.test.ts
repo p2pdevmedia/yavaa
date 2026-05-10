@@ -34,7 +34,8 @@ describe('mode shell routes', () => {
 
   test('trabajador shell owns its mode pages', () => {
     expect(readProjectFile('src/app/dashboard/trabajador/page.tsx')).toContain('Inicio Trabajador');
-    expect(readProjectFile('src/app/dashboard/trabajador/urgencias/page.tsx')).toContain('Navegar urgencias');
+    expect(readProjectFile('src/app/dashboard/trabajador/urgencias/page.tsx')).toContain("view: 'urgencias'");
+    expect(readProjectFile('src/app/dashboard/trabajador/urgencias/page.tsx')).toContain('initialMode="contractor"');
     expect(readProjectFile('src/app/dashboard/trabajador/mis-clientes/page.tsx')).toContain('trabajos aceptados o completados');
     expect(readProjectFile('src/app/dashboard/trabajador/perfil/page.tsx')).toContain('initialMode="contractor"');
   });

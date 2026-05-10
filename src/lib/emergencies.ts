@@ -18,6 +18,7 @@ export const emergencyStatusList = [
   'DISPATCHING',
   'ACCEPTED',
   'CANCELLED_BY_CLIENT',
+  'RESOLVED_BY_CLIENT',
   'REASSIGNMENT_NEEDED',
   'EXPIRED'
 ] as const;
@@ -35,6 +36,20 @@ export const createEmergencyRequestSchema = z.object({
   addressId: z.string().uuid(),
   description: z.string().trim().min(8).max(1000)
 });
+
+export const updateEmergencyRequestSchema = createEmergencyRequestSchema;
+
+export const emergencyOwnerPatchSchema = z.discriminatedUnion('action', [
+  updateEmergencyRequestSchema.extend({
+    action: z.literal('update')
+  }),
+  z.object({
+    action: z.literal('resolve')
+  }),
+  z.object({
+    action: z.literal('cancel')
+  })
+]);
 
 export const emergencyResponseSchema = z.object({
   action: z.enum(emergencyActions),
@@ -60,6 +75,7 @@ const emergencyRequestSelect = Prisma.validator<Prisma.EmergencyRequestSelect>()
   description: true,
   acceptedAt: true,
   cancelledAt: true,
+  resolvedAt: true,
   createdAt: true,
   updatedAt: true,
   client: {
@@ -180,6 +196,10 @@ function resolveEmergencyListMode(actor: EmergencyRequestActor, requestedMode?: 
 
   if (requestedMode === 'contractor' && isContractorActor(actor)) {
     return 'contractor';
+  }
+
+  if (requestedMode) {
+    return 'none';
   }
 
   if (isAdminActor(actor)) {
@@ -321,6 +341,14 @@ export async function getEmergencyRequestForActor(
 
 function ensureClientActor(actor: EmergencyRequestActor): void {
   if (!canCreateEmergencyRequest(actor)) {
+    throw new Error('forbidden');
+  }
+}
+
+function ensureOwnClientEmergency(actor: EmergencyRequestActor, row: EmergencyRequestRow): void {
+  ensureClientActor(actor);
+
+  if (row.client.id !== actor.userId) {
     throw new Error('forbidden');
   }
 }
@@ -543,17 +571,13 @@ export async function cancelEmergencyRequest(
   actor: EmergencyRequestActor,
   emergencyRequestId: string
 ): Promise<EmergencyRequestRecord> {
-  ensureClientActor(actor);
-
   const row = await loadEmergencyRequest(prisma, emergencyRequestId);
 
   if (!row) {
     throw new Error('not-found');
   }
 
-  if (row.client.id !== actor.userId) {
-    throw new Error('forbidden');
-  }
+  ensureOwnClientEmergency(actor, row);
 
   if (!['DISPATCHING', 'OPEN', 'REASSIGNMENT_NEEDED'].includes(row.status)) {
     throw new Error('invalid-state');
@@ -591,6 +615,147 @@ export async function cancelEmergencyRequest(
     entityId: emergencyRequestId,
     metadata: {
       cancelledAt: now.toISOString()
+    }
+  });
+
+  const loaded = await loadEmergencyRequest(prisma, emergencyRequestId);
+
+  if (!loaded) {
+    throw new Error('not-found');
+  }
+
+  return toEmergencyRecord(loaded);
+}
+
+export async function updateEmergencyRequest(
+  prisma: PrismaClient,
+  actor: EmergencyRequestActor,
+  emergencyRequestId: string,
+  input: z.infer<typeof updateEmergencyRequestSchema>
+): Promise<EmergencyRequestRecord> {
+  const parsed = updateEmergencyRequestSchema.parse(input);
+  const row = await loadEmergencyRequest(prisma, emergencyRequestId);
+
+  if (!row) {
+    throw new Error('not-found');
+  }
+
+  ensureOwnClientEmergency(actor, row);
+
+  if (!['DISPATCHING', 'OPEN', 'REASSIGNMENT_NEEDED'].includes(row.status)) {
+    throw new Error('invalid-state');
+  }
+
+  const [address, category] = await Promise.all([
+    prisma.address.findFirst({
+      where: {
+        id: parsed.addressId,
+        userId: actor.userId
+      },
+      select: {
+        id: true
+      }
+    }),
+    prisma.category.findFirst({
+      where: {
+        id: parsed.categoryId,
+        status: 'ACTIVE'
+      },
+      select: {
+        id: true
+      }
+    })
+  ]);
+
+  if (!address) {
+    throw new Error('invalid-address');
+  }
+
+  if (!category) {
+    throw new Error('invalid-category');
+  }
+
+  await prisma.emergencyRequest.update({
+    where: { id: emergencyRequestId },
+    data: {
+      categoryId: category.id,
+      addressId: address.id,
+      description: parsed.description
+    },
+    select: {
+      id: true
+    }
+  });
+
+  await recordAuditLog({
+    actorUserId: actor.userId,
+    action: 'emergency_request.updated',
+    entityType: 'emergency_request',
+    entityId: emergencyRequestId,
+    metadata: {
+      categoryId: category.id,
+      addressId: address.id
+    }
+  });
+
+  const loaded = await loadEmergencyRequest(prisma, emergencyRequestId);
+
+  if (!loaded) {
+    throw new Error('not-found');
+  }
+
+  return toEmergencyRecord(loaded);
+}
+
+export async function resolveEmergencyRequest(
+  prisma: PrismaClient,
+  actor: EmergencyRequestActor,
+  emergencyRequestId: string
+): Promise<EmergencyRequestRecord> {
+  const row = await loadEmergencyRequest(prisma, emergencyRequestId);
+
+  if (!row) {
+    throw new Error('not-found');
+  }
+
+  ensureOwnClientEmergency(actor, row);
+
+  if (['CANCELLED_BY_CLIENT', 'RESOLVED_BY_CLIENT', 'EXPIRED'].includes(row.status)) {
+    throw new Error('invalid-state');
+  }
+
+  const now = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.emergencyRequestCandidate.updateMany({
+      where: {
+        emergencyRequestId,
+        status: 'NOTIFIED'
+      },
+      data: {
+        status: 'REVOKED'
+      }
+    });
+
+    return tx.emergencyRequest.update({
+      where: { id: emergencyRequestId },
+      data: {
+        status: 'RESOLVED_BY_CLIENT',
+        resolvedAt: now
+      },
+      select: {
+        id: true
+      }
+    });
+  });
+
+  await recordAuditLog({
+    actorUserId: actor.userId,
+    action: 'emergency_request.resolved',
+    entityType: 'emergency_request',
+    entityId: emergencyRequestId,
+    metadata: {
+      resolvedAt: now.toISOString()
     }
   });
 

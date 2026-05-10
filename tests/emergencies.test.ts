@@ -7,7 +7,9 @@ import {
   createEmergencyRequest,
   listEmergencyRequestsForActor,
   reassignEmergencyRequest,
+  resolveEmergencyRequest,
   respondToEmergencyRequest,
+  updateEmergencyRequest,
   type EmergencyRequestActor
 } from '@/lib/emergencies';
 
@@ -102,6 +104,7 @@ function buildMockPrisma() {
     description: string;
     acceptedAt: Date | null;
     cancelledAt: Date | null;
+    resolvedAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
     client: {
@@ -187,6 +190,7 @@ function buildMockPrisma() {
     description: 'Pipe burst and water is flooding the kitchen',
     acceptedAt: null,
     cancelledAt: null,
+    resolvedAt: null,
     createdAt: new Date('2026-05-09T12:00:00.000Z'),
     updatedAt: new Date('2026-05-09T12:00:00.000Z'),
     client: {
@@ -239,7 +243,7 @@ function buildMockPrisma() {
       create: vi.fn().mockImplementation(async () => requestRow),
       findMany: vi.fn().mockImplementation(async () => [requestRow]),
       findUnique: vi.fn().mockImplementation(async () => requestRow),
-      update: vi.fn().mockImplementation(async ({ data }: { data: { status?: string; assignedContractorProfileId?: string | null; acceptedAt?: Date | null; cancelledAt?: Date | null; dispatchRound?: number; expiresAt?: Date } }) => {
+      update: vi.fn().mockImplementation(async ({ data }: { data: { status?: string; assignedContractorProfileId?: string | null; acceptedAt?: Date | null; cancelledAt?: Date | null; resolvedAt?: Date | null; dispatchRound?: number; expiresAt?: Date; description?: string; categoryId?: string; addressId?: string } }) => {
         requestRow = {
           ...requestRow,
           status: data.status ?? requestRow.status,
@@ -247,8 +251,24 @@ function buildMockPrisma() {
             data.assignedContractorProfileId === contractorProfileId ? contractorProfile : requestRow.assignedContractorProfile,
           acceptedAt: data.acceptedAt ?? requestRow.acceptedAt,
           cancelledAt: data.cancelledAt ?? requestRow.cancelledAt,
+          resolvedAt: data.resolvedAt ?? requestRow.resolvedAt,
           dispatchRound: data.dispatchRound ?? requestRow.dispatchRound,
-          expiresAt: data.expiresAt ?? requestRow.expiresAt
+          expiresAt: data.expiresAt ?? requestRow.expiresAt,
+          description: data.description ?? requestRow.description,
+          category: data.categoryId
+            ? {
+                id: data.categoryId,
+                slug: 'updated-category',
+                name: 'Updated Category'
+              }
+            : requestRow.category,
+          address: data.addressId
+            ? {
+                ...requestRow.address,
+                id: data.addressId,
+                label: 'Updated Home'
+              }
+            : requestRow.address
         };
 
         return requestRow;
@@ -377,6 +397,64 @@ describe('emergency helpers', () => {
     expect(prisma.emergencyRequest.update).toHaveBeenCalledTimes(1);
   });
 
+  it('lets a client edit their own open emergency request', async () => {
+    const { prisma } = buildMockPrisma();
+
+    const request = await updateEmergencyRequest(
+      prisma as never,
+      clientActor,
+      '44444444-4444-4444-8444-444444444444',
+      {
+        categoryId: '88888888-8888-4888-8888-888888888888',
+        addressId: '66666666-6666-4666-8666-666666666666',
+        description: 'Updated urgent plumbing issue in the kitchen'
+      }
+    );
+
+    expect(request.description).toBe('Updated urgent plumbing issue in the kitchen');
+    expect(prisma.address.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: '66666666-6666-4666-8666-666666666666',
+          userId: clientActor.userId
+        })
+      })
+    );
+    expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'emergency_request.updated',
+        actorUserId: clientActor.userId
+      })
+    );
+  });
+
+  it('lets a client mark their own accepted emergency request as resolved', async () => {
+    const { prisma } = buildMockPrisma();
+
+    await respondToEmergencyRequest(
+      prisma as never,
+      contractorActor,
+      '44444444-4444-4444-8444-444444444444',
+      'accept'
+    );
+    vi.clearAllMocks();
+
+    const request = await resolveEmergencyRequest(
+      prisma as never,
+      clientActor,
+      '44444444-4444-4444-8444-444444444444'
+    );
+
+    expect(request.status).toBe('RESOLVED_BY_CLIENT');
+    expect(prisma.emergencyRequest.update).toHaveBeenCalledTimes(1);
+    expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'emergency_request.resolved',
+        actorUserId: clientActor.userId
+      })
+    );
+  });
+
   it('lets an admin force a reassignment', async () => {
     const { prisma } = buildMockPrisma();
 
@@ -399,6 +477,18 @@ describe('emergency helpers', () => {
 
     expect(prisma.emergencyRequest.findMany).toHaveBeenCalledTimes(1);
     expect(requests).toHaveLength(1);
+  });
+
+  it('does not fall back to the admin-wide emergency list when client mode is unavailable', async () => {
+    const { prisma } = buildMockPrisma();
+
+    await listEmergencyRequestsForActor(prisma as never, adminActor, { mode: 'client' });
+
+    expect(prisma.emergencyRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { OR: [] }
+      })
+    );
   });
 
   it('lists contractor-visible emergencies when a dual-role actor is browsing as contractor', async () => {

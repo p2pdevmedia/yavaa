@@ -38,7 +38,7 @@ export async function ProtectedModePage({
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <YavaaPageShell width="lg" className="py-8">
+      <YavaaPageShell width="lg" className="pb-8 pt-20 sm:pt-8">
         <section className="space-y-6">
           <div className="space-y-2">
             <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{eyebrow}</p>

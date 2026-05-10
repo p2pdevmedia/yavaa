@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState, type FormEvent } from 'react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
-import { Bell, Glasses, HardHat } from 'lucide-react';
+import { CheckCircle2, Glasses, HardHat, Pencil, Trash2, X } from 'lucide-react';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { AdminPanel } from '@/components/dashboard/admin-panel';
@@ -16,8 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { dashboardProfilePath, type DashboardView } from '@/lib/dashboard-routes';
-import type { DashboardNotification } from '@/lib/dashboard-notifications';
+import type { DashboardView } from '@/lib/dashboard-routes';
 import type { DashboardAdminData } from '@/lib/dashboard-admin';
 import type { DashboardBooking, DashboardEmergency } from '@/lib/dashboard-workspace';
 import type { PublicCatalogLocation, PublicCatalogMarket } from '@/lib/public-catalog';
@@ -114,11 +113,9 @@ export type DashboardPanelProps = {
   view: DashboardView;
   initialUser: DashboardUser;
   initialMode?: DashboardMode;
-  email: string | null;
   categories: DashboardCategory[];
   bookings: DashboardBooking[];
   emergencies: DashboardEmergency[];
-  notifications: DashboardNotification[];
   adminData: DashboardAdminData | null;
   addressMarkets: PublicCatalogMarket[];
   addressLocations: PublicCatalogLocation[];
@@ -226,13 +223,6 @@ function buildEmergencyDraft(user: DashboardUser, categories: DashboardCategory[
   };
 }
 
-function formatName(user: DashboardUser): string {
-  const namePieces = [user.profile?.firstName, user.profile?.lastName].filter(
-    (value): value is string => Boolean(value)
-  );
-  return namePieces.length > 0 ? namePieces.join(' ') : user.displayName ?? user.email;
-}
-
 function formatUtcDateTime(value: string): string {
   return `${value.slice(0, 10)} ${value.slice(11, 16)} UTC`;
 }
@@ -243,6 +233,7 @@ function formatEmergencyStatus(status: DashboardEmergency['status']): string {
     DISPATCHING: 'Buscando trabajador',
     ACCEPTED: 'Aceptada',
     CANCELLED_BY_CLIENT: 'Cancelada',
+    RESOLVED_BY_CLIENT: 'Resuelta',
     REASSIGNMENT_NEEDED: 'Reasignar',
     EXPIRED: 'Expirada'
   };
@@ -254,6 +245,14 @@ function isAvailableContractorEmergency(emergency: DashboardEmergency): boolean 
   return ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'].includes(emergency.status);
 }
 
+function canEditClientEmergency(emergency: DashboardEmergency): boolean {
+  return ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'].includes(emergency.status);
+}
+
+function canResolveClientEmergency(emergency: DashboardEmergency): boolean {
+  return !['CANCELLED_BY_CLIENT', 'RESOLVED_BY_CLIENT', 'EXPIRED'].includes(emergency.status);
+}
+
 function toDashboardEmergencyFromApi(request: EmergencyApiRequest): DashboardEmergency {
   return {
     id: request.id,
@@ -263,6 +262,7 @@ function toDashboardEmergencyFromApi(request: EmergencyApiRequest): DashboardEme
     description: request.description,
     acceptedAt: request.acceptedAt,
     cancelledAt: request.cancelledAt,
+    resolvedAt: request.resolvedAt,
     createdAt: request.createdAt,
     updatedAt: request.updatedAt,
     category: request.category,
@@ -276,10 +276,6 @@ function toDashboardEmergencyFromApi(request: EmergencyApiRequest): DashboardEme
   };
 }
 
-function isAdminUser(user: DashboardUser): boolean {
-  return user.roles.includes('admin');
-}
-
 function hasContractorMode(user: DashboardUser): boolean {
   return user.roles.includes('contractor') || Boolean(user.contractorProfile);
 }
@@ -288,27 +284,13 @@ function getInitialDashboardMode(user: DashboardUser): DashboardMode {
   return hasContractorMode(user) ? 'contractor' : 'client';
 }
 
-function getUserInitials(user: DashboardUser): string {
-  const namePieces = [user.profile?.firstName, user.profile?.lastName].filter(
-    (value): value is string => Boolean(value)
-  );
-
-  if (namePieces.length >= 2) {
-    return `${namePieces[0][0]}${namePieces[1][0]}`.toUpperCase();
-  }
-
-  return formatName(user).slice(0, 2).toUpperCase();
-}
-
 export function DashboardPanel({
   view,
   initialUser,
   initialMode,
-  email,
   categories,
   bookings,
   emergencies: initialEmergencies,
-  notifications,
   adminData,
   addressMarkets,
   addressLocations
@@ -322,6 +304,7 @@ export function DashboardPanel({
   const [emergencyDraft, setEmergencyDraft] = useState<EmergencyDraft>(() =>
     buildEmergencyDraft(initialUser, categories)
   );
+  const [emergencyEditDrafts, setEmergencyEditDrafts] = useState<Record<string, EmergencyDraft>>({});
   const [emergencies, setEmergencies] = useState<DashboardEmergency[]>(initialEmergencies);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
@@ -331,6 +314,8 @@ export function DashboardPanel({
   const [emergencyError, setEmergencyError] = useState<string | null>(null);
   const [emergencyStatus, setEmergencyStatus] = useState<string | null>(null);
   const [isSavingEmergency, setIsSavingEmergency] = useState(false);
+  const [editingEmergencyId, setEditingEmergencyId] = useState<string | null>(null);
+  const [mutatingEmergencyId, setMutatingEmergencyId] = useState<string | null>(null);
   const [isSavingEmergencyAvailability, setIsSavingEmergencyAvailability] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
@@ -341,8 +326,6 @@ export function DashboardPanel({
   const [activeMode, setActiveMode] = useState<DashboardMode>(() => initialMode ?? getInitialDashboardMode(initialUser));
   const [modeError, setModeError] = useState<string | null>(null);
   const [modeStatus, setModeStatus] = useState<string | null>(null);
-  const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
-  const [notificationPopoverOpen, setNotificationPopoverOpen] = useState(false);
 
   async function parseEnvelope<TEnvelope = UserEnvelope>(response: Response): Promise<TEnvelope | null> {
     try {
@@ -551,6 +534,156 @@ export function DashboardPanel({
     }
   }
 
+  function replaceEmergency(updatedEmergency: DashboardEmergency) {
+    setEmergencies((current) =>
+      current.map((emergency) => (emergency.id === updatedEmergency.id ? updatedEmergency : emergency))
+    );
+  }
+
+  function startEditingEmergency(emergency: DashboardEmergency) {
+    setEmergencyError(null);
+    setEmergencyStatus(null);
+    setEditingEmergencyId(emergency.id);
+    setEmergencyEditDrafts((current) => ({
+      ...current,
+      [emergency.id]: {
+        categoryId: emergency.category.id,
+        addressId: emergency.address.id,
+        description: emergency.description
+      }
+    }));
+  }
+
+  function stopEditingEmergency() {
+    setEditingEmergencyId(null);
+  }
+
+  async function handleEmergencyUpdate(event: FormEvent<HTMLFormElement>, emergencyId: string) {
+    event.preventDefault();
+    const draft = emergencyEditDrafts[emergencyId];
+
+    if (!draft) {
+      return;
+    }
+
+    setEmergencyError(null);
+    setEmergencyStatus(null);
+    setMutatingEmergencyId(emergencyId);
+
+    try {
+      const response = await fetch(`/api/emergencies/${emergencyId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'update',
+          categoryId: draft.categoryId,
+          addressId: draft.addressId,
+          description: draft.description
+        })
+      });
+
+      const payload = await parseEnvelope<EmergencyEnvelope>(response);
+
+      if (!response.ok) {
+        setEmergencyError(
+          (payload as { message?: string; error?: string } | null)?.message ??
+            (payload as { error?: string } | null)?.error ??
+            'No pudimos editar la urgencia.'
+        );
+        return;
+      }
+
+      if (payload?.request) {
+        replaceEmergency(toDashboardEmergencyFromApi(payload.request as EmergencyApiRequest));
+      }
+
+      setEditingEmergencyId(null);
+      setEmergencyStatus('Urgencia actualizada.');
+    } catch {
+      setEmergencyError('No pudimos editar la urgencia.');
+    } finally {
+      setMutatingEmergencyId(null);
+    }
+  }
+
+  async function handleEmergencyResolve(emergencyId: string) {
+    setEmergencyError(null);
+    setEmergencyStatus(null);
+    setMutatingEmergencyId(emergencyId);
+
+    try {
+      const response = await fetch(`/api/emergencies/${emergencyId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'resolve'
+        })
+      });
+
+      const payload = await parseEnvelope<EmergencyEnvelope>(response);
+
+      if (!response.ok) {
+        setEmergencyError(
+          (payload as { message?: string; error?: string } | null)?.message ??
+            (payload as { error?: string } | null)?.error ??
+            'No pudimos marcar la urgencia como resuelta.'
+        );
+        return;
+      }
+
+      if (payload?.request) {
+        replaceEmergency(toDashboardEmergencyFromApi(payload.request as EmergencyApiRequest));
+      }
+
+      setEmergencyStatus('Urgencia marcada como resuelta.');
+    } catch {
+      setEmergencyError('No pudimos marcar la urgencia como resuelta.');
+    } finally {
+      setMutatingEmergencyId(null);
+    }
+  }
+
+  async function handleEmergencyDelete(emergencyId: string) {
+    const confirmed = window.confirm('¿Querés borrar esta urgencia? La vamos a cancelar y quitar de tu lista.');
+
+    if (!confirmed) {
+      return;
+    }
+
+    setEmergencyError(null);
+    setEmergencyStatus(null);
+    setMutatingEmergencyId(emergencyId);
+
+    try {
+      const response = await fetch(`/api/emergencies/${emergencyId}`, {
+        method: 'DELETE'
+      });
+
+      const payload = await parseEnvelope<EmergencyEnvelope>(response);
+
+      if (!response.ok) {
+        setEmergencyError(
+          (payload as { message?: string; error?: string } | null)?.message ??
+            (payload as { error?: string } | null)?.error ??
+            'No pudimos borrar la urgencia.'
+        );
+        return;
+      }
+
+      setEmergencies((current) => current.filter((emergency) => emergency.id !== emergencyId));
+      setEditingEmergencyId((current) => (current === emergencyId ? null : current));
+      setEmergencyStatus('Urgencia borrada.');
+    } catch {
+      setEmergencyError('No pudimos borrar la urgencia.');
+    } finally {
+      setMutatingEmergencyId(null);
+    }
+  }
+
   async function handleContractorModeSelect(nextPath?: Route) {
     setModeError(null);
     setModeStatus(null);
@@ -617,23 +750,7 @@ export function DashboardPanel({
     }
   }
 
-  async function handleModeToggle() {
-    if (activeMode === 'contractor') {
-      handleClientModeSelect();
-      return;
-    }
-
-    await handleContractorModeSelect();
-  }
-
   const primaryAddress = user.addresses.find((address) => address.isDefault) ?? user.addresses[0] ?? null;
-  const unreadNotificationCount = notifications.filter((notification) => !notification.isRead).length;
-  const userInitials = getUserInitials(user);
-  const profilePhotoSrc = user.profile?.avatarUrl
-    ? `/api/me/profile?avatar=${encodeURIComponent(user.profile.avatarUrl)}`
-    : null;
-  const activeModeLabel = activeMode === 'contractor' ? 'contratista' : 'cliente';
-  const ActiveModeIcon = activeMode === 'contractor' ? HardHat : Glasses;
   const provinceOptions = useMemo(() => getProvinceOptions(addressLocations), [addressLocations]);
   const cityOptions = useMemo(
     () => getCityOptions(addressLocations, addressDraft.province),
@@ -656,175 +773,6 @@ export function DashboardPanel({
 
   return (
     <div className="space-y-6">
-      <div className="relative flex flex-col gap-4 rounded-lg border border-border/70 bg-card/90 p-6 pr-16 shadow-soft backdrop-blur md:flex-row md:items-center md:justify-between">
-        <div
-          aria-label={`Modo activo: ${activeModeLabel}`}
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-background/80 text-primary shadow-soft backdrop-blur"
-          title={`Modo ${activeModeLabel}`}
-        >
-          <ActiveModeIcon className="h-4 w-4" aria-hidden="true" />
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary">{user.status}</Badge>
-          </div>
-          <h2 className="font-display text-3xl text-foreground">{formatName(user)}</h2>
-          <p className="text-sm text-muted-foreground">{email ?? user.email}</p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative">
-            <button
-              type="button"
-              aria-label="Abrir notificaciones"
-              aria-expanded={notificationPopoverOpen}
-              className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-card text-foreground transition hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              onClick={() => {
-                setNotificationPopoverOpen((current) => !current);
-                setAccountPopoverOpen(false);
-              }}
-            >
-              <Bell className="h-5 w-5" aria-hidden="true" />
-              {unreadNotificationCount > 0 ? (
-                <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[0.68rem] font-semibold text-primary-foreground">
-                  {unreadNotificationCount}
-                </span>
-              ) : null}
-            </button>
-
-            {notificationPopoverOpen ? (
-              <div className="absolute left-0 top-14 z-20 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border/80 bg-card p-4 shadow-soft sm:left-auto sm:right-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Campana</p>
-                    <h3 className="font-display text-xl font-semibold text-foreground">Notificaciones</h3>
-                  </div>
-                  <Badge variant={unreadNotificationCount > 0 ? 'default' : 'secondary'}>
-                    {unreadNotificationCount > 0 ? `${unreadNotificationCount} nuevas` : 'Al día'}
-                  </Badge>
-                </div>
-
-                <div className="mt-4 max-h-96 space-y-3 overflow-y-auto pr-1">
-                  {notifications.length > 0 ? (
-                    notifications.map((notification) => (
-                      <article key={notification.id} className="rounded-lg border border-border/70 bg-background/45 p-3">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant={notification.isRead ? 'outline' : 'secondary'}>
-                            {notification.typeLabel}
-                          </Badge>
-                          {!notification.isRead ? <Badge variant="default">Nueva</Badge> : null}
-                        </div>
-                        <p className="mt-2 text-sm font-semibold text-foreground">{notification.title}</p>
-                        <p className="mt-1 text-sm leading-5 text-muted-foreground">{notification.body}</p>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          {formatUtcDateTime(notification.createdAt)}
-                        </p>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {notification.bookingId ? (
-                            <Button asChild size="sm" variant="outline">
-                              <Link href={'/dashboard/bookings' as Route}>Ver booking</Link>
-                            </Button>
-                          ) : (
-                            <Button asChild size="sm" variant="outline">
-                              <Link href={dashboardProfilePath}>Abrir perfil</Link>
-                            </Button>
-                          )}
-                          <span className="inline-flex items-center rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">
-                            {notification.isRead ? 'Leída' : 'Sin leer'}
-                          </span>
-                        </div>
-                      </article>
-                    ))
-                  ) : (
-                    <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-                      No hay notificaciones por ahora.
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="relative">
-            <button
-              type="button"
-              aria-label="Abrir menú de perfil"
-              aria-expanded={accountPopoverOpen}
-              className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-muted font-display text-sm font-semibold text-muted-foreground transition hover:border-primary/50 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              onClick={() => {
-                setAccountPopoverOpen((current) => !current);
-                setNotificationPopoverOpen(false);
-              }}
-            >
-              {profilePhotoSrc ? (
-                <span
-                  aria-hidden="true"
-                  className="h-full w-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${profilePhotoSrc})` }}
-                />
-              ) : (
-                userInitials
-              )}
-            </button>
-
-            {accountPopoverOpen ? (
-              <div className="absolute left-0 top-14 z-20 w-[min(16rem,calc(100vw-2rem))] rounded-lg border border-border/80 bg-card p-3 shadow-soft sm:left-auto sm:right-0">
-                <div className="border-b border-border/70 px-2 pb-3">
-                  <p className="text-sm font-semibold text-foreground">{formatName(user)}</p>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">{email ?? user.email}</p>
-                </div>
-
-                <div className="mt-3 space-y-2">
-                  <Link
-                    href={dashboardProfilePath}
-                    className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
-                    onClick={() => setAccountPopoverOpen(false)}
-                  >
-                    Perfil
-                  </Link>
-
-                  {!isAdminUser(user) ? (
-                    <button
-                      type="button"
-                      className="flex w-full flex-col items-start rounded-lg px-3 py-2 text-left transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={handleModeToggle}
-                      disabled={isSwitchingContractorMode}
-                    >
-                      <span className="text-sm font-medium text-foreground">
-                        {isSwitchingContractorMode ? 'Cambiando modo...' : 'Cambiar de modo'}
-                      </span>
-                      <span className="mt-1 text-xs text-muted-foreground">
-                        Actual: {activeMode === 'contractor' ? 'contratista' : 'cliente'}
-                      </span>
-                    </button>
-                  ) : null}
-
-                  {modeError ? (
-                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
-                      {modeError}
-                    </p>
-                  ) : null}
-
-                  {modeStatus ? (
-                    <p className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-                      {modeStatus}
-                    </p>
-                  ) : null}
-
-                  <SignOutButton className="w-full justify-start border-border/70 bg-card px-3" />
-                </div>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="rounded-lg border border-border/70 px-4 py-3 text-sm">
-            <p className="text-muted-foreground">Direcciones</p>
-            <p className="font-mono text-foreground">{user.addresses.length}</p>
-          </div>
-        </div>
-      </div>
-
       {view === 'admin' ? (
         adminData ? (
           <AdminPanel initialData={adminData} />
@@ -1225,26 +1173,162 @@ export function DashboardPanel({
             </CardHeader>
             <CardContent className="space-y-3">
               {visibleEmergencies.length > 0 ? (
-                visibleEmergencies.map((emergency) => (
-                  <article key={emergency.id} className="rounded-lg border border-border/70 bg-muted/20 p-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="secondary">{formatEmergencyStatus(emergency.status)}</Badge>
-                      <Badge variant="outline">{emergency.category.name}</Badge>
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-foreground">{emergency.description}</p>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      {emergency.address.label} · {emergency.address.city}, {emergency.address.province}
-                    </p>
-                    <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-                      <span>Creada: {formatUtcDateTime(emergency.createdAt)}</span>
-                      <span>Vence: {formatUtcDateTime(emergency.expiresAt)}</span>
-                      <span>Candidatos: {emergency.candidateCount}</span>
-                    </div>
-                    {emergency.assignedContractorName ? (
-                      <p className="mt-2 text-sm text-foreground">Trabajador: {emergency.assignedContractorName}</p>
-                    ) : null}
-                  </article>
-                ))
+                visibleEmergencies.map((emergency) => {
+                  const isEditing = editingEmergencyId === emergency.id;
+                  const isMutating = mutatingEmergencyId === emergency.id;
+                  const editDraft = emergencyEditDrafts[emergency.id] ?? {
+                    categoryId: emergency.category.id,
+                    addressId: emergency.address.id,
+                    description: emergency.description
+                  };
+
+                  return (
+                    <article key={emergency.id} className="rounded-lg border border-border/70 bg-muted/20 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary">{formatEmergencyStatus(emergency.status)}</Badge>
+                          <Badge variant="outline">{emergency.category.name}</Badge>
+                        </div>
+
+                        {activeMode === 'client' ? (
+                          <div className="flex flex-wrap gap-2">
+                            {canEditClientEmergency(emergency) ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => startEditingEmergency(emergency)}
+                                disabled={isMutating}
+                              >
+                                <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
+                                Editar urgencia
+                              </Button>
+                            ) : null}
+                            {canResolveClientEmergency(emergency) ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => void handleEmergencyResolve(emergency.id)}
+                                disabled={isMutating}
+                              >
+                                <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                                Marcar resuelta
+                              </Button>
+                            ) : null}
+                            {canEditClientEmergency(emergency) ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => void handleEmergencyDelete(emergency.id)}
+                                disabled={isMutating}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                                Borrar urgencia
+                              </Button>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
+
+                      {isEditing ? (
+                        <form className="mt-4 space-y-4" onSubmit={(event) => void handleEmergencyUpdate(event, emergency.id)}>
+                          <div className="grid gap-4 md:grid-cols-2">
+                            <div className="space-y-2">
+                              <Label htmlFor={`emergency-edit-category-${emergency.id}`}>Categoría</Label>
+                              <select
+                                id={`emergency-edit-category-${emergency.id}`}
+                                className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                value={editDraft.categoryId}
+                                onChange={(event) =>
+                                  setEmergencyEditDrafts((current) => ({
+                                    ...current,
+                                    [emergency.id]: {
+                                      ...editDraft,
+                                      categoryId: event.target.value
+                                    }
+                                  }))
+                                }
+                              >
+                                {categories.map((category) => (
+                                  <option key={category.id} value={category.id}>
+                                    {category.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`emergency-edit-address-${emergency.id}`}>Dirección</Label>
+                              <select
+                                id={`emergency-edit-address-${emergency.id}`}
+                                className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                value={editDraft.addressId}
+                                onChange={(event) =>
+                                  setEmergencyEditDrafts((current) => ({
+                                    ...current,
+                                    [emergency.id]: {
+                                      ...editDraft,
+                                      addressId: event.target.value
+                                    }
+                                  }))
+                                }
+                              >
+                                {user.addresses.map((address) => (
+                                  <option key={address.id} value={address.id}>
+                                    {address.label} - {address.city}, {address.province}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor={`emergency-edit-description-${emergency.id}`}>Descripción</Label>
+                            <Textarea
+                              id={`emergency-edit-description-${emergency.id}`}
+                              value={editDraft.description}
+                              onChange={(event) =>
+                                setEmergencyEditDrafts((current) => ({
+                                  ...current,
+                                  [emergency.id]: {
+                                    ...editDraft,
+                                    description: event.target.value
+                                  }
+                                }))
+                              }
+                            />
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button type="submit" size="sm" disabled={isMutating}>
+                              <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                              {isMutating ? 'Guardando...' : 'Guardar cambios'}
+                            </Button>
+                            <Button type="button" size="sm" variant="outline" onClick={stopEditingEmergency}>
+                              <X className="mr-2 h-4 w-4" aria-hidden="true" />
+                              Cancelar edición
+                            </Button>
+                          </div>
+                        </form>
+                      ) : (
+                        <>
+                          <p className="mt-3 text-sm font-semibold text-foreground">{emergency.description}</p>
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {emergency.address.label} · {emergency.address.city}, {emergency.address.province}
+                          </p>
+                        </>
+                      )}
+
+                      <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
+                        <span>Creada: {formatUtcDateTime(emergency.createdAt)}</span>
+                        <span>Vence: {formatUtcDateTime(emergency.expiresAt)}</span>
+                        <span>Candidatos: {emergency.candidateCount}</span>
+                      </div>
+                      {emergency.assignedContractorName ? (
+                        <p className="mt-2 text-sm text-foreground">Trabajador: {emergency.assignedContractorName}</p>
+                      ) : null}
+                    </article>
+                  );
+                })
               ) : (
                 <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
                   {emergencyEmptyMessage}
