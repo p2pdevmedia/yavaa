@@ -44,7 +44,7 @@ export function canManageAddress(context: PermissionContext, ownerUserId: string
 export function canManageContractorProfile(context: PermissionContext, ownerUserId: string): boolean {
   return (
     isActiveContext(context) &&
-    ((hasRole(context, 'contractor') && context.userId === ownerUserId) || hasRole(context, 'admin'))
+    (context.userId === ownerUserId || hasRole(context, 'admin'))
   );
 }
 

@@ -943,9 +943,9 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           tags: ['me'],
           security: [{ bearerAuth: [] }],
           responses: {
-            '200': { description: 'Contractor profile for the authenticated user.' },
+            '200': { description: 'Contractor profile for the authenticated user, if one exists.' },
             '401': { description: 'Missing or invalid session token.' },
-            '403': { description: 'The authenticated user cannot access contractor data.' }
+            '403': { description: 'The authenticated user is suspended or blocked.' }
           }
         },
         patch: {
@@ -954,10 +954,10 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           tags: ['me'],
           security: [{ bearerAuth: [] }],
           responses: {
-            '200': { description: 'Updated contractor profile and refreshed user state.' },
+            '200': { description: 'Updated contractor profile, ensured contractor role, and refreshed user state.' },
             '400': { description: 'Invalid contractor profile payload.' },
             '401': { description: 'Missing or invalid session token.' },
-            '403': { description: 'The authenticated user cannot access contractor data.' },
+            '403': { description: 'The authenticated user is suspended or blocked.' },
             '422': { description: 'The selected address does not belong to the authenticated user.' }
           }
         }

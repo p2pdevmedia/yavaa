@@ -67,9 +67,10 @@ describe('permission helpers', () => {
     expect(canViewUserRecord(activeClient, 'admin_001')).toBe(false);
   });
 
-  it('requires the contractor role for contractor profile management', () => {
+  it('lets any active user manage their own contractor profile', () => {
     expect(canManageContractorProfile(activeContractor, 'contractor_001')).toBe(true);
-    expect(canManageContractorProfile(activeClient, 'client_001')).toBe(false);
+    expect(canManageContractorProfile(activeClient, 'client_001')).toBe(true);
+    expect(canManageContractorProfile(activeClient, 'contractor_001')).toBe(false);
     expect(canManageContractorProfile(activeAdmin, 'contractor_001')).toBe(true);
   });
 

@@ -3,6 +3,7 @@ import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 
 import { recordAuditLog } from '@/lib/audit';
+import { ensureContractorRoleForUser } from '@/lib/contractor-profile';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
 import { canManageContractorProfile } from '@/lib/permissions';
@@ -100,33 +101,37 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
-  await prisma.contractorProfile.upsert({
-    where: {
-      userId: appUser.id
-    },
-    update: {
-      acceptsEmergencies: data.acceptsEmergencies,
-      addressId: data.addressId ?? undefined,
-      dniNumber: data.dniNumber ?? undefined,
-      dniFrontUrl: data.dniFrontUrl ?? undefined,
-      dniBackUrl: data.dniBackUrl ?? undefined,
-      profilePhotoUrl: data.profilePhotoUrl ?? undefined,
-      reviewNotes: data.reviewNotes ?? undefined,
-      approvalStatus: data.submitForReview ? ContractorApprovalStatus.PENDING_REVIEW : undefined,
-      submittedAt: data.submitForReview ? new Date() : undefined
-    },
-    create: {
-      userId: appUser.id,
-      acceptsEmergencies: data.acceptsEmergencies,
-      addressId: data.addressId ?? null,
-      dniNumber: data.dniNumber ?? null,
-      dniFrontUrl: data.dniFrontUrl ?? null,
-      dniBackUrl: data.dniBackUrl ?? null,
-      profilePhotoUrl: data.profilePhotoUrl ?? null,
-      reviewNotes: data.reviewNotes ?? null,
-      approvalStatus: data.submitForReview ? ContractorApprovalStatus.PENDING_REVIEW : ContractorApprovalStatus.DRAFT,
-      submittedAt: data.submitForReview ? new Date() : null
-    }
+  await prisma.$transaction(async (tx) => {
+    await tx.contractorProfile.upsert({
+      where: {
+        userId: appUser.id
+      },
+      update: {
+        acceptsEmergencies: data.acceptsEmergencies,
+        addressId: data.addressId ?? undefined,
+        dniNumber: data.dniNumber ?? undefined,
+        dniFrontUrl: data.dniFrontUrl ?? undefined,
+        dniBackUrl: data.dniBackUrl ?? undefined,
+        profilePhotoUrl: data.profilePhotoUrl ?? undefined,
+        reviewNotes: data.reviewNotes ?? undefined,
+        approvalStatus: data.submitForReview ? ContractorApprovalStatus.PENDING_REVIEW : undefined,
+        submittedAt: data.submitForReview ? new Date() : undefined
+      },
+      create: {
+        userId: appUser.id,
+        acceptsEmergencies: data.acceptsEmergencies,
+        addressId: data.addressId ?? null,
+        dniNumber: data.dniNumber ?? null,
+        dniFrontUrl: data.dniFrontUrl ?? null,
+        dniBackUrl: data.dniBackUrl ?? null,
+        profilePhotoUrl: data.profilePhotoUrl ?? null,
+        reviewNotes: data.reviewNotes ?? null,
+        approvalStatus: data.submitForReview ? ContractorApprovalStatus.PENDING_REVIEW : ContractorApprovalStatus.DRAFT,
+        submittedAt: data.submitForReview ? new Date() : null
+      }
+    });
+
+    await ensureContractorRoleForUser(tx, appUser.id);
   });
 
   await recordAuditLog({
@@ -136,6 +141,7 @@ export async function PATCH(request: NextRequest) {
     entityId: appUser.id,
     metadata: {
       addressChanged: data.addressId !== undefined,
+      contractorRoleEnsured: true,
       submittedForReview: data.submitForReview
     }
   });

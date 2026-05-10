@@ -140,6 +140,8 @@ type EmergencyDraft = {
   description: string;
 };
 
+type DashboardMode = 'client' | 'contractor';
+
 function toStringOrEmpty(value: string | null | undefined): string {
   return value ?? '';
 }
@@ -189,6 +191,18 @@ function formatUtcDateTime(value: string): string {
   return `${value.slice(0, 10)} ${value.slice(11, 16)} UTC`;
 }
 
+function isAdminUser(user: DashboardUser): boolean {
+  return user.roles.includes('admin');
+}
+
+function hasContractorMode(user: DashboardUser): boolean {
+  return user.roles.includes('contractor') || Boolean(user.contractorProfile);
+}
+
+function getInitialDashboardMode(user: DashboardUser): DashboardMode {
+  return hasContractorMode(user) ? 'contractor' : 'client';
+}
+
 export function DashboardPanel({
   view,
   initialUser,
@@ -214,7 +228,13 @@ export function DashboardPanel({
   const [isSavingEmergencyAvailability, setIsSavingEmergencyAvailability] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
-  const [acceptsEmergencies, setAcceptsEmergencies] = useState(initialUser.contractorProfile?.acceptsEmergencies ?? false);
+  const [isSwitchingContractorMode, setIsSwitchingContractorMode] = useState(false);
+  const [acceptsEmergencies, setAcceptsEmergencies] = useState(
+    initialUser.contractorProfile?.acceptsEmergencies ?? false
+  );
+  const [activeMode, setActiveMode] = useState<DashboardMode>(() => getInitialDashboardMode(initialUser));
+  const [modeError, setModeError] = useState<string | null>(null);
+  const [modeStatus, setModeStatus] = useState<string | null>(null);
 
   async function parseEnvelope(response: Response): Promise<UserEnvelope | null> {
     try {
@@ -413,6 +433,56 @@ export function DashboardPanel({
     }
   }
 
+  async function handleContractorModeSelect() {
+    setModeError(null);
+    setModeStatus(null);
+
+    if (hasContractorMode(user)) {
+      setActiveMode('contractor');
+      setModeStatus('Modo contratista activo.');
+      return;
+    }
+
+    setIsSwitchingContractorMode(true);
+
+    try {
+      const response = await fetch('/api/me/contractor-profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          acceptsEmergencies: false
+        })
+      });
+
+      const payload = await parseEnvelope(response);
+
+      if (!response.ok) {
+        setModeError(
+          (payload as { message?: string; error?: string } | null)?.message ??
+            (payload as { error?: string } | null)?.error ??
+            'No pudimos activar el modo contratista.'
+        );
+        return;
+      }
+
+      if (payload?.appUser) {
+        setUser(payload.appUser);
+        setProfileDraft(buildProfileDraft(payload.appUser));
+        setAddressDraft(buildAddressDraft(payload.appUser));
+        setAcceptsEmergencies(payload.appUser.contractorProfile?.acceptsEmergencies ?? false);
+      }
+
+      setActiveMode('contractor');
+      setModeStatus('Modo contratista activado. Tu perfil quedó en borrador.');
+    } catch {
+      setModeError('No pudimos activar el modo contratista.');
+    } finally {
+      setIsSwitchingContractorMode(false);
+    }
+  }
+
   const primaryAddress = user.addresses.find((address) => address.isDefault) ?? user.addresses[0] ?? null;
 
   return (
@@ -445,6 +515,56 @@ export function DashboardPanel({
           </div>
         </div>
       </div>
+
+      {!isAdminUser(user) ? (
+        <Card className="border-border/70 bg-card/90 shadow-soft">
+          <CardHeader>
+            <CardTitle className="font-display text-2xl">Modo de uso</CardTitle>
+            <CardDescription>Podés operar como cliente o activar tu perfil contratista sin aprobación previa.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2" role="group" aria-label="Modo activo del dashboard">
+              <Button
+                type="button"
+                variant={activeMode === 'client' ? 'default' : 'outline'}
+                onClick={() => {
+                  setActiveMode('client');
+                  setModeError(null);
+                  setModeStatus('Modo cliente activo.');
+                }}
+              >
+                Modo cliente
+              </Button>
+              <Button
+                type="button"
+                variant={activeMode === 'contractor' ? 'default' : 'outline'}
+                onClick={handleContractorModeSelect}
+                disabled={isSwitchingContractorMode}
+              >
+                {isSwitchingContractorMode ? 'Activando...' : 'Modo contratista'}
+              </Button>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              {activeMode === 'contractor'
+                ? `Perfil contratista: ${user.contractorProfile?.approvalStatus ?? 'DRAFT'}`
+                : 'Modo cliente activo para buscar servicios, crear urgencias y manejar tus bookings.'}
+            </p>
+
+            {modeError ? (
+              <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {modeError}
+              </p>
+            ) : null}
+
+            {modeStatus ? (
+              <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                {modeStatus}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {view === 'admin' ? (
         adminData ? (
