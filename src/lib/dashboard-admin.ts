@@ -7,7 +7,13 @@ import {
 } from '@/lib/admin-contractors';
 import { listUsersForAdmin, type AdminUserSummary } from '@/lib/admin-users';
 import { listBookingsForActor, type BookingActor } from '@/lib/bookings';
-import { serializeBookingsForDashboard, type DashboardBooking } from '@/lib/dashboard-workspace';
+import {
+  serializeBookingsForDashboard,
+  serializeEmergenciesForDashboard,
+  type DashboardBooking,
+  type DashboardEmergency
+} from '@/lib/dashboard-workspace';
+import { listEmergencyRequestsForActor } from '@/lib/emergencies';
 import { hasRole, type PermissionContext } from '@/lib/permissions';
 
 export type DashboardAdminData = {
@@ -15,6 +21,7 @@ export type DashboardAdminData = {
   contractorProfiles: AdminContractorProfileSummary[];
   categories: AdminCategorySummary[];
   bookings: DashboardBooking[];
+  emergencies: DashboardEmergency[];
 };
 
 export async function getDashboardAdminData(
@@ -25,17 +32,19 @@ export async function getDashboardAdminData(
     return null;
   }
 
-  const [users, contractorProfiles, categories, bookings] = await Promise.all([
+  const [users, contractorProfiles, categories, bookings, emergencies] = await Promise.all([
     listUsersForAdmin(prisma, actor),
     listContractorProfilesForAdmin(prisma, actor, {}),
     listCategoriesForAdmin(prisma, actor, {}),
-    listBookingsForActor(prisma, actor as BookingActor)
+    listBookingsForActor(prisma, actor as BookingActor),
+    listEmergencyRequestsForActor(prisma, actor)
   ]);
 
   return {
     users,
     contractorProfiles,
     categories,
-    bookings: serializeBookingsForDashboard(bookings)
+    bookings: serializeBookingsForDashboard(bookings),
+    emergencies: serializeEmergenciesForDashboard(emergencies)
   };
 }

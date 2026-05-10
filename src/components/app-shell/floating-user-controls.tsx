@@ -2,8 +2,8 @@
 
 import type { Route } from 'next';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Bell } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Bell, Glasses, HardHat } from 'lucide-react';
 import { useState } from 'react';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { AppShellUserControlsState } from '@/lib/app-shell-user-controls';
 import type { DashboardNotification } from '@/lib/dashboard-notifications';
+import { cn } from '@/lib/utils';
 
 type FloatingUserControlsProps = AppShellUserControlsState;
 
@@ -55,14 +56,67 @@ function getNotificationHref(notification: DashboardNotification, profilePath: R
 }
 
 export function FloatingUserControls({ user, email, notifications }: FloatingUserControlsProps) {
+  const router = useRouter();
   const pathname = usePathname();
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
   const [notificationPopoverOpen, setNotificationPopoverOpen] = useState(false);
+  const [modeError, setModeError] = useState<string | null>(null);
+  const [isSwitchingMode, setIsSwitchingMode] = useState(false);
+  const [hasContractorMode, setHasContractorMode] = useState(
+    user.roles.includes('contractor') || user.hasContractorProfile
+  );
   const unreadNotificationCount = notifications.filter((notification) => !notification.isRead).length;
   const profilePath = getDashboardProfilePath(pathname);
+  const activeMode = pathname?.startsWith('/dashboard/trabajador') ? 'contractor' : 'client';
+  const activeModeLabel = activeMode === 'contractor' ? 'Trabajador' : 'Jefe';
   const profilePhotoSrc = user.profile?.avatarUrl
     ? `/api/me/profile?avatar=${encodeURIComponent(user.profile.avatarUrl)}`
     : null;
+
+  async function handleModeToggle() {
+    const nextMode = activeMode === 'contractor' ? 'client' : 'contractor';
+    const nextPath = nextMode === 'contractor' ? '/dashboard/trabajador/perfil' : '/dashboard/jefe/perfil';
+
+    setModeError(null);
+
+    if (nextMode === 'client') {
+      setAccountPopoverOpen(false);
+      router.push(nextPath as Route);
+      return;
+    }
+
+    if (!hasContractorMode) {
+      setIsSwitchingMode(true);
+
+      try {
+        const response = await fetch('/api/me/contractor-profile', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            acceptsEmergencies: false
+          })
+        });
+
+        if (!response.ok) {
+          setModeError('No pudimos activar el modo Trabajador.');
+          return;
+        }
+
+        setHasContractorMode(true);
+      } catch {
+        setModeError('No pudimos activar el modo Trabajador.');
+        return;
+      } finally {
+        setIsSwitchingMode(false);
+      }
+    }
+
+    setAccountPopoverOpen(false);
+    router.push(nextPath as Route);
+    router.refresh();
+  }
 
   return (
     <div className="fixed right-4 top-4 z-50 flex items-center gap-2 sm:right-6 sm:top-6">
@@ -138,9 +192,9 @@ export function FloatingUserControls({ user, email, notifications }: FloatingUse
       <div className="relative">
         <button
           type="button"
-          aria-label="Abrir menu de perfil"
+          aria-label="Abrir menú de perfil"
           aria-expanded={accountPopoverOpen}
-          className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-muted font-display text-sm font-semibold text-muted-foreground shadow-soft backdrop-blur transition hover:border-primary/50 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-muted font-display text-sm font-semibold text-muted-foreground shadow-soft backdrop-blur transition hover:border-primary/50 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           onClick={() => {
             setAccountPopoverOpen((current) => !current);
             setNotificationPopoverOpen(false);
@@ -156,15 +210,57 @@ export function FloatingUserControls({ user, email, notifications }: FloatingUse
             getUserInitials(user)
           )}
         </button>
+        <span
+          aria-label={`Modo activo: ${activeModeLabel}`}
+          className="absolute -bottom-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full border border-background bg-primary text-primary-foreground shadow-soft"
+        >
+          {activeMode === 'contractor' ? (
+            <HardHat className="h-3.5 w-3.5" aria-hidden="true" />
+          ) : (
+            <Glasses className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+        </span>
 
         {accountPopoverOpen ? (
-          <div className="absolute right-0 top-14 w-[min(16rem,calc(100vw-2rem))] rounded-lg border border-border/80 bg-card p-3 shadow-soft">
+          <div className="absolute right-0 top-14 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-border/80 bg-card p-3 shadow-soft">
             <div className="border-b border-border/70 px-2 pb-3">
               <p className="text-sm font-semibold text-foreground">{formatName(user)}</p>
               <p className="mt-1 truncate text-xs text-muted-foreground">{email ?? user.email}</p>
             </div>
 
             <div className="mt-3 space-y-2">
+              <button
+                type="button"
+                aria-label={`Cambiar de modo: ${activeModeLabel}`}
+                aria-pressed={activeMode === 'contractor'}
+                className="grid h-10 w-full grid-cols-2 rounded-full border border-border/70 bg-muted/40 p-1 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                onClick={() => void handleModeToggle()}
+                disabled={isSwitchingMode}
+              >
+                <span
+                  className={cn(
+                    'flex items-center justify-center gap-1 rounded-full transition',
+                    activeMode === 'client' ? 'bg-primary text-primary-foreground shadow-soft' : 'text-foreground'
+                  )}
+                >
+                  <Glasses className="h-3.5 w-3.5" aria-hidden="true" />
+                  Jefe
+                </span>
+                <span
+                  className={cn(
+                    'flex items-center justify-center gap-1 rounded-full transition',
+                    activeMode === 'contractor' ? 'bg-primary text-primary-foreground shadow-soft' : 'text-foreground'
+                  )}
+                >
+                  <HardHat className="h-3.5 w-3.5" aria-hidden="true" />
+                  {isSwitchingMode ? 'Activando' : 'Trabajador'}
+                </span>
+              </button>
+              {modeError ? (
+                <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                  {modeError}
+                </p>
+              ) : null}
               <Link
                 href={profilePath}
                 className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent"

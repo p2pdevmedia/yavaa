@@ -1,10 +1,7 @@
 'use client';
 
-import Link from 'next/link';
 import { useMemo, useState, type FormEvent } from 'react';
-import type { Route } from 'next';
-import { useRouter } from 'next/navigation';
-import { CheckCircle2, Glasses, HardHat, Pencil, Trash2, X } from 'lucide-react';
+import { CheckCircle2, Pencil, Trash2, X } from 'lucide-react';
 
 import { AdminPanel } from '@/components/dashboard/admin-panel';
 import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
@@ -155,7 +152,8 @@ type EmergencyEnvelope = {
   request?: EmergencyApiRequest;
 };
 
-type EmergencyApiRequest = Omit<DashboardEmergency, 'assignedContractorName' | 'candidateCount'> & {
+type EmergencyApiRequest = Omit<DashboardEmergency, 'assignedContractorName' | 'candidateCount' | 'clientName'> & {
+  clientName?: string;
   assignedContractorName?: string | null;
   candidateCount?: number;
   candidates?: unknown[];
@@ -280,6 +278,7 @@ function toDashboardEmergencyFromApi(request: EmergencyApiRequest): DashboardEme
     resolvedAt: request.resolvedAt,
     createdAt: request.createdAt,
     updatedAt: request.updatedAt,
+    clientName: request.clientName ?? 'Cliente',
     category: request.category,
     address: request.address,
     assignedContractorName:
@@ -310,7 +309,6 @@ export function DashboardPanel({
   addressMarkets,
   addressLocations
 }: DashboardPanelProps) {
-  const router = useRouter();
   const [user, setUser] = useState(initialUser);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
@@ -342,13 +340,10 @@ export function DashboardPanel({
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingContractorProfile, setIsSavingContractorProfile] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
-  const [isSwitchingContractorMode, setIsSwitchingContractorMode] = useState(false);
   const [acceptsEmergencies, setAcceptsEmergencies] = useState(
     initialUser.contractorProfile?.acceptsEmergencies ?? false
   );
-  const [activeMode, setActiveMode] = useState<DashboardMode>(() => initialMode ?? getInitialDashboardMode(initialUser));
-  const [modeError, setModeError] = useState<string | null>(null);
-  const [modeStatus, setModeStatus] = useState<string | null>(null);
+  const activeMode = initialMode ?? getInitialDashboardMode(initialUser);
   const [contractorProfileError, setContractorProfileError] = useState<string | null>(null);
   const [contractorProfileStatus, setContractorProfileStatus] = useState<string | null>(null);
 
@@ -779,73 +774,6 @@ export function DashboardPanel({
     }
   }
 
-  async function handleContractorModeSelect(nextPath?: Route) {
-    setModeError(null);
-    setModeStatus(null);
-
-    if (hasContractorMode(user)) {
-      setActiveMode('contractor');
-      setModeStatus('Modo contratista activo.');
-      if (nextPath) {
-        router.push(nextPath);
-      }
-      return;
-    }
-
-    setIsSwitchingContractorMode(true);
-
-    try {
-      const response = await fetch('/api/me/contractor-profile', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          acceptsEmergencies: false
-        })
-      });
-
-      const payload = await parseEnvelope(response);
-
-      if (!response.ok) {
-        setModeError(
-          (payload as { message?: string; error?: string } | null)?.message ??
-            (payload as { error?: string } | null)?.error ??
-            'No pudimos activar el modo contratista.'
-        );
-        return;
-      }
-
-      if (payload?.appUser) {
-        setUser(payload.appUser);
-        setProfileDraft(buildProfileDraft(payload.appUser));
-        setContractorProfileDraft(buildContractorProfileDraft(payload.appUser));
-        setAddressDraft(buildAddressDraft(payload.appUser));
-        setAcceptsEmergencies(payload.appUser.contractorProfile?.acceptsEmergencies ?? false);
-      }
-
-      setActiveMode('contractor');
-      setModeStatus('Modo contratista activado. Tu perfil quedó en borrador.');
-      if (nextPath) {
-        router.push(nextPath);
-      }
-    } catch {
-      setModeError('No pudimos activar el modo contratista.');
-    } finally {
-      setIsSwitchingContractorMode(false);
-    }
-  }
-
-  function handleClientModeSelect(nextPath?: Route) {
-    setModeError(null);
-    setActiveMode('client');
-    setModeStatus('Modo cliente activo.');
-
-    if (nextPath) {
-      router.push(nextPath);
-    }
-  }
-
   const primaryAddress = user.addresses.find((address) => address.isDefault) ?? user.addresses[0] ?? null;
   const provinceOptions = useMemo(() => getProvinceOptions(addressLocations), [addressLocations]);
   const cityOptions = useMemo(
@@ -987,65 +915,6 @@ export function DashboardPanel({
           </CardContent>
         </Card>
       </div>
-      ) : null}
-
-      {view === 'perfil' ? (
-        <Card className="border-border/70 bg-card/90 shadow-soft">
-          <CardHeader>
-            <CardTitle className="font-display text-2xl">Cambiar modo</CardTitle>
-            <CardDescription>Elegí si querés usar Yavaa como Jefe o como Trabajador.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button
-                type="button"
-                variant={activeMode === 'client' ? 'default' : 'outline'}
-                onClick={() => handleClientModeSelect('/dashboard/jefe/perfil' as Route)}
-              >
-                <Glasses className="mr-2 h-4 w-4" aria-hidden="true" />
-                Usar modo Jefe
-              </Button>
-
-              {hasContractorMode(user) ? (
-                <Button asChild variant={activeMode === 'contractor' ? 'default' : 'outline'}>
-                  <Link
-                    href={'/dashboard/trabajador/perfil' as Route}
-                    onClick={() => {
-                      setModeError(null);
-                      setActiveMode('contractor');
-                      setModeStatus('Modo contratista activo.');
-                    }}
-                  >
-                    <HardHat className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Usar modo Trabajador
-                  </Link>
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => void handleContractorModeSelect('/dashboard/trabajador/perfil' as Route)}
-                  disabled={isSwitchingContractorMode}
-                >
-                  <HardHat className="mr-2 h-4 w-4" aria-hidden="true" />
-                  {isSwitchingContractorMode ? 'Activando...' : 'Usar modo Trabajador'}
-                </Button>
-              )}
-            </div>
-
-            {modeError ? (
-              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {modeError}
-              </p>
-            ) : null}
-
-            {modeStatus ? (
-              <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                {modeStatus}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
       ) : null}
 
       {view === 'perfil' && activeMode === 'contractor' ? (

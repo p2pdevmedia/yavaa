@@ -7,7 +7,8 @@ describe('dashboard admin sections', () => {
     expect(dashboardAdminSections).toEqual([
       { id: 'usuarios', label: 'Usuarios', href: '/dashboard/admin/usuarios' },
       { id: 'categorias', label: 'Categorías', href: '/dashboard/admin/categorias' },
-      { id: 'bookings', label: 'Bookings', href: '/dashboard/admin/bookings' }
+      { id: 'bookings', label: 'Bookings', href: '/dashboard/admin/bookings' },
+      { id: 'urgencias', label: 'Urgencias', href: '/dashboard/admin/urgencias' }
     ]);
   });
 });

@@ -29,6 +29,10 @@ function getSectionCount(sectionId: string, data: DashboardAdminData): number {
     return data.bookings.length;
   }
 
+  if (sectionId === 'urgencias') {
+    return data.emergencies.length;
+  }
+
   return 0;
 }
 
@@ -43,6 +47,10 @@ function getSectionDescription(sectionId: string): string {
 
   if (sectionId === 'categorias') {
     return 'Crear, editar, inactivar y borrar categorías cuando no tengan uso histórico.';
+  }
+
+  if (sectionId === 'urgencias') {
+    return 'Vista operativa de todas las urgencias y emergencias del marketplace.';
   }
 
   return 'Correcciones operativas sobre reservas conflictivas.';

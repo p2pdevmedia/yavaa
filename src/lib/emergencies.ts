@@ -175,7 +175,7 @@ export type EmergencyCandidateRecord = EmergencyRequestRow['candidates'][number]
 export type EmergencyRequestRecord = EmergencyRequestRow;
 
 const dispatchBatchSize = 3;
-const emergencyDispatchWindowMinutes = 10;
+const emergencyDispatchWindowMinutes = 24 * 60;
 const contractorBrowsableEmergencyStatuses: EmergencyRequestStatus[] = ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'];
 
 function isClientActor(actor: EmergencyRequestActor): boolean {

@@ -85,6 +85,7 @@ export type DashboardEmergency = {
   resolvedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  clientName: string;
   category: EmergencyRequestRecord['category'];
   address: EmergencyRequestRecord['address'];
   assignedContractorName: string | null;
@@ -170,6 +171,7 @@ export function serializeEmergencyForDashboard(emergency: EmergencyRequestRecord
   const assignedContractor = emergency.assignedContractorProfile
     ? serializeWorkspaceUser(emergency.assignedContractorProfile.user)
     : null;
+  const client = serializeWorkspaceUser(emergency.client);
 
   return {
     id: emergency.id,
@@ -182,6 +184,7 @@ export function serializeEmergencyForDashboard(emergency: EmergencyRequestRecord
     resolvedAt: emergency.resolvedAt?.toISOString() ?? null,
     createdAt: emergency.createdAt.toISOString(),
     updatedAt: emergency.updatedAt.toISOString(),
+    clientName: client.displayName ?? client.email,
     category: emergency.category,
     address: emergency.address,
     assignedContractorName: assignedContractor ? assignedContractor.displayName ?? assignedContractor.email : null,

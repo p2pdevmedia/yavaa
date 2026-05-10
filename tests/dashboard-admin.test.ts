@@ -6,6 +6,7 @@ import { listCategoriesForAdmin } from '@/lib/admin-categories';
 import { listContractorProfilesForAdmin } from '@/lib/admin-contractors';
 import { listUsersForAdmin } from '@/lib/admin-users';
 import { listBookingsForActor } from '@/lib/bookings';
+import { listEmergencyRequestsForActor } from '@/lib/emergencies';
 
 vi.mock('@/lib/admin-categories', () => ({
   listCategoriesForAdmin: vi.fn()
@@ -21,6 +22,10 @@ vi.mock('@/lib/admin-users', () => ({
 
 vi.mock('@/lib/bookings', () => ({
   listBookingsForActor: vi.fn()
+}));
+
+vi.mock('@/lib/emergencies', () => ({
+  listEmergencyRequestsForActor: vi.fn()
 }));
 
 const activeAdmin = {
@@ -48,6 +53,7 @@ describe('dashboard admin data', () => {
     expect(listContractorProfilesForAdmin).not.toHaveBeenCalled();
     expect(listCategoriesForAdmin).not.toHaveBeenCalled();
     expect(listBookingsForActor).not.toHaveBeenCalled();
+    expect(listEmergencyRequestsForActor).not.toHaveBeenCalled();
   });
 
   it('loads every admin workspace surface for active admins', async () => {
@@ -66,6 +72,7 @@ describe('dashboard admin data', () => {
     vi.mocked(listContractorProfilesForAdmin).mockResolvedValue([]);
     vi.mocked(listCategoriesForAdmin).mockResolvedValue([]);
     vi.mocked(listBookingsForActor).mockResolvedValue([]);
+    vi.mocked(listEmergencyRequestsForActor).mockResolvedValue([]);
 
     const data = await getDashboardAdminData({} as PrismaClient, activeAdmin);
 
@@ -73,9 +80,11 @@ describe('dashboard admin data', () => {
     expect(listContractorProfilesForAdmin).toHaveBeenCalledWith({}, activeAdmin, {});
     expect(listCategoriesForAdmin).toHaveBeenCalledWith({}, activeAdmin, {});
     expect(listBookingsForActor).toHaveBeenCalledWith({}, activeAdmin);
+    expect(listEmergencyRequestsForActor).toHaveBeenCalledWith({}, activeAdmin);
     expect(data?.users).toHaveLength(1);
     expect(data?.contractorProfiles).toEqual([]);
     expect(data?.categories).toEqual([]);
     expect(data?.bookings).toEqual([]);
+    expect(data?.emergencies).toEqual([]);
   });
 });

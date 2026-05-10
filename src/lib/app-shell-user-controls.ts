@@ -6,6 +6,7 @@ import { listNotificationsForUser } from '@/lib/notifications';
 import { resolveAppUser } from '@/lib/app-user';
 import { getPrismaClient } from '@/lib/prisma';
 import { isDatabaseUnavailableError } from '@/lib/public-db-fallback';
+import type { AppRoleSlug } from '@/lib/permissions';
 
 export type AppShellUserControlsState = {
   user: {
@@ -16,6 +17,8 @@ export type AppShellUserControlsState = {
       lastName: string | null;
       avatarUrl: string | null;
     } | null;
+    roles: AppRoleSlug[];
+    hasContractorProfile: boolean;
   };
   email: string | null;
   notifications: DashboardNotification[];
@@ -49,7 +52,9 @@ export async function getAppShellUserControlsState(): Promise<AppShellUserContro
               lastName: appUser.user.profile.lastName,
               avatarUrl: appUser.user.profile.avatarUrl
             }
-          : null
+          : null,
+        roles: appUser.user.roles,
+        hasContractorProfile: Boolean(appUser.user.contractorProfile)
       },
       email: authState.user.email ?? null,
       notifications: serializeNotificationsForDashboard(notifications)

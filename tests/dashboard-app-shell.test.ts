@@ -18,14 +18,14 @@ describe('dashboard app shell', () => {
   );
 
   test('exposes profile and notifications as app-style header controls', () => {
-    expect(dashboardPanelSource).toContain('aria-label="Abrir menú de perfil"');
-    expect(dashboardPanelSource).toContain('accountPopoverOpen');
-    expect(dashboardPanelSource).toContain('aria-label="Abrir notificaciones"');
-    expect(dashboardPanelSource).toContain('notificationPopoverOpen');
+    expect(floatingUserControlsSource).toContain('aria-label="Abrir menú de perfil"');
+    expect(floatingUserControlsSource).toContain('accountPopoverOpen');
+    expect(floatingUserControlsSource).toContain('aria-label="Abrir notificaciones"');
+    expect(floatingUserControlsSource).toContain('notificationPopoverOpen');
   });
 
   test('keeps account actions inside the profile avatar menu', () => {
-    expect(dashboardPanelSource).toContain('Cambiar de modo');
+    expect(floatingUserControlsSource).toContain('Cambiar de modo');
     expect(floatingUserControlsSource).toContain('<SignOutButton');
     expect(dashboardPanelSource).not.toContain('<SignOutButton');
     expect(dashboardPanelSource).not.toContain('Modo de uso');
@@ -33,9 +33,9 @@ describe('dashboard app shell', () => {
   });
 
   test('shows the current mode as a small floating icon instead of a header label', () => {
-    expect(dashboardPanelSource).toContain('Glasses');
-    expect(dashboardPanelSource).toContain('HardHat');
-    expect(dashboardPanelSource).toContain('aria-label={`Modo activo: ${activeModeLabel}`}');
+    expect(floatingUserControlsSource).toContain('Glasses');
+    expect(floatingUserControlsSource).toContain('HardHat');
+    expect(floatingUserControlsSource).toContain('aria-label={`Modo activo: ${activeModeLabel}`}');
     expect(dashboardPanelSource).not.toContain('<p className="text-muted-foreground">Contractor</p>');
   });
 
@@ -88,12 +88,15 @@ describe('dashboard app shell', () => {
     expect(trabajadorProfilePage).toContain('initialMode="contractor"');
   });
 
-  test('shows mode switching as a visible profile action', () => {
-    expect(dashboardPanelSource).toContain('Cambiar modo');
-    expect(dashboardPanelSource).toContain('Usar modo Jefe');
-    expect(dashboardPanelSource).toContain('Usar modo Trabajador');
-    expect(dashboardPanelSource).toContain('/dashboard/jefe/perfil');
-    expect(dashboardPanelSource).toContain('/dashboard/trabajador/perfil');
+  test('moves mode switching from the profile page into the profile avatar control', () => {
+    expect(dashboardPanelSource).not.toContain('Cambiar modo');
+    expect(dashboardPanelSource).not.toContain('Usar modo Jefe');
+    expect(dashboardPanelSource).not.toContain('Usar modo Trabajador');
+    expect(floatingUserControlsSource).toContain('Cambiar de modo');
+    expect(floatingUserControlsSource).toContain('Jefe');
+    expect(floatingUserControlsSource).toContain('Trabajador');
+    expect(floatingUserControlsSource).toContain('/dashboard/jefe/perfil');
+    expect(floatingUserControlsSource).toContain('/dashboard/trabajador/perfil');
   });
 
   test('keeps sign out in the top profile avatar menu only', () => {

@@ -21,6 +21,7 @@ const mockedRecordAuditLog = vi.mocked(recordAuditLog);
 
 afterEach(() => {
   vi.clearAllMocks();
+  vi.useRealTimers();
 });
 
 const clientActor: EmergencyRequestActor = {
@@ -350,6 +351,8 @@ function buildMockPrisma() {
 
 describe('emergency helpers', () => {
   it('creates an emergency request and dispatches to eligible contractors', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-09T12:00:00.000Z'));
     const { prisma, tx } = buildMockPrisma();
 
     const request = await createEmergencyRequest(prisma as never, clientActor, {
@@ -366,6 +369,13 @@ describe('emergency helpers', () => {
     expect(mockedRecordAuditLog).toHaveBeenCalledTimes(1);
     expect(request.status).toBe('DISPATCHING');
     expect(request.candidates).toHaveLength(1);
+    expect(tx.emergencyRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          expiresAt: new Date('2026-05-10T12:00:00.000Z')
+        })
+      })
+    );
   });
 
   it('lets a contractor accept the emergency and closes the request to others', async () => {
