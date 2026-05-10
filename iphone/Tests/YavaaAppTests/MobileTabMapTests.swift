@@ -3,10 +3,10 @@ import YavaaCore
 @testable import YavaaApp
 
 final class MobileTabMapTests: XCTestCase {
-    func testClientModeUsesYavaaAndProfileTabs() {
+    func testClientModeUsesInicioYavaaAndProfileTabs() {
         XCTAssertEqual(
             MobileTabMap.tabs(for: .client),
-            [.yavaa, .profile]
+            [.home, .yavaa, .profile]
         )
     }
 

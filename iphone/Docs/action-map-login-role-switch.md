@@ -49,13 +49,18 @@ These actions are client-mode surface entry points for this slice.
 
 Bottom menu:
 
+- Inicio
 - Yavaa
 - Perfil
 
-Yavaa API-backed surface:
+Inicio API-backed surface:
 
 - Search services
 - View providers
+
+Yavaa API-backed surface:
+
+- Create emergency requests for work that needs to be resolved urgently
 
 Perfil API-backed surface:
 

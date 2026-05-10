@@ -1,6 +1,7 @@
 import YavaaCore
 
 public enum MobileTab: String, CaseIterable, Equatable, Sendable {
+    case home
     case yavaa
     case offers
     case working
@@ -8,6 +9,8 @@ public enum MobileTab: String, CaseIterable, Equatable, Sendable {
 
     public var title: String {
         switch self {
+        case .home:
+            return "Inicio"
         case .yavaa:
             return "Yavaa"
         case .offers:
@@ -21,8 +24,10 @@ public enum MobileTab: String, CaseIterable, Equatable, Sendable {
 
     public var systemImageName: String {
         switch self {
+        case .home:
+            return "house"
         case .yavaa:
-            return "magnifyingglass"
+            return "bolt.badge.clock"
         case .offers:
             return "tray.full"
         case .working:
@@ -37,7 +42,7 @@ public enum MobileTabMap {
     public static func tabs(for mode: AppMode) -> [MobileTab] {
         switch mode {
         case .client:
-            return [.yavaa, .profile]
+            return [.home, .yavaa, .profile]
         case .contractor:
             return [.offers, .working, .profile]
         }

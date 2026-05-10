@@ -121,6 +121,22 @@ public final class AppContainer: ObservableObject {
         )
     }
 
+    public func loadEmergencyComposerData() async throws -> EmergencyComposerData {
+        async let categories = apiClient.fetchCatalogCategories()
+        async let addresses = apiClient.fetchAddresses()
+        let loadedCategories = try await categories
+        let loadedAddresses = try await addresses
+
+        return EmergencyComposerData(
+            categories: loadedCategories.categories,
+            addresses: loadedAddresses.addresses
+        )
+    }
+
+    public func createEmergency(_ input: EmergencyRequestInput) async throws {
+        _ = try await apiClient.createEmergency(input)
+    }
+
     public func loadBookings() async throws -> [BookingSummary] {
         try await apiClient.fetchBookings().bookings
     }

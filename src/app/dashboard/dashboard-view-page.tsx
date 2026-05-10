@@ -68,9 +68,7 @@ export async function getDashboardViewPageState({
       bookings = await listBookingsForActor(prisma, context.appUser.permissionContext);
     }
 
-    if (view === 'notificaciones') {
-      notifications = await listNotificationsForUser(prisma, context.appUser.user.id, 20);
-    }
+    notifications = await listNotificationsForUser(prisma, context.appUser.user.id, 20);
 
     if (view === 'admin') {
       adminData = await getDashboardAdminData(prisma, context.appUser.permissionContext);

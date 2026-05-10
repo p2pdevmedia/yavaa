@@ -186,6 +186,16 @@ public final class APIClient: @unchecked Sendable {
         try await send(APIRequest(path: "/api/bookings", method: .get))
     }
 
+    public func createEmergency(_ input: EmergencyRequestInput) async throws -> EmergencyResponse {
+        try await send(
+            APIRequest(
+                path: "/api/emergencies",
+                method: .post,
+                body: try JSONEncoder().encode(input)
+            )
+        )
+    }
+
     public func actOnBooking(id: String, input: BookingActionInput) async throws -> BookingResponse {
         try await send(
             APIRequest(
@@ -523,6 +533,49 @@ public struct BookingAddress: Decodable, Equatable, Sendable {
     public let city: String
     public let province: String
     public let postalCode: String?
+}
+
+public struct EmergencyRequestInput: Encodable, Equatable, Sendable {
+    public let categoryId: String
+    public let addressId: String
+    public let description: String
+
+    public init(categoryId: String, addressId: String, description: String) {
+        self.categoryId = categoryId
+        self.addressId = addressId
+        self.description = description
+    }
+}
+
+public struct EmergencyResponse: Decodable, Equatable, Sendable {
+    public let request: EmergencyRequestSummary
+}
+
+public struct EmergencyRequestSummary: Decodable, Equatable, Identifiable, Sendable {
+    public let id: String
+    public let status: String
+    public let dispatchRound: Int
+    public let expiresAt: String
+    public let description: String
+    public let acceptedAt: String?
+    public let cancelledAt: String?
+    public let createdAt: String
+    public let updatedAt: String
+    public let client: BookingUser
+    public let category: BookingCategory
+    public let address: BookingAddress
+    public let assignedContractorProfile: BookingContractorProfile?
+    public let candidates: [EmergencyCandidateSummary]
+}
+
+public struct EmergencyCandidateSummary: Decodable, Equatable, Identifiable, Sendable {
+    public let id: String
+    public let contractorProfileId: String
+    public let dispatchRound: Int
+    public let status: String
+    public let notifiedAt: String
+    public let respondedAt: String?
+    public let responseNote: String?
 }
 
 public struct OpenAPIDocumentSummary: Decodable, Equatable, Sendable {

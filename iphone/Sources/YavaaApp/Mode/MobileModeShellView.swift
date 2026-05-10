@@ -33,8 +33,13 @@ public struct MobileModeShellView: View {
     @ViewBuilder
     private func tabView(_ tab: MobileTab) -> some View {
         switch tab {
-        case .yavaa:
+        case .home:
             ClientYavaaView(load: container.loadClientHome)
+        case .yavaa:
+            EmergencyCreateView(
+                load: container.loadEmergencyComposerData,
+                create: container.createEmergency
+            )
         case .offers:
             ContractorBookingsView(
                 kind: .offers,
@@ -67,6 +72,113 @@ public struct MobileModeShellView: View {
                 }
             )
         }
+    }
+}
+
+private struct EmergencyCreateView: View {
+    let load: () async throws -> EmergencyComposerData
+    let create: (EmergencyRequestInput) async throws -> Void
+
+    @State private var categories: [CatalogCategory] = []
+    @State private var addresses: [WebsiteAddress] = []
+    @State private var selectedCategoryId = ""
+    @State private var selectedAddressId = ""
+    @State private var description = ""
+    @State private var isLoading = false
+    @State private var statusMessage: String?
+
+    var body: some View {
+        Form {
+            Section("Urgencia") {
+                Text("Para trabajos que necesitan resolverse en la brevedad.")
+                    .foregroundStyle(.secondary)
+
+                Picker("Categoria", selection: $selectedCategoryId) {
+                    ForEach(categories) { category in
+                        Text(category.name)
+                            .tag(category.id)
+                    }
+                }
+
+                Picker("Direccion", selection: $selectedAddressId) {
+                    ForEach(addresses, id: \.id) { address in
+                        Text(address.label)
+                            .tag(address.id)
+                    }
+                }
+
+                TextField("Que hay que resolver?", text: $description, axis: .vertical)
+                    .lineLimit(3...6)
+            }
+
+            Section {
+                PrimaryActionButton("Crear urgencia") {
+                    Task {
+                        await submit()
+                    }
+                }
+                .disabled(!canSubmit)
+                .accessibilityIdentifier("emergency.create")
+            }
+
+            if let statusMessage {
+                Section {
+                    Text(statusMessage)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .overlay {
+            if isLoading {
+                ProgressView()
+            }
+        }
+        .task {
+            await reload()
+        }
+        .refreshable {
+            await reload()
+        }
+    }
+
+    private var canSubmit: Bool {
+        !selectedCategoryId.isEmpty
+            && !selectedAddressId.isEmpty
+            && description.trimmingCharacters(in: .whitespacesAndNewlines).count >= 8
+    }
+
+    private func reload() async {
+        isLoading = true
+        statusMessage = nil
+        do {
+            let data = try await load()
+            categories = data.categories
+            addresses = data.addresses
+            selectedCategoryId = selectedCategoryId.isEmpty ? data.categories.first?.id ?? "" : selectedCategoryId
+            selectedAddressId = selectedAddressId.isEmpty ? data.addresses.first?.id ?? "" : selectedAddressId
+        } catch {
+            statusMessage = "No se pudo cargar categorias y direcciones desde la API."
+        }
+        isLoading = false
+    }
+
+    private func submit() async {
+        isLoading = true
+        statusMessage = nil
+        do {
+            try await create(
+                EmergencyRequestInput(
+                    categoryId: selectedCategoryId,
+                    addressId: selectedAddressId,
+                    description: description
+                )
+            )
+            description = ""
+            statusMessage = "Urgencia creada. Yavaa esta buscando constructores disponibles."
+        } catch {
+            statusMessage = "No se pudo crear la urgencia en /api/emergencies."
+        }
+        isLoading = false
     }
 }
 
@@ -582,6 +694,16 @@ public struct ClientHomeData: Equatable, Sendable {
     public init(categories: [CatalogCategory], providers: [PublicProviderCard]) {
         self.categories = categories
         self.providers = providers
+    }
+}
+
+public struct EmergencyComposerData: Equatable, Sendable {
+    public let categories: [CatalogCategory]
+    public let addresses: [WebsiteAddress]
+
+    public init(categories: [CatalogCategory], addresses: [WebsiteAddress]) {
+        self.categories = categories
+        self.addresses = addresses
     }
 }
 

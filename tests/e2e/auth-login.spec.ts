@@ -160,20 +160,20 @@ test('signs up through the UI and provisions the database records', async ({ pag
     const confirmationMessage = page.getByText(
       'Te enviamos un correo para confirmar tu cuenta. Después podés ingresar.'
     );
-    const dashboardHeading = page.getByRole('heading', { name: /Bookings y chat/i });
+    const dashboardHeading = page.getByRole('heading', { name: /Perfil personal/i });
     const authError = page.getByTestId('auth-error');
 
     const outcome = await Promise.race([
       confirmationMessage
         .waitFor({ state: 'visible' })
         .then(() => 'confirmation' as const),
-      page.waitForURL(/\/dashboard$/).then(() => 'dashboard' as const),
+      page.waitForURL(/\/dashboard\/perfil$/).then(() => 'dashboard' as const),
       authError.waitFor({ state: 'visible' }).then(() => 'auth-error' as const),
       page.waitForTimeout(15_000).then(() => 'timeout' as const)
     ]);
 
     if (outcome === 'dashboard') {
-      await expect(page).toHaveURL(/\/dashboard$/);
+      await expect(page).toHaveURL(/\/dashboard\/perfil$/);
       await expect(dashboardHeading).toBeVisible();
     } else if (outcome === 'confirmation') {
       await expect(confirmationMessage).toBeVisible();
@@ -217,7 +217,7 @@ test('admin signs in and sees operational dashboard data', async ({ page }) => {
 
   try {
     if (hasConfiguredAdminCredentials) {
-      await page.goto('/sign-in?next=%2Fdashboard');
+      await page.goto('/sign-in?next=%2Fdashboard%2Fadmin');
       await page.getByLabel('Correo electrónico').fill(configuredAdminEmail!);
       await page.getByLabel('Contraseña').fill(configuredAdminPassword!);
       await page.getByRole('button', { name: 'Ingresar' }).click();
@@ -271,7 +271,7 @@ test('admin signs in and sees operational dashboard data', async ({ page }) => {
         }
       });
 
-      await page.goto('/sign-in?next=%2Fdashboard');
+      await page.goto('/sign-in?next=%2Fdashboard%2Fadmin');
       await page.getByLabel('Correo electrónico').fill(email);
       await page.getByLabel('Contraseña').fill(adminLoginPassword);
       await page.getByRole('button', { name: 'Ingresar' }).click();
@@ -284,10 +284,10 @@ test('admin signs in and sees operational dashboard data', async ({ page }) => {
         }
       ]);
 
-      await page.goto('/sign-in?next=%2Fdashboard');
+      await page.goto('/sign-in?next=%2Fdashboard%2Fadmin');
     }
 
-    await expect(page).toHaveURL(/\/dashboard$/, { timeout: 15000 });
+    await expect(page).toHaveURL(/\/dashboard\/admin$/, { timeout: 15000 });
     await expect(page.getByText(email).first()).toBeVisible();
     await expect(page.getByText('admin').first()).toBeVisible();
     await expect(page.getByRole('heading', { name: /Operación del marketplace/i })).toBeVisible({

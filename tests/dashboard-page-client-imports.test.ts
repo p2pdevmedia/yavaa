@@ -5,8 +5,6 @@ import { join } from 'node:path';
 const dashboardPages = [
   'admin/page.tsx',
   'bookings/page.tsx',
-  'direcciones/page.tsx',
-  'notificaciones/page.tsx',
   'perfil/page.tsx',
   'urgencias/page.tsx'
 ];
@@ -20,6 +18,20 @@ describe('dashboard route client references', () => {
         "import { DashboardPanelClient } from '@/components/dashboard/dashboard-panel-client';"
       );
       expect(source).toContain('<DashboardPanelClient');
+    }
+  });
+
+  test('legacy address and notification routes redirect into the app-style profile surface', () => {
+    const redirects = [
+      ['direcciones/page.tsx', "'/dashboard/perfil'"],
+      ['notificaciones/page.tsx', "'/dashboard/perfil'"]
+    ] as const;
+
+    for (const [page, target] of redirects) {
+      const source = readFileSync(join(process.cwd(), 'src/app/dashboard', page), 'utf8');
+
+      expect(source).toContain("import { redirect } from 'next/navigation';");
+      expect(source).toContain(`redirect(${target})`);
     }
   });
 });

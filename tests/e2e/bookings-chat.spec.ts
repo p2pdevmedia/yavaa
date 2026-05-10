@@ -19,10 +19,10 @@ async function authenticateAsSeededClient(page: Page) {
 
 async function openDashboard(page: Page) {
   await authenticateAsSeededClient(page);
-  await page.goto('/dashboard');
-  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goto('/dashboard/bookings');
+  await expect(page).toHaveURL(/\/dashboard\/bookings$/);
   await expect(page.getByRole('heading', { name: /Bookings y chat/i })).toBeVisible();
-  await expect(page.getByRole('heading', { name: /Notificaciones/i })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Abrir notificaciones/i })).toBeVisible();
   await expect(page.getByText('Booking created in the deterministic seed dataset.')).toBeVisible({
     timeout: 15000
   });

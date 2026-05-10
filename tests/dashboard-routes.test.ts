@@ -1,20 +1,24 @@
 import { describe, expect, test } from 'vitest';
 
-import { dashboardDefaultPath, dashboardNavigationItems } from '@/lib/dashboard-routes';
+import {
+  dashboardDefaultPath,
+  dashboardNavigationItems,
+  dashboardNotificationPath,
+  dashboardProfilePath
+} from '@/lib/dashboard-routes';
 
 describe('dashboard routes', () => {
-  test('defines the separate dashboard views in navigation order', () => {
+  test('defines the primary dashboard tabs in navigation order', () => {
     expect(dashboardNavigationItems.map((item) => item.href)).toEqual([
-      '/dashboard/perfil',
-      '/dashboard/direcciones',
       '/dashboard/urgencias',
-      '/dashboard/notificaciones',
       '/dashboard/bookings',
       '/dashboard/admin'
     ]);
   });
 
-  test('uses profile as the default dashboard view', () => {
+  test('keeps profile and notifications as header actions', () => {
     expect(dashboardDefaultPath).toBe('/dashboard/perfil');
+    expect(dashboardProfilePath).toBe('/dashboard/perfil');
+    expect(dashboardNotificationPath).toBe('/dashboard/notificaciones');
   });
 });

@@ -1,6 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
+import type { Route } from 'next';
+import { Bell } from 'lucide-react';
 
 import { AdminPanel } from '@/components/dashboard/admin-panel';
 import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
@@ -11,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import type { DashboardView } from '@/lib/dashboard-routes';
+import { dashboardProfilePath, type DashboardView } from '@/lib/dashboard-routes';
 import type { DashboardNotification } from '@/lib/dashboard-notifications';
 import type { DashboardAdminData } from '@/lib/dashboard-admin';
 import type { DashboardBooking } from '@/lib/dashboard-workspace';
@@ -203,6 +206,18 @@ function getInitialDashboardMode(user: DashboardUser): DashboardMode {
   return hasContractorMode(user) ? 'contractor' : 'client';
 }
 
+function getUserInitials(user: DashboardUser): string {
+  const namePieces = [user.profile?.firstName, user.profile?.lastName].filter(
+    (value): value is string => Boolean(value)
+  );
+
+  if (namePieces.length >= 2) {
+    return `${namePieces[0][0]}${namePieces[1][0]}`.toUpperCase();
+  }
+
+  return formatName(user).slice(0, 2).toUpperCase();
+}
+
 export function DashboardPanel({
   view,
   initialUser,
@@ -235,6 +250,7 @@ export function DashboardPanel({
   const [activeMode, setActiveMode] = useState<DashboardMode>(() => getInitialDashboardMode(initialUser));
   const [modeError, setModeError] = useState<string | null>(null);
   const [modeStatus, setModeStatus] = useState<string | null>(null);
+  const [notificationPopoverOpen, setNotificationPopoverOpen] = useState(false);
 
   async function parseEnvelope(response: Response): Promise<UserEnvelope | null> {
     try {
@@ -484,6 +500,8 @@ export function DashboardPanel({
   }
 
   const primaryAddress = user.addresses.find((address) => address.isDefault) ?? user.addresses[0] ?? null;
+  const unreadNotificationCount = notifications.filter((notification) => !notification.isRead).length;
+  const userInitials = getUserInitials(user);
 
   return (
     <div className="space-y-6">
@@ -501,7 +519,92 @@ export function DashboardPanel({
           <p className="text-sm text-muted-foreground">{email ?? user.email}</p>
         </div>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Abrir notificaciones"
+              aria-expanded={notificationPopoverOpen}
+              className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-card text-foreground transition hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => setNotificationPopoverOpen((current) => !current)}
+            >
+              <Bell className="h-5 w-5" aria-hidden="true" />
+              {unreadNotificationCount > 0 ? (
+                <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[0.68rem] font-semibold text-primary-foreground">
+                  {unreadNotificationCount}
+                </span>
+              ) : null}
+            </button>
+
+            {notificationPopoverOpen ? (
+              <div className="absolute right-0 top-14 z-20 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border/80 bg-card p-4 shadow-soft">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Campana</p>
+                    <h3 className="font-display text-xl font-semibold text-foreground">Notificaciones</h3>
+                  </div>
+                  <Badge variant={unreadNotificationCount > 0 ? 'default' : 'secondary'}>
+                    {unreadNotificationCount > 0 ? `${unreadNotificationCount} nuevas` : 'Al día'}
+                  </Badge>
+                </div>
+
+                <div className="mt-4 max-h-96 space-y-3 overflow-y-auto pr-1">
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <article key={notification.id} className="rounded-lg border border-border/70 bg-background/45 p-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={notification.isRead ? 'outline' : 'secondary'}>
+                            {notification.typeLabel}
+                          </Badge>
+                          {!notification.isRead ? <Badge variant="default">Nueva</Badge> : null}
+                        </div>
+                        <p className="mt-2 text-sm font-semibold text-foreground">{notification.title}</p>
+                        <p className="mt-1 text-sm leading-5 text-muted-foreground">{notification.body}</p>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {formatUtcDateTime(notification.createdAt)}
+                        </p>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {notification.bookingId ? (
+                            <Button asChild size="sm" variant="outline">
+                              <Link href={'/dashboard/bookings' as Route}>Ver booking</Link>
+                            </Button>
+                          ) : (
+                            <Button asChild size="sm" variant="outline">
+                              <Link href={dashboardProfilePath}>Abrir perfil</Link>
+                            </Button>
+                          )}
+                          <span className="inline-flex items-center rounded-full border border-border/70 px-3 py-1 text-xs text-muted-foreground">
+                            {notification.isRead ? 'Leída' : 'Sin leer'}
+                          </span>
+                        </div>
+                      </article>
+                    ))
+                  ) : (
+                    <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+                      No hay notificaciones por ahora.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          <Link
+            href={dashboardProfilePath}
+            aria-label="Abrir perfil"
+            className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-muted font-display text-sm font-semibold text-muted-foreground transition hover:border-primary/50 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          >
+            {user.profile?.avatarUrl ? (
+              <span
+                aria-hidden="true"
+                className="h-full w-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${user.profile.avatarUrl})` }}
+              />
+            ) : (
+              userInitials
+            )}
+          </Link>
+
           <div className="rounded-lg border border-border/70 px-4 py-3 text-sm">
             <p className="text-muted-foreground">Direcciones</p>
             <p className="font-mono text-foreground">{user.addresses.length}</p>
@@ -682,10 +785,10 @@ export function DashboardPanel({
       </div>
       ) : null}
 
-      {view === 'direcciones' ? (
+      {view === 'perfil' ? (
         <Card className="border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
-            <CardTitle className="font-display text-2xl">Direcciones</CardTitle>
+            <CardTitle className="font-display text-2xl">Direcciones guardadas</CardTitle>
             <CardDescription>Vemos tus direcciones guardadas y podés agregar una nueva.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -974,38 +1077,6 @@ export function DashboardPanel({
               {primaryAddress ? `${primaryAddress.city}, ${primaryAddress.province}` : 'No definida'}
             </p>
           </div>
-        </CardContent>
-      </Card>
-      ) : null}
-
-      {view === 'notificaciones' ? (
-      <Card className="border-border/70 bg-card/90 shadow-soft">
-        <CardHeader>
-          <CardTitle className="font-display text-2xl">Notificaciones</CardTitle>
-          <CardDescription>
-            {notifications.filter((notification) => !notification.isRead).length > 0
-              ? `${notifications.filter((notification) => !notification.isRead).length} sin leer.`
-              : 'No hay notificaciones pendientes.'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {notifications.length > 0 ? (
-            notifications.map((notification) => (
-              <div key={notification.id} className="rounded-lg border border-border/70 bg-muted/20 p-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant={notification.isRead ? 'outline' : 'secondary'}>{notification.typeLabel}</Badge>
-                  {!notification.isRead ? <Badge variant="default">Nueva</Badge> : null}
-                </div>
-                <p className="mt-2 font-medium text-foreground">{notification.title}</p>
-                <p className="mt-1 text-sm text-muted-foreground">{notification.body}</p>
-                <p className="mt-2 text-xs text-muted-foreground">{formatUtcDateTime(notification.createdAt)}</p>
-              </div>
-            ))
-          ) : (
-            <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-              La bandeja está vacía por ahora.
-            </p>
-          )}
         </CardContent>
       </Card>
       ) : null}

@@ -89,4 +89,18 @@ final class APIClientTests: XCTestCase {
 
         XCTAssertEqual(object?["action"] as? String, "accept")
     }
+
+    func testEncodesEmergencyRequestForNextAPI() throws {
+        let input = EmergencyRequestInput(
+            categoryId: "88888888-8888-4888-8888-888888888888",
+            addressId: "66666666-6666-4666-8666-666666666666",
+            description: "Necesito resolver una perdida de agua hoy."
+        )
+        let data = try JSONEncoder().encode(input)
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+
+        XCTAssertEqual(object?["categoryId"] as? String, "88888888-8888-4888-8888-888888888888")
+        XCTAssertEqual(object?["addressId"] as? String, "66666666-6666-4666-8666-666666666666")
+        XCTAssertEqual(object?["description"] as? String, "Necesito resolver una perdida de agua hoy.")
+    }
 }
