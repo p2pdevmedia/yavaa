@@ -34,7 +34,10 @@ public struct MobileModeShellView: View {
     private func tabView(_ tab: MobileTab) -> some View {
         switch tab {
         case .home:
-            ClientYavaaView(load: container.loadClientHome)
+            ClientYavaaView(
+                load: container.loadClientHome,
+                loadProfile: container.loadProviderProfile
+            )
         case .yavaa:
             EmergencyCreateView(
                 load: container.loadEmergencyComposerData,
@@ -184,6 +187,7 @@ private struct EmergencyCreateView: View {
 
 private struct ClientYavaaView: View {
     let load: (String?) async throws -> ClientHomeData
+    let loadProfile: (String) async throws -> PublicProviderProfile?
 
     @State private var categories: [CatalogCategory] = []
     @State private var providers: [PublicProviderCard] = []
@@ -195,9 +199,14 @@ private struct ClientYavaaView: View {
 
     var body: some View {
         List {
-            Section("Categorias") {
-                if categories.isEmpty && !isLoading {
-                    Text("No hay categorias disponibles.")
+            Section("Trabajadores") {
+                if let referenceLabel = NearbyWorkerMatcher.referenceLabel(addresses: addresses) {
+                    Text("Cercanos a \(referenceLabel)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Agrega una direccion en Perfil para ordenar trabajadores cercanos.")
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
@@ -210,26 +219,8 @@ private struct ClientYavaaView: View {
                     }
                     .padding(.vertical, YavaaSpacing.xs)
                 }
-            }
 
-            Section("Trabajadores") {
-                if let referenceLabel = NearbyWorkerMatcher.referenceLabel(addresses: addresses) {
-                    Text("Cercanos a \(referenceLabel)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Agrega una direccion en Perfil para ordenar trabajadores cercanos.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                ForEach(nearbyProviders.prefix(5)) { provider in
-                    ProviderRow(provider: provider)
-                }
-            }
-
-            Section("Buscar constructores") {
-                TextField("Nombre, bio o categoria", text: $query)
+                TextField("Buscar por nombre", text: $query)
 
                 if let errorMessage {
                     Text(errorMessage)
@@ -240,8 +231,15 @@ private struct ClientYavaaView: View {
                     ProgressView()
                 }
 
-                ForEach(filteredProviders) { provider in
-                    ProviderRow(provider: provider)
+                ForEach(filteredNearbyProviders) { provider in
+                    NavigationLink {
+                        ProviderProfileView(
+                            providerId: provider.contractorProfileId,
+                            load: loadProfile
+                        )
+                    } label: {
+                        ProviderRow(provider: provider)
+                    }
                 }
             }
         }
@@ -253,13 +251,14 @@ private struct ClientYavaaView: View {
         }
     }
 
-    private var filteredProviders: [PublicProviderCard] {
+    private var filteredNearbyProviders: [PublicProviderCard] {
         let trimmedQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let source = nearbyProviders
         guard !trimmedQuery.isEmpty else {
-            return providers
+            return source
         }
 
-        return providers.filter { provider in
+        return source.filter { provider in
             provider.displayName.lowercased().contains(trimmedQuery)
                 || (provider.bio?.lowercased().contains(trimmedQuery) ?? false)
                 || provider.categories.contains { $0.name.lowercased().contains(trimmedQuery) }
@@ -296,6 +295,86 @@ private struct ClientYavaaView: View {
             addresses = data.addresses
         } catch {
             errorMessage = "No se pudo cargar la API de Yavaa."
+        }
+        isLoading = false
+    }
+}
+
+private struct ProviderProfileView: View {
+    let providerId: String
+    let load: (String) async throws -> PublicProviderProfile?
+
+    @State private var provider: PublicProviderProfile?
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        List {
+            if isLoading {
+                ProgressView()
+            }
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .foregroundStyle(YavaaColor.warning)
+            }
+
+            if let provider {
+                Section("Perfil") {
+                    Text(provider.displayName)
+                        .font(.title2.weight(.bold))
+
+                    if let bio = provider.bio, !bio.isEmpty {
+                        Text(bio)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text(provider.acceptsEmergencies ? "Acepta urgencias" : "No acepta urgencias")
+                        .foregroundStyle(.secondary)
+
+                    Text("Precio por hora no publicado")
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Trabajos") {
+                    ForEach(provider.categories, id: \.slug) { category in
+                        Text(category.name)
+                    }
+                }
+
+                Section("Zonas") {
+                    ForEach(provider.workZones, id: \.slug) { zone in
+                        VStack(alignment: .leading, spacing: YavaaSpacing.xs) {
+                            Text(zone.name)
+                            if let description = zone.description, !description.isEmpty {
+                                Text(description)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        .navigationTitle(provider?.displayName ?? "Trabajador")
+        .task {
+            await reload()
+        }
+        .refreshable {
+            await reload()
+        }
+    }
+
+    private func reload() async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            provider = try await load(providerId)
+            if provider == nil {
+                errorMessage = "No se encontro el perfil publico."
+            }
+        } catch {
+            errorMessage = "No se pudo cargar /api/providers/\(providerId)."
         }
         isLoading = false
     }

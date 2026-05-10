@@ -124,6 +124,10 @@ public final class AppContainer: ObservableObject {
         )
     }
 
+    public func loadProviderProfile(id: String) async throws -> PublicProviderProfile? {
+        try await apiClient.fetchProviderProfile(id: id).provider
+    }
+
     public func loadEmergencyComposerData() async throws -> EmergencyComposerData {
         async let categories = apiClient.fetchCatalogCategories()
         async let addresses = apiClient.fetchAddresses()

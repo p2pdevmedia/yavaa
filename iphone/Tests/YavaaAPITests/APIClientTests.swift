@@ -62,6 +62,52 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "GET")
     }
 
+    func testBuildsPublicProviderProfileRequest() throws {
+        let environment = APIEnvironment.production
+        let request = try APIRequest(path: "/api/providers/provider_001", method: .get)
+            .urlRequest(environment: environment, accessToken: nil)
+
+        XCTAssertEqual(request.url?.absoluteString, "https://www.yavaa.lat/api/providers/provider_001")
+        XCTAssertEqual(request.httpMethod, "GET")
+    }
+
+    func testDecodesPublicProviderProfileResponse() throws {
+        let json = """
+        {
+          "provider": {
+            "contractorProfileId": "provider_001",
+            "displayName": "Carlos Perez",
+            "bio": "Albanil con experiencia.",
+            "profilePhotoUrl": null,
+            "acceptsEmergencies": true,
+            "marketSlug": "salta",
+            "marketCity": "Salta",
+            "marketProvince": "Salta",
+            "categories": [
+              {
+                "slug": "construction",
+                "name": "Construccion",
+                "group": "obra",
+                "isPrimary": true
+              }
+            ],
+            "workZones": [
+              {
+                "slug": "centro",
+                "name": "Centro",
+                "description": "Zona centro"
+              }
+            ]
+          }
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(PublicProviderProfileResponse.self, from: json)
+
+        XCTAssertEqual(response.provider?.displayName, "Carlos Perez")
+        XCTAssertEqual(response.provider?.workZones.first?.name, "Centro")
+    }
+
     func testDecodesCatalogCategoriesResponse() throws {
         let json = """
         {

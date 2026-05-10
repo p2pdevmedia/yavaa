@@ -157,6 +157,10 @@ public final class APIClient: @unchecked Sendable {
         try await send(APIRequest.providerSearch(category: category))
     }
 
+    public func fetchProviderProfile(id: String) async throws -> PublicProviderProfileResponse {
+        try await send(APIRequest(path: "/api/providers/\(id)", method: .get))
+    }
+
     public func fetchAddresses() async throws -> AddressesResponse {
         try await send(APIRequest(path: "/api/me/addresses", method: .get))
     }
@@ -342,6 +346,10 @@ public struct PublicProvidersResponse: Decodable, Equatable, Sendable {
     public let items: [PublicProviderCard]
 }
 
+public struct PublicProviderProfileResponse: Decodable, Equatable, Sendable {
+    public let provider: PublicProviderProfile?
+}
+
 public struct PublicProviderCard: Decodable, Equatable, Identifiable, Sendable {
     public let contractorProfileId: String
     public let displayName: String
@@ -392,6 +400,29 @@ public struct PublicProviderCategory: Decodable, Equatable, Sendable {
         self.group = group
         self.isPrimary = isPrimary
     }
+}
+
+public struct PublicProviderProfile: Decodable, Equatable, Identifiable, Sendable {
+    public let contractorProfileId: String
+    public let displayName: String
+    public let bio: String?
+    public let profilePhotoUrl: String?
+    public let acceptsEmergencies: Bool
+    public let marketSlug: String?
+    public let marketCity: String?
+    public let marketProvince: String?
+    public let categories: [PublicProviderCategory]
+    public let workZones: [PublicProviderWorkZone]
+
+    public var id: String {
+        contractorProfileId
+    }
+}
+
+public struct PublicProviderWorkZone: Decodable, Equatable, Sendable {
+    public let slug: String
+    public let name: String
+    public let description: String?
 }
 
 public struct AddressesResponse: Decodable, Equatable, Sendable {
