@@ -25,7 +25,7 @@
          <BuildableReference BuildableIdentifier='primary' BlueprintIdentifier='6A0E760B2B00000100ABC001' BuildableName='Yavaa.app' BlueprintName='YavaaIPhone' ReferencedContainer='container:iphone.xcodeproj'/>
       </BuildableProductRunnable>
       <EnvironmentVariables>
-         <EnvironmentVariable key='YAVAA_API_BASE_URL' value='https://www.yavaa.lat' isEnabled='YES'/>
+         <EnvironmentVariable key='YAVAA_API_BASE_URL' value='http://localhost:3000' isEnabled='YES'/>
          <EnvironmentVariable key='YAVAA_SUPABASE_URL' value='https://mvzkbhnfuhjvnojncwbf.supabase.co' isEnabled='YES'/>
          <EnvironmentVariable key='YAVAA_SUPABASE_PUBLISHABLE_KEY' value='sb_publishable_GzzsGRN3w9dtjg3ZkNn81A_noGzYnZE' isEnabled='YES'/>
       </EnvironmentVariables>

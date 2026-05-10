@@ -2,6 +2,16 @@ import XCTest
 @testable import YavaaApp
 
 final class AppConfigurationTests: XCTestCase {
+    func testDefaultsToLocalWebsiteWhenRuntimeConfigurationIsMissing() {
+        let configuration = YavaaAppConfiguration.load(
+            environment: [:],
+            bundleInfo: [:]
+        )
+
+        XCTAssertEqual(configuration.apiEnvironment.baseURL, URL(string: "http://localhost:3000"))
+        XCTAssertNil(configuration.authService)
+    }
+
     func testLoadsRuntimeConfigurationFromBundleInfoWhenEnvironmentIsEmpty() {
         let configuration = YavaaAppConfiguration.load(
             environment: [:],

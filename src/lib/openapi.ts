@@ -398,6 +398,23 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const adminUserDetailSchema = {
+    allOf: [
+      adminUserSchema,
+      {
+        type: 'object',
+        additionalProperties: true,
+        required: ['contractorProfile', 'bookingsAsClient', 'bookingsAsContractor', 'auditLogs'],
+        properties: {
+          contractorProfile: { anyOf: [{ type: 'object' }, { type: 'null' }] },
+          bookingsAsClient: { type: 'array', items: { type: 'object' } },
+          bookingsAsContractor: { type: 'array', items: { type: 'object' } },
+          auditLogs: { type: 'array', items: { type: 'object' } }
+        }
+      }
+    ]
+  } as const;
+
   const adminCategorySchema = {
     type: 'object',
     additionalProperties: false,
@@ -1754,6 +1771,40 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
         }
       },
       '/api/admin/users/{userId}': {
+        get: {
+          operationId: 'adminGetUser',
+          summary: 'Inspect a user for admin operations',
+          tags: ['admin'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'userId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'User detail for admin inspection.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['user'],
+                    properties: {
+                      user: adminUserDetailSchema
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can manage users.' },
+            '404': { description: 'User not found.' }
+          }
+        },
         patch: {
           operationId: 'adminUpdateUserStatus',
           summary: 'Update user operational status',
@@ -1916,6 +1967,88 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             '401': { description: 'Missing or invalid session token.' },
             '403': { description: 'Only active admins can manage categories.' },
             '422': { description: 'Initial categories cannot be paused.' }
+          }
+        }
+      },
+      '/api/admin/categories/{categoryId}': {
+        patch: {
+          operationId: 'adminUpdateCategory',
+          summary: 'Update a category by id',
+          tags: ['admin'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'categoryId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: adminCategoryInputSchema
+              }
+            }
+          },
+          responses: {
+            '200': {
+              description: 'Category updated.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['category'],
+                    properties: {
+                      category: adminCategorySchema
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Invalid category payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can manage categories.' },
+            '404': { description: 'Category not found.' },
+            '422': { description: 'Initial categories cannot be paused.' }
+          }
+        },
+        delete: {
+          operationId: 'adminDeleteCategory',
+          summary: 'Delete an unused category by id',
+          tags: ['admin'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'categoryId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Category deleted.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['category'],
+                    properties: {
+                      category: adminCategorySchema
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can manage categories.' },
+            '404': { description: 'Category not found.' },
+            '409': { description: 'Category has durable marketplace references.' },
+            '422': { description: 'Initial categories cannot be deleted.' }
           }
         }
       },

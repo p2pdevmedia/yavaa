@@ -11,6 +11,11 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/session']).toBeDefined();
     expect(document.paths['/api/me']).toBeDefined();
     expect(document.paths['/api/me/profile']).toBeDefined();
+    expect(
+      (document.paths['/api/me/profile']?.patch?.requestBody as
+        | { content?: Record<string, unknown> }
+        | undefined)?.content?.['multipart/form-data']
+    ).toBeDefined();
     expect(document.paths['/api/me/addresses']).toBeDefined();
     expect(document.paths['/api/me/addresses/{addressId}']).toBeDefined();
     expect(document.paths['/api/me/addresses/{addressId}']?.patch).toBeDefined();

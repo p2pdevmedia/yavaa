@@ -128,7 +128,6 @@ type ProfileDraft = {
   displayName: string;
   firstName: string;
   lastName: string;
-  avatarUrl: string;
   phone: string;
   bio: string;
 };
@@ -199,7 +198,6 @@ function buildProfileDraft(user: DashboardUser): ProfileDraft {
     displayName: toStringOrEmpty(user.displayName),
     firstName: toStringOrEmpty(user.profile?.firstName),
     lastName: toStringOrEmpty(user.profile?.lastName),
-    avatarUrl: toStringOrEmpty(user.profile?.avatarUrl),
     phone: toStringOrEmpty(user.profile?.phone),
     bio: toStringOrEmpty(user.profile?.bio)
   };
@@ -314,6 +312,8 @@ export function DashboardPanel({
   const router = useRouter();
   const [user, setUser] = useState(initialUser);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
+  const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
+  const [profilePhotoInputKey, setProfilePhotoInputKey] = useState(0);
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(() => buildAddressDraft(initialUser));
   const [emergencyDraft, setEmergencyDraft] = useState<EmergencyDraft>(() =>
     buildEmergencyDraft(initialUser, categories)
@@ -354,19 +354,20 @@ export function DashboardPanel({
     setIsSavingProfile(true);
 
     try {
+      const formData = new FormData();
+      formData.set('displayName', profileDraft.displayName);
+      formData.set('firstName', profileDraft.firstName);
+      formData.set('lastName', profileDraft.lastName);
+      formData.set('phone', profileDraft.phone);
+      formData.set('bio', profileDraft.bio);
+
+      if (profilePhotoFile) {
+        formData.set('avatarFile', profilePhotoFile);
+      }
+
       const response = await fetch('/api/me/profile', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          displayName: profileDraft.displayName || null,
-          firstName: profileDraft.firstName || null,
-          lastName: profileDraft.lastName || null,
-          avatarUrl: profileDraft.avatarUrl || null,
-          phone: profileDraft.phone || null,
-          bio: profileDraft.bio || null
-        })
+        body: formData
       });
 
       const payload = await parseEnvelope(response);
@@ -386,6 +387,8 @@ export function DashboardPanel({
         setAddressDraft(buildAddressDraft(payload.appUser));
       }
 
+      setProfilePhotoFile(null);
+      setProfilePhotoInputKey((current) => current + 1);
       setProfileStatus('Perfil actualizado.');
     } catch {
       setProfileError('No pudimos guardar el perfil.');
@@ -618,6 +621,9 @@ export function DashboardPanel({
   const primaryAddress = user.addresses.find((address) => address.isDefault) ?? user.addresses[0] ?? null;
   const unreadNotificationCount = notifications.filter((notification) => !notification.isRead).length;
   const userInitials = getUserInitials(user);
+  const profilePhotoSrc = user.profile?.avatarUrl
+    ? `/api/me/profile?avatar=${encodeURIComponent(user.profile.avatarUrl)}`
+    : null;
   const activeModeLabel = activeMode === 'contractor' ? 'contratista' : 'cliente';
   const ActiveModeIcon = activeMode === 'contractor' ? HardHat : Glasses;
   const provinceOptions = useMemo(() => getProvinceOptions(addressLocations), [addressLocations]);
@@ -734,11 +740,11 @@ export function DashboardPanel({
                 setNotificationPopoverOpen(false);
               }}
             >
-              {user.profile?.avatarUrl ? (
+              {profilePhotoSrc ? (
                 <span
                   aria-hidden="true"
                   className="h-full w-full bg-cover bg-center"
-                  style={{ backgroundImage: `url(${user.profile.avatarUrl})` }}
+                  style={{ backgroundImage: `url(${profilePhotoSrc})` }}
                 />
               ) : (
                 userInitials
@@ -878,13 +884,17 @@ export function DashboardPanel({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="avatar-url">Avatar URL</Label>
+                <Label htmlFor="profile-photo">Foto de perfil</Label>
                 <Input
-                  id="avatar-url"
-                  value={profileDraft.avatarUrl}
-                  onChange={(event) => setProfileDraft((current) => ({ ...current, avatarUrl: event.target.value }))}
-                  placeholder="https://..."
+                  key={profilePhotoInputKey}
+                  id="profile-photo"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) => setProfilePhotoFile(event.target.files?.[0] ?? null)}
                 />
+                {profilePhotoFile ? (
+                  <p className="text-xs text-muted-foreground">{profilePhotoFile.name}</p>
+                ) : null}
               </div>
 
               <div className="space-y-2">

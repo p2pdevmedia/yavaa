@@ -134,6 +134,8 @@ El scheme de desarrollo inyecta las variables runtime que necesita el login:
 - `YAVAA_SUPABASE_URL`
 - `YAVAA_SUPABASE_PUBLISHABLE_KEY`
 
+En el simulador, el scheme compartido apunta `YAVAA_API_BASE_URL` a `http://localhost:3000` para consumir el Next.js local. En un iPhone fisico, `localhost` es el propio telefono; para probar contra tu Mac usa la IP LAN de la Mac o un tunnel HTTPS y sobreescribi `YAVAA_API_BASE_URL` en el scheme.
+
 E2E de login en iPhone Simulator:
 
 ```sh

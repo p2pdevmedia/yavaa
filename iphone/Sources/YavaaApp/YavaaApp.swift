@@ -360,7 +360,7 @@ struct YavaaAppConfiguration {
             bundleInfo: bundleInfo
         )
             .flatMap(URL.init(string:))
-            .map(APIEnvironment.init(baseURL:)) ?? .production
+            .map(APIEnvironment.init(baseURL:)) ?? .localWebsite
 
         let authService: AuthenticationService?
         if let supabaseURLString = configurationValue(

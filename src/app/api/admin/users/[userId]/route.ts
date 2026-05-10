@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 
-import { updateAdminUserStatusSchema, updateUserStatusForAdmin } from '@/lib/admin-users';
+import { getUserForAdmin, updateAdminUserStatusSchema, updateUserStatusForAdmin } from '@/lib/admin-users';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
 import { resolveRequestAuth } from '@/lib/request-auth';
@@ -72,6 +72,42 @@ function mapAdminUserError(error: unknown): { status: number; body: { error: str
       message: 'We could not update the user status.'
     }
   };
+}
+
+export async function GET(request: NextRequest, { params }: RouteParams) {
+  const auth = await resolveRequestAuth(request);
+
+  if (!auth.authenticated) {
+    return jsonResponse(auth, { status: 401 });
+  }
+
+  if (!auth.permissionContext) {
+    return jsonResponse(
+      {
+        error: 'forbidden',
+        message: 'Only active admins can manage users.'
+      },
+      { status: 403 }
+    );
+  }
+
+  const { userId } = await params;
+  const prisma = getPrismaClient();
+
+  try {
+    const user = await getUserForAdmin(prisma, auth.permissionContext, userId);
+
+    return jsonResponse(
+      {
+        user
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    const mapped = mapAdminUserError(error);
+
+    return jsonResponse(mapped.body, { status: mapped.status });
+  }
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {

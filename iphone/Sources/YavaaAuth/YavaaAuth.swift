@@ -261,7 +261,12 @@ public final class SupabaseAuthenticationService: AuthenticationService, @unchec
         self.client = SupabaseClient(
             supabaseURL: url,
             supabaseKey: publishableKey,
-            options: .init(auth: .init(redirectToURL: redirectURL))
+            options: .init(
+                auth: .init(
+                    redirectToURL: redirectURL,
+                    emitLocalSessionAsInitialSession: true
+                )
+            )
         )
     }
 
