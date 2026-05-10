@@ -28,6 +28,11 @@ public enum HTTPMethod: String, Sendable {
     case delete = "DELETE"
 }
 
+public enum EmergencyListMode: String, Sendable {
+    case client
+    case contractor
+}
+
 public struct APIEnvironment: Equatable, Sendable {
     public let baseURL: URL
 
@@ -90,6 +95,14 @@ public struct APIRequest: Equatable, Sendable {
             path: "/api/providers",
             method: .get,
             queryItems: category.map { [URLQueryItem(name: "category", value: $0)] } ?? []
+        )
+    }
+
+    public static func emergencyList(mode: EmergencyListMode? = nil) throws -> APIRequest {
+        try APIRequest(
+            path: "/api/emergencies",
+            method: .get,
+            queryItems: mode.map { [URLQueryItem(name: "mode", value: $0.rawValue)] } ?? []
         )
     }
 }
@@ -205,6 +218,10 @@ public final class APIClient: @unchecked Sendable {
 
     public func fetchBookings() async throws -> BookingsResponse {
         try await send(APIRequest(path: "/api/bookings", method: .get))
+    }
+
+    public func fetchEmergencies(mode: EmergencyListMode? = nil) async throws -> EmergencyListResponse {
+        try await send(APIRequest.emergencyList(mode: mode))
     }
 
     public func createEmergency(_ input: EmergencyRequestInput) async throws -> EmergencyResponse {
@@ -701,6 +718,10 @@ public struct EmergencyRequestInput: Encodable, Equatable, Sendable {
 
 public struct EmergencyResponse: Decodable, Equatable, Sendable {
     public let request: EmergencyRequestSummary
+}
+
+public struct EmergencyListResponse: Decodable, Equatable, Sendable {
+    public let requests: [EmergencyRequestSummary]
 }
 
 public struct EmergencyRequestSummary: Decodable, Equatable, Identifiable, Sendable {

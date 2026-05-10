@@ -78,7 +78,7 @@ public struct MobileModeShellView: View {
             }
         case .urgencies:
             if effectiveMode == .contractor {
-                ContractorEmergencyBrowseView(load: container.loadBookings)
+                ContractorEmergencyBrowseView(load: container.loadEmergencies)
             } else {
                 EmergencyCreateView(
                     load: container.loadEmergencyComposerData,
@@ -447,9 +447,9 @@ private struct ClientWorkersView: View {
 }
 
 private struct ContractorEmergencyBrowseView: View {
-    let load: () async throws -> [BookingSummary]
+    let load: () async throws -> [EmergencyRequestSummary]
 
-    @State private var bookings: [BookingSummary] = []
+    @State private var emergencies: [EmergencyRequestSummary] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
 
@@ -474,13 +474,8 @@ private struct ContractorEmergencyBrowseView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                ForEach(emergencyBookings) { booking in
-                    BookingRow(
-                        booking: booking,
-                        canAct: false,
-                        accept: {},
-                        reject: {}
-                    )
+                ForEach(emergencyBookings) { emergency in
+                    EmergencyRequestRow(emergency: emergency)
                 }
             }
         }
@@ -492,9 +487,11 @@ private struct ContractorEmergencyBrowseView: View {
         }
     }
 
-    private var emergencyBookings: [BookingSummary] {
-        bookings.filter { booking in
-            booking.status == "PENDING_ACCEPTANCE"
+    private var emergencyBookings: [EmergencyRequestSummary] {
+        emergencies.filter { emergency in
+            emergency.status == "OPEN"
+                || emergency.status == "DISPATCHING"
+                || emergency.status == "REASSIGNMENT_NEEDED"
         }
     }
 
@@ -502,11 +499,29 @@ private struct ContractorEmergencyBrowseView: View {
         isLoading = true
         errorMessage = nil
         do {
-            bookings = try await load()
+            emergencies = try await load()
         } catch {
-            errorMessage = "No se pudieron cargar urgencias desde /api/bookings."
+            errorMessage = "No se pudieron cargar urgencias desde /api/emergencies."
         }
         isLoading = false
+    }
+}
+
+private struct EmergencyRequestRow: View {
+    let emergency: EmergencyRequestSummary
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: YavaaSpacing.xs) {
+            Text(emergency.category.name)
+                .font(.headline)
+            Text(emergency.description)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text("\(emergency.address.label) - \(emergency.status)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.vertical, YavaaSpacing.xs)
     }
 }
 

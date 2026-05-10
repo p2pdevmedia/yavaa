@@ -11,7 +11,7 @@ import { serializeNotificationsForDashboard } from '@/lib/dashboard-notification
 import { getDashboardPageContext } from '@/lib/dashboard-page-data';
 import type { DashboardView } from '@/lib/dashboard-routes';
 import { serializeBookingsForDashboard, serializeEmergenciesForDashboard } from '@/lib/dashboard-workspace';
-import { listEmergencyRequestsForActor } from '@/lib/emergencies';
+import { listEmergencyRequestsForActor, type EmergencyListMode } from '@/lib/emergencies';
 import { listNotificationsForUser } from '@/lib/notifications';
 import { getPrismaClient } from '@/lib/prisma';
 import {
@@ -24,6 +24,7 @@ import { isDatabaseUnavailableError } from '@/lib/public-db-fallback';
 type DashboardViewPageStateArgs = {
   view: DashboardView;
   nextPath: string;
+  mode?: EmergencyListMode;
 };
 
 type DashboardViewPageReadyState = {
@@ -45,7 +46,8 @@ export type DashboardViewPageState = DashboardViewPageReadyState | DashboardView
 
 export async function getDashboardViewPageState({
   view,
-  nextPath
+  nextPath,
+  mode
 }: DashboardViewPageStateArgs): Promise<DashboardViewPageState> {
   const context = await getDashboardPageContext(nextPath);
 
@@ -75,7 +77,7 @@ export async function getDashboardViewPageState({
 
     if (view === 'urgencias') {
       categories = await listPublicCatalogCategories();
-      emergencies = await listEmergencyRequestsForActor(prisma, context.appUser.permissionContext);
+      emergencies = await listEmergencyRequestsForActor(prisma, context.appUser.permissionContext, { mode });
     }
 
     if (view === 'bookings') {

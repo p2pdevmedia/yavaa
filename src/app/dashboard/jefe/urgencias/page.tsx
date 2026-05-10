@@ -6,7 +6,11 @@ import {
 import { DashboardPanelClient } from '@/components/dashboard/dashboard-panel-client';
 
 export default async function JefeEmergenciesPage() {
-  const state = await getDashboardViewPageState({ view: 'urgencias', nextPath: '/dashboard/jefe/urgencias' });
+  const state = await getDashboardViewPageState({
+    view: 'urgencias',
+    nextPath: '/dashboard/jefe/urgencias',
+    mode: 'client'
+  });
 
   if (state.kind !== 'ready') {
     return <DashboardViewPageFallback state={state} />;

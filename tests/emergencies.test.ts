@@ -400,4 +400,37 @@ describe('emergency helpers', () => {
     expect(prisma.emergencyRequest.findMany).toHaveBeenCalledTimes(1);
     expect(requests).toHaveLength(1);
   });
+
+  it('lists contractor-visible emergencies when a dual-role actor is browsing as contractor', async () => {
+    const { prisma } = buildMockPrisma();
+    const dualRoleActor: EmergencyRequestActor = {
+      ...contractorActor,
+      roles: ['client', 'contractor']
+    };
+
+    await listEmergencyRequestsForActor(prisma as never, dualRoleActor, { mode: 'contractor' });
+
+    expect(prisma.emergencyRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            {
+              assignedContractorProfile: {
+                userId: dualRoleActor.userId
+              }
+            },
+            {
+              candidates: {
+                some: {
+                  contractorProfile: {
+                    userId: dualRoleActor.userId
+                  }
+                }
+              }
+            }
+          ]
+        }
+      })
+    );
+  });
 });

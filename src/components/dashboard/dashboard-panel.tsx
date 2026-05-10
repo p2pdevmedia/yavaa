@@ -250,6 +250,10 @@ function formatEmergencyStatus(status: DashboardEmergency['status']): string {
   return labels[status];
 }
 
+function isAvailableContractorEmergency(emergency: DashboardEmergency): boolean {
+  return ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'].includes(emergency.status);
+}
+
 function toDashboardEmergencyFromApi(request: EmergencyApiRequest): DashboardEmergency {
   return {
     id: request.id,
@@ -636,6 +640,15 @@ export function DashboardPanel({
       normalizeLocationName(market.city) === normalizeLocationName(addressDraft.city) &&
       normalizeLocationName(market.province) === normalizeLocationName(addressDraft.province)
   );
+  const visibleEmergencies =
+    activeMode === 'contractor' ? emergencies.filter(isAvailableContractorEmergency) : emergencies;
+  const emergencyListTitle = activeMode === 'contractor' ? 'Urgencias disponibles' : 'Mis urgencias creadas';
+  const emergencyListDescription =
+    activeMode === 'contractor'
+      ? 'Solicitudes urgentes existentes y disponibles para trabajadores.'
+      : 'Seguimiento de los pedidos urgentes que podés ver con tu cuenta.';
+  const emergencyEmptyMessage =
+    activeMode === 'contractor' ? 'No hay urgencias disponibles ahora.' : 'Todavía no creaste urgencias.';
 
   return (
     <div className="space-y-6">
@@ -1181,12 +1194,12 @@ export function DashboardPanel({
         <>
           <Card className="border-border/70 bg-card/90 shadow-soft">
             <CardHeader>
-              <CardTitle className="font-display text-2xl">Mis urgencias creadas</CardTitle>
-              <CardDescription>Seguimiento de los pedidos urgentes que podés ver con tu cuenta.</CardDescription>
+              <CardTitle className="font-display text-2xl">{emergencyListTitle}</CardTitle>
+              <CardDescription>{emergencyListDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {emergencies.length > 0 ? (
-                emergencies.map((emergency) => (
+              {visibleEmergencies.length > 0 ? (
+                visibleEmergencies.map((emergency) => (
                   <article key={emergency.id} className="rounded-lg border border-border/70 bg-muted/20 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="secondary">{formatEmergencyStatus(emergency.status)}</Badge>
@@ -1208,12 +1221,13 @@ export function DashboardPanel({
                 ))
               ) : (
                 <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-                  Todavía no creaste urgencias.
+                  {emergencyEmptyMessage}
                 </p>
               )}
             </CardContent>
           </Card>
 
+          {activeMode === 'client' ? (
           <Card className="border-border/70 bg-card/90 shadow-soft">
             <CardHeader>
               <CardTitle className="font-display text-2xl">Crear nueva urgencia</CardTitle>
@@ -1293,31 +1307,41 @@ export function DashboardPanel({
               {isSavingEmergency ? 'Enviando...' : 'Crear nueva urgencia'}
             </Button>
           </form>
-
-          {activeMode === 'contractor' ? (
-            <>
-              <Separator />
-              <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
-                <div className="space-y-1">
-                  <p className="font-medium text-foreground">Disponibilidad para urgencias</p>
-                  <p className="text-sm text-muted-foreground">
-                    {acceptsEmergencies
-                      ? 'Tu perfil aparece en dispatch de urgencias.'
-                      : 'Tu perfil no aparece en dispatch de urgencias.'}
-                  </p>
-                </div>
-                <Button type="button" variant="secondary" onClick={handleEmergencyAvailabilityToggle}>
-                  {isSavingEmergencyAvailability
-                    ? 'Guardando...'
-                    : acceptsEmergencies
-                      ? 'Desactivar urgencias'
-                      : 'Activar urgencias'}
-                </Button>
-              </div>
-            </>
-          ) : null}
             </CardContent>
           </Card>
+          ) : null}
+
+          {activeMode === 'contractor' ? (
+            <Card className="border-border/70 bg-card/90 shadow-soft">
+              <CardHeader>
+                <CardTitle className="font-display text-2xl">Disponibilidad para urgencias</CardTitle>
+                <CardDescription>
+                  Controlá si tu perfil entra en el dispatch de solicitudes urgentes.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-1">
+                    <p className="font-medium text-foreground">
+                      {acceptsEmergencies ? 'Urgencias activas' : 'Urgencias pausadas'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {acceptsEmergencies
+                        ? 'Tu perfil aparece en dispatch de urgencias.'
+                        : 'Tu perfil no aparece en dispatch de urgencias.'}
+                    </p>
+                  </div>
+                  <Button type="button" variant="secondary" onClick={handleEmergencyAvailabilityToggle}>
+                    {isSavingEmergencyAvailability
+                      ? 'Guardando...'
+                      : acceptsEmergencies
+                        ? 'Desactivar urgencias'
+                        : 'Activar urgencias'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
         </>
       ) : null}
 

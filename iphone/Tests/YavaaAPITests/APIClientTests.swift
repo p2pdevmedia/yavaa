@@ -71,6 +71,16 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "GET")
     }
 
+    func testBuildsEmergencyListRequestForContractorBrowse() throws {
+        let environment = APIEnvironment.production
+        let request = try APIRequest.emergencyList(mode: .contractor)
+            .urlRequest(environment: environment, accessToken: "contractor-token")
+
+        XCTAssertEqual(request.url?.absoluteString, "https://www.yavaa.lat/api/emergencies?mode=contractor")
+        XCTAssertEqual(request.httpMethod, "GET")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer contractor-token")
+    }
+
     func testDecodesPublicProviderProfileResponse() throws {
         let json = """
         {
@@ -314,6 +324,66 @@ final class APIClientTests: XCTestCase {
 
         XCTAssertEqual(response.request.id, "44444444-4444-4444-8444-444444444444")
         XCTAssertEqual(response.request.candidates.first?.status, "NOTIFIED")
+    }
+
+    func testDecodesEmergencyListResponseFromNextAPI() throws {
+        let json = """
+        {
+          "requests": [
+            {
+              "id": "44444444-4444-4444-8444-444444444444",
+              "status": "DISPATCHING",
+              "dispatchRound": 1,
+              "expiresAt": "2026-05-09T12:30:00.000Z",
+              "description": "Necesito resolver una perdida de agua hoy.",
+              "acceptedAt": null,
+              "cancelledAt": null,
+              "createdAt": "2026-05-09T12:00:00.000Z",
+              "updatedAt": "2026-05-09T12:00:00.000Z",
+              "client": {
+                "id": "11111111-1111-4111-8111-111111111111",
+                "email": "client@yavaa.test",
+                "displayName": "Client One",
+                "profile": {
+                  "firstName": "Client",
+                  "lastName": "One"
+                }
+              },
+              "category": {
+                "id": "88888888-8888-4888-8888-888888888888",
+                "slug": "home-services",
+                "name": "Home Services"
+              },
+              "address": {
+                "id": "66666666-6666-4666-8666-666666666666",
+                "label": "Casa",
+                "line1": "Main 123",
+                "line2": null,
+                "city": "Salta",
+                "province": "Salta",
+                "postalCode": "4400"
+              },
+              "assignedContractorProfile": null,
+              "candidates": [
+                {
+                  "id": "77777777-7777-4777-8777-777777777777",
+                  "contractorProfileId": "55555555-5555-4555-8555-555555555555",
+                  "dispatchRound": 1,
+                  "status": "NOTIFIED",
+                  "notifiedAt": "2026-05-09T12:00:00.000Z",
+                  "respondedAt": null,
+                  "responseNote": null
+                }
+              ]
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(EmergencyListResponse.self, from: json)
+
+        XCTAssertEqual(response.requests.map(\.id), ["44444444-4444-4444-8444-444444444444"])
+        XCTAssertEqual(response.requests.first?.status, "DISPATCHING")
     }
 
     func testProfileUpdateInputOmitsEmptyFieldsRejectedByNextValidation() throws {

@@ -1,7 +1,12 @@
 import { type NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 
-import { createEmergencyRequest, createEmergencyRequestSchema, listEmergencyRequestsForActor } from '@/lib/emergencies';
+import {
+  createEmergencyRequest,
+  createEmergencyRequestSchema,
+  emergencyListModeSchema,
+  listEmergencyRequestsForActor
+} from '@/lib/emergencies';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
 import { resolveRequestAuth } from '@/lib/request-auth';
@@ -66,7 +71,19 @@ export async function GET(request: NextRequest) {
   }
 
   const prisma = getPrismaClient();
-  const requests = await listEmergencyRequestsForActor(prisma, auth.permissionContext);
+  const parsedMode = emergencyListModeSchema.optional().safeParse(request.nextUrl.searchParams.get('mode') ?? undefined);
+
+  if (!parsedMode.success) {
+    return jsonResponse(
+      {
+        error: 'invalid-request',
+        message: 'Emergency list mode is invalid.'
+      },
+      { status: 400 }
+    );
+  }
+
+  const requests = await listEmergencyRequestsForActor(prisma, auth.permissionContext, { mode: parsedMode.data });
 
   return jsonResponse(
     {

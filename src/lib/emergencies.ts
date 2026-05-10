@@ -27,6 +27,9 @@ export type EmergencyRequestStatus = (typeof emergencyStatusList)[number];
 export const emergencyCandidateStatusList = ['NOTIFIED', 'ACCEPTED', 'IGNORED', 'EXPIRED', 'REVOKED'] as const;
 export type EmergencyRequestCandidateStatus = (typeof emergencyCandidateStatusList)[number];
 
+export const emergencyListModeSchema = z.enum(['client', 'contractor']);
+export type EmergencyListMode = z.infer<typeof emergencyListModeSchema>;
+
 export const createEmergencyRequestSchema = z.object({
   categoryId: z.string().uuid(),
   addressId: z.string().uuid(),
@@ -170,6 +173,30 @@ function isAdminActor(actor: EmergencyRequestActor): boolean {
   return actor.status === UserStatus.ACTIVE && actor.roles.includes('admin');
 }
 
+function resolveEmergencyListMode(actor: EmergencyRequestActor, requestedMode?: EmergencyListMode): EmergencyListMode | 'admin' | 'none' {
+  if (requestedMode === 'client' && isClientActor(actor)) {
+    return 'client';
+  }
+
+  if (requestedMode === 'contractor' && isContractorActor(actor)) {
+    return 'contractor';
+  }
+
+  if (isAdminActor(actor)) {
+    return 'admin';
+  }
+
+  if (isClientActor(actor)) {
+    return 'client';
+  }
+
+  if (isContractorActor(actor)) {
+    return 'contractor';
+  }
+
+  return 'none';
+}
+
 function toEmergencyRecord(row: EmergencyRequestRow): EmergencyRequestRecord {
   return row;
 }
@@ -240,14 +267,16 @@ function canViewRow(actor: EmergencyRequestActor, row: EmergencyRequestRow): boo
 
 export async function listEmergencyRequestsForActor(
   prisma: PrismaClient,
-  actor: EmergencyRequestActor
+  actor: EmergencyRequestActor,
+  options: { mode?: EmergencyListMode } = {}
 ): Promise<EmergencyRequestRecord[]> {
+  const mode = resolveEmergencyListMode(actor, options.mode);
   const rows = await prisma.emergencyRequest.findMany({
-    where: isAdminActor(actor)
+    where: mode === 'admin'
       ? undefined
-      : isClientActor(actor)
+      : mode === 'client'
         ? { clientUserId: actor.userId }
-        : isContractorActor(actor)
+        : mode === 'contractor'
           ? {
               OR: [
                 {
@@ -266,7 +295,7 @@ export async function listEmergencyRequestsForActor(
                 }
               ]
             }
-          : undefined,
+          : { OR: [] },
     select: emergencyRequestSelect,
     orderBy: [
       { createdAt: 'desc' }

@@ -1599,6 +1599,15 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           summary: 'List emergency requests visible to the active account',
           tags: ['emergencies'],
           security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'query',
+              name: 'mode',
+              required: false,
+              schema: { type: 'string', enum: ['client', 'contractor'] },
+              description: 'Optional account perspective for dual-role users.'
+            }
+          ],
           responses: {
             '200': {
               description: 'Emergency requests visible to the active account.',
