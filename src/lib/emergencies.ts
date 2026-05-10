@@ -179,7 +179,7 @@ export type EmergencyRequestRecord = EmergencyRequestRow;
 
 const dispatchBatchSize = 3;
 const emergencyDispatchWindowMinutes = 24 * 60;
-const republishedEmergencyDispatchWindowMinutes = 2 * 60;
+const extendedEmergencyDispatchWindowMinutes = emergencyDispatchWindowMinutes;
 const contractorBrowsableEmergencyStatuses: EmergencyRequestStatus[] = ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'];
 
 function isClientActor(actor: EmergencyRequestActor): boolean {
@@ -663,7 +663,7 @@ export async function cancelEmergencyRequest(
 
   ensureOwnClientEmergency(actor, row);
 
-  if (!['DISPATCHING', 'OPEN', 'REASSIGNMENT_NEEDED'].includes(row.status)) {
+  if (!['DISPATCHING', 'OPEN', 'REASSIGNMENT_NEEDED', 'EXPIRED'].includes(row.status)) {
     throw new Error('invalid-state');
   }
 
@@ -808,25 +808,74 @@ export async function republishEmergencyRequest(
     throw new Error('invalid-state');
   }
 
-  const republished = await createEmergencyRequest(prisma, actor, {
-    categoryId: row.category.id,
-    addressId: row.address.id,
-    description: row.description
-  }, {
-    dispatchWindowMinutes: republishedEmergencyDispatchWindowMinutes
+  if (!row.address.market) {
+    throw new Error('invalid-address-market');
+  }
+
+  const now = new Date();
+  const nextRound = row.dispatchRound + 1;
+  const expiresAt = new Date(now.getTime() + extendedEmergencyDispatchWindowMinutes * 60 * 1000);
+  const eligibleContractors = await findEligibleContractors(prisma, row.category.id, row.address.market.id);
+  const selectedContractors = eligibleContractors.slice(0, dispatchBatchSize);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.emergencyRequestCandidate.updateMany({
+      where: {
+        emergencyRequestId,
+        status: 'NOTIFIED'
+      },
+      data: {
+        status: 'EXPIRED'
+      }
+    });
+
+    if (selectedContractors.length > 0) {
+      await tx.emergencyRequestCandidate.createMany({
+        data: selectedContractors.map((contractorProfile) => ({
+          emergencyRequestId,
+          contractorProfileId: contractorProfile.id,
+          dispatchRound: nextRound,
+          status: 'NOTIFIED',
+          notifiedAt: now
+        }))
+      });
+    }
+
+    return tx.emergencyRequest.update({
+      where: { id: emergencyRequestId },
+      data: {
+        status: selectedContractors.length > 0 ? 'DISPATCHING' : 'EXPIRED',
+        dispatchRound: nextRound,
+        expiresAt,
+        acceptedAt: null,
+        assignedContractorProfileId: null
+      },
+      select: {
+        id: true
+      }
+    });
   });
 
   await recordAuditLog({
     actorUserId: actor.userId,
-    action: 'emergency_request.republished',
+    action: 'emergency_request.extended',
     entityType: 'emergency_request',
     entityId: emergencyRequestId,
     metadata: {
-      republishedEmergencyRequestId: republished.id
+      extendedEmergencyRequestId: emergencyRequestId,
+      nextRound,
+      expiresAt: expiresAt.toISOString(),
+      selectedContractors: selectedContractors.map((contractorProfile) => contractorProfile.id)
     }
   });
 
-  return republished;
+  const loaded = await loadEmergencyRequest(prisma, emergencyRequestId);
+
+  if (!loaded) {
+    throw new Error('not-found');
+  }
+
+  return toEmergencyRecord(loaded);
 }
 
 export async function resolveEmergencyRequest(

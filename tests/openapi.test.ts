@@ -80,7 +80,7 @@ describe('openapi foundation', () => {
     expect(document.components?.securitySchemes?.bearerAuth).toBeDefined();
   });
 
-  it('documents client republishing for expired emergency requests', () => {
+  it('documents client extending for expired emergency requests through the compatible republish action', () => {
     const document = getOpenApiDocument();
     const patchRequestSchema = (
       document.paths['/api/emergencies/{emergencyRequestId}']?.patch?.requestBody as
@@ -92,6 +92,7 @@ describe('openapi foundation', () => {
                     properties?: {
                       action?: {
                         enum?: string[];
+                        description?: string;
                       };
                     };
                   }>;
@@ -103,7 +104,11 @@ describe('openapi foundation', () => {
     )?.content?.['application/json']?.schema;
 
     expect(
-      patchRequestSchema?.oneOf?.some((variant) => variant.properties?.action?.enum?.includes('republish'))
+      patchRequestSchema?.oneOf?.some(
+        (variant) =>
+          variant.properties?.action?.enum?.includes('republish') &&
+          variant.properties.action.description?.includes('extends an expired existing emergency request by 24 hours')
+      )
     ).toBe(true);
   });
 

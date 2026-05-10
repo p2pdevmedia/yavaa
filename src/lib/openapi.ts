@@ -862,7 +862,11 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
         additionalProperties: false,
         required: ['action'],
         properties: {
-          action: { type: 'string', enum: ['resolve', 'republish', 'cancel'] }
+          action: {
+            type: 'string',
+            enum: ['resolve', 'republish', 'cancel'],
+            description: '`republish` extends an expired existing emergency request by 24 hours for compatibility.'
+          }
         }
       }
     ]
@@ -1911,7 +1915,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
         },
         patch: {
           operationId: 'mutateOwnEmergencyRequest',
-          summary: 'Update, cancel, resolve, or republish an owned emergency request',
+          summary: 'Update, cancel, resolve, or extend an owned emergency request',
           tags: ['emergencies'],
           security: [{ bearerAuth: [] }],
           parameters: [

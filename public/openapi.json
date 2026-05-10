@@ -6177,7 +6177,7 @@
       },
       "patch": {
         "operationId": "mutateOwnEmergencyRequest",
-        "summary": "Update, cancel, resolve, or republish an owned emergency request",
+        "summary": "Update, cancel, resolve, or extend an owned emergency request",
         "tags": [
           "emergencies"
         ],
@@ -6246,7 +6246,8 @@
                           "resolve",
                           "republish",
                           "cancel"
-                        ]
+                        ],
+                        "description": "`republish` extends an expired existing emergency request by 24 hours for compatibility."
                       }
                     }
                   }

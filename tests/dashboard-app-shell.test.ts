@@ -137,7 +137,7 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('Editar urgencia');
     expect(dashboardPanelSource).toContain('Borrar urgencia');
     expect(dashboardPanelSource).toContain('Marcar resuelta');
-    expect(dashboardPanelSource).toContain('Republicar urgencia');
+    expect(dashboardPanelSource).toContain('Extender 24 horas');
   });
 
   test('shows expired emergencies as a contractor-only tab inside the urgencies view', () => {
@@ -156,10 +156,10 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('formatLocalDateTime(emergency.expiresAt)');
   });
 
-  test('replaces the expired emergency card locally after republishing', () => {
-    expect(dashboardPanelSource).toContain('const republishedEmergency = toDashboardEmergencyFromApi');
+  test('updates the expired emergency card locally after extending it', () => {
+    expect(dashboardPanelSource).toContain('const extendedEmergency = toDashboardEmergencyFromApi');
     expect(dashboardPanelSource).toContain(
-      'current.filter((emergency) => emergency.id !== emergencyId && emergency.id !== republishedEmergency.id)'
+      'current.map((emergency) => (emergency.id === emergencyId ? extendedEmergency : emergency))'
     );
   });
 

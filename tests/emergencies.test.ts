@@ -479,7 +479,7 @@ describe('emergency helpers', () => {
     );
   });
 
-  it('lets a client republish their own expired emergency as a new request', async () => {
+  it('lets a client extend their own expired emergency by a full dispatch day', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-05-09T13:00:00.000Z'));
     const { prisma, tx } = buildMockPrisma({ status: 'EXPIRED' });
@@ -490,29 +490,42 @@ describe('emergency helpers', () => {
       '44444444-4444-4444-8444-444444444444'
     );
 
-    expect(request.id).not.toBe('44444444-4444-4444-8444-444444444444');
+    expect(request.id).toBe('44444444-4444-4444-8444-444444444444');
     expect(request.status).toBe('DISPATCHING');
     expect(request.description).toBe('Pipe burst and water is flooding the kitchen');
-    expect(tx.emergencyRequest.create).toHaveBeenCalledWith(
+    expect(tx.emergencyRequest.create).not.toHaveBeenCalled();
+    expect(tx.emergencyRequestCandidate.createMany).toHaveBeenCalledTimes(1);
+    expect(tx.emergencyRequest.update).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          categoryId: '88888888-8888-4888-8888-888888888888',
-          addressId: '66666666-6666-4666-8666-666666666666',
-          description: 'Pipe burst and water is flooding the kitchen',
-          expiresAt: new Date('2026-05-09T15:00:00.000Z')
+          status: 'DISPATCHING',
+          expiresAt: new Date('2026-05-10T13:00:00.000Z')
         })
       })
     );
     expect(mockedRecordAuditLog).toHaveBeenCalledWith(
       expect.objectContaining({
-        action: 'emergency_request.republished',
+        action: 'emergency_request.extended',
         actorUserId: clientActor.userId,
         entityId: '44444444-4444-4444-8444-444444444444',
         metadata: expect.objectContaining({
-          republishedEmergencyRequestId: request.id
+          extendedEmergencyRequestId: request.id
         })
       })
     );
+  });
+
+  it('lets a client delete their own expired emergency request', async () => {
+    const { prisma } = buildMockPrisma({ status: 'EXPIRED' });
+
+    const request = await cancelEmergencyRequest(
+      prisma as never,
+      clientActor,
+      '44444444-4444-4444-8444-444444444444'
+    );
+
+    expect(request.status).toBe('CANCELLED_BY_CLIENT');
+    expect(prisma.emergencyRequest.update).toHaveBeenCalledTimes(1);
   });
 
   it('lets a client mark their own accepted emergency request as resolved', async () => {

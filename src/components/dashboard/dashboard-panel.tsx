@@ -312,8 +312,12 @@ function canResolveClientEmergency(emergency: DashboardEmergency): boolean {
   return !['CANCELLED_BY_CLIENT', 'RESOLVED_BY_CLIENT', 'EXPIRED'].includes(emergency.status);
 }
 
-function canRepublishClientEmergency(emergency: DashboardEmergency): boolean {
+function canExtendClientEmergency(emergency: DashboardEmergency): boolean {
   return emergency.status === 'EXPIRED';
+}
+
+function canDeleteClientEmergency(emergency: DashboardEmergency): boolean {
+  return ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED', 'EXPIRED'].includes(emergency.status);
 }
 
 function toDashboardEmergencyFromApi(request: EmergencyApiRequest): DashboardEmergency {
@@ -843,7 +847,7 @@ export function DashboardPanel({
     }
   }
 
-  async function handleEmergencyRepublish(emergencyId: string) {
+  async function handleEmergencyExtend(emergencyId: string) {
     setEmergencyError(null);
     setEmergencyStatus(null);
     setMutatingEmergencyId(emergencyId);
@@ -865,22 +869,21 @@ export function DashboardPanel({
         setEmergencyError(
           (payload as { message?: string; error?: string } | null)?.message ??
             (payload as { error?: string } | null)?.error ??
-            'No pudimos republicar la urgencia.'
+            'No pudimos extender la urgencia.'
         );
         return;
       }
 
       if (payload?.request) {
-        const republishedEmergency = toDashboardEmergencyFromApi(payload.request as EmergencyApiRequest);
-        setEmergencies((current) => [
-          republishedEmergency,
-          ...current.filter((emergency) => emergency.id !== emergencyId && emergency.id !== republishedEmergency.id)
-        ]);
+        const extendedEmergency = toDashboardEmergencyFromApi(payload.request as EmergencyApiRequest);
+        setEmergencies((current) =>
+          current.map((emergency) => (emergency.id === emergencyId ? extendedEmergency : emergency))
+        );
       }
 
-      setEmergencyStatus('Urgencia republicada.');
+      setEmergencyStatus('Urgencia extendida 24 horas.');
     } catch {
-      setEmergencyError('No pudimos republicar la urgencia.');
+      setEmergencyError('No pudimos extender la urgencia.');
     } finally {
       setMutatingEmergencyId(null);
     }
@@ -1647,19 +1650,19 @@ export function DashboardPanel({
                                 Marcar resuelta
                               </Button>
                             ) : null}
-                            {canRepublishClientEmergency(emergency) ? (
+                            {canExtendClientEmergency(emergency) ? (
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="secondary"
-                                onClick={() => void handleEmergencyRepublish(emergency.id)}
+                                onClick={() => void handleEmergencyExtend(emergency.id)}
                                 disabled={isMutating}
                               >
                                 <RefreshCcw className="mr-2 h-4 w-4" aria-hidden="true" />
-                                Republicar urgencia
+                                Extender 24 horas
                               </Button>
                             ) : null}
-                            {canEditClientEmergency(emergency) ? (
+                            {canDeleteClientEmergency(emergency) ? (
                               <Button
                                 type="button"
                                 size="sm"
