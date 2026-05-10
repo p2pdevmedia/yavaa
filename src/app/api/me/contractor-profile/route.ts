@@ -249,6 +249,7 @@ export async function PATCH(request: NextRequest) {
   const data = parsedBody.data;
   const categoryIds =
     data.categoryIds === undefined ? undefined : Array.from(new Set(data.categoryIds.filter((id) => id.length > 0)));
+  let selectedAddressWorkZoneIds: string[] | undefined;
 
   if (data.addressId) {
     const ownershipCheck = await prisma.address.findFirst({
@@ -257,7 +258,16 @@ export async function PATCH(request: NextRequest) {
         userId: appUser.id
       },
       select: {
-        id: true
+        id: true,
+        market: {
+          select: {
+            workZones: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -270,6 +280,8 @@ export async function PATCH(request: NextRequest) {
         { status: 422 }
       );
     }
+
+    selectedAddressWorkZoneIds = ownershipCheck.market?.workZones.map((workZone) => workZone.id) ?? [];
   }
 
   if (categoryIds !== undefined && categoryIds.length > 0) {
@@ -363,6 +375,23 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    if (selectedAddressWorkZoneIds !== undefined) {
+      await tx.contractorWorkZone.deleteMany({
+        where: {
+          contractorProfileId: contractorProfile.id
+        }
+      });
+
+      if (selectedAddressWorkZoneIds.length > 0) {
+        await tx.contractorWorkZone.createMany({
+          data: selectedAddressWorkZoneIds.map((workZoneId) => ({
+            contractorProfileId: contractorProfile.id,
+            workZoneId
+          }))
+        });
+      }
+    }
+
     await ensureContractorRoleForUser(tx, appUser.id);
   });
 
@@ -376,7 +405,8 @@ export async function PATCH(request: NextRequest) {
       categoriesChanged: categoryIds !== undefined,
       contractorRoleEnsured: true,
       hourlyRateChanged: contractorProfileData.hourlyRateCents !== undefined,
-      submittedForReview: contractorProfileData.submitForReview
+      submittedForReview: contractorProfileData.submitForReview,
+      ...(selectedAddressWorkZoneIds !== undefined ? { workZonesChanged: true } : {})
     }
   });
 

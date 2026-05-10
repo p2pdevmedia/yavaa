@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import type { Route } from 'next';
-import { Activity, CheckCircle2, Pencil, Save, X, XCircle } from 'lucide-react';
+import { Activity, CheckCircle2, Maximize2, Pencil, Save, X, XCircle } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +27,11 @@ type AdminUserEditDraft = {
 };
 
 type ContractorReviewAction = 'APPROVED' | 'REJECTED';
+
+type ContractorImagePreview = {
+  label: string;
+  url: string;
+};
 
 function buildEditDraft(user: AdminUserDetailData): AdminUserEditDraft {
   return {
@@ -80,9 +86,14 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
   const [draft, setDraft] = useState<AdminUserEditDraft>(() => buildEditDraft(user));
   const [isSaving, setIsSaving] = useState(false);
   const [contractorReviewNotes, setContractorReviewNotes] = useState(user.contractorProfile?.reviewNotes ?? '');
+  const [imagePreview, setImagePreview] = useState<ContractorImagePreview | null>(null);
   const [isReviewingContractor, setIsReviewingContractor] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  function openImagePreview(preview: ContractorImagePreview) {
+    setImagePreview(preview);
+  }
 
   async function submitEdit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -411,35 +422,41 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-2 text-sm">
+              <div className="grid gap-3 text-sm sm:grid-cols-3">
                 {currentUser.contractorProfile.profilePhotoUrl ? (
-                  <Button asChild size="sm" variant="outline">
-                    <a href={currentUser.contractorProfile.profilePhotoUrl} target="_blank" rel="noreferrer">
-                      Ver foto
-                    </a>
-                  </Button>
+                  <ContractorDocumentThumbnail
+                    label="Foto de perfil"
+                    url={currentUser.contractorProfile.profilePhotoUrl}
+                    onOpen={openImagePreview}
+                  />
                 ) : null}
                 {currentUser.contractorProfile.dniFrontUrl ? (
-                  <Button asChild size="sm" variant="outline">
-                    <a href={currentUser.contractorProfile.dniFrontUrl} target="_blank" rel="noreferrer">
-                      Ver DNI frente
-                    </a>
-                  </Button>
+                  <ContractorDocumentThumbnail
+                    label="DNI frente"
+                    url={currentUser.contractorProfile.dniFrontUrl}
+                    onOpen={openImagePreview}
+                  />
                 ) : null}
                 {currentUser.contractorProfile.dniBackUrl ? (
-                  <Button asChild size="sm" variant="outline">
-                    <a href={currentUser.contractorProfile.dniBackUrl} target="_blank" rel="noreferrer">
-                      Ver DNI dorso
-                    </a>
-                  </Button>
+                  <ContractorDocumentThumbnail
+                    label="DNI dorso"
+                    url={currentUser.contractorProfile.dniBackUrl}
+                    onOpen={openImagePreview}
+                  />
                 ) : null}
               </div>
 
-              {['DRAFT', 'PENDING_REVIEW'].includes(currentUser.contractorProfile.approvalStatus) ? (
+              {['DRAFT', 'PENDING_REVIEW', 'APPROVED'].includes(currentUser.contractorProfile.approvalStatus) ? (
                 <div className="space-y-3">
                   {currentUser.contractorProfile.approvalStatus === 'DRAFT' ? (
                     <p className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
                       Este perfil está en borrador. Revisá que tenga datos suficientes antes de aprobarlo.
+                    </p>
+                  ) : null}
+                  {currentUser.contractorProfile.approvalStatus === 'APPROVED' ? (
+                    <p className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                      Este contratista está aprobado. Podés rechazarlo para retirarlo de discovery y pedirle que
+                      vuelva a enviar los datos.
                     </p>
                   ) : null}
                   <div className="space-y-2">
@@ -453,15 +470,17 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
                     />
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => void submitContractorReview('APPROVED')}
-                      disabled={isReviewingContractor}
-                    >
-                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                      Aprobar contratista
-                    </Button>
+                    {currentUser.contractorProfile.approvalStatus !== 'APPROVED' ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => void submitContractorReview('APPROVED')}
+                        disabled={isReviewingContractor}
+                      >
+                        <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                        Aprobar contratista
+                      </Button>
+                    ) : null}
                     <Button
                       type="button"
                       size="sm"
@@ -470,7 +489,9 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
                       disabled={isReviewingContractor}
                     >
                       <XCircle className="h-4 w-4" aria-hidden="true" />
-                      Rechazar contratista
+                      {currentUser.contractorProfile.approvalStatus === 'APPROVED'
+                        ? 'Solicitar reenvío de datos'
+                        : 'Rechazar contratista'}
                     </Button>
                   </div>
                 </div>
@@ -494,7 +515,75 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
         <ActivityCard title="Bookings como cliente" items={currentUser.bookingsAsClient} />
         <ActivityCard title="Bookings como contractor" items={currentUser.bookingsAsContractor} />
       </div>
+
+      {imagePreview ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/95 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-contractor-image-preview-title"
+        >
+          <div className="max-h-full w-full max-w-5xl space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Imagen ampliada</p>
+                <h3 id="admin-contractor-image-preview-title" className="font-display text-2xl text-foreground">
+                  {imagePreview.label}
+                </h3>
+              </div>
+              <Button type="button" size="sm" variant="outline" onClick={() => setImagePreview(null)}>
+                <X className="h-4 w-4" aria-hidden="true" />
+                Cerrar
+              </Button>
+            </div>
+            <div className="flex max-h-[78vh] items-center justify-center overflow-hidden rounded-lg border border-border/70 bg-card">
+              <Image
+                src={imagePreview.url}
+                alt={`Imagen ampliada de ${imagePreview.label}`}
+                width={1200}
+                height={900}
+                unoptimized
+                className="max-h-[78vh] w-auto max-w-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function ContractorDocumentThumbnail({
+  label,
+  url,
+  onOpen
+}: {
+  label: string;
+  url: string;
+  onOpen: (preview: ContractorImagePreview) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="group overflow-hidden rounded-lg border border-border/70 bg-background/60 text-left transition hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onClick={() => onOpen({ label, url })}
+    >
+      <span className="block px-3 pb-2 pt-3 text-xs uppercase tracking-[0.16em] text-muted-foreground">{label}</span>
+      <span className="relative block h-32 overflow-hidden bg-muted">
+        <Image
+          src={url}
+          alt={`Miniatura de ${label}`}
+          width={320}
+          height={180}
+          unoptimized
+          className="h-full w-full object-cover transition duration-200 group-hover:scale-105"
+        />
+        <span className="absolute inset-x-2 bottom-2 flex items-center justify-center gap-2 rounded-md bg-background/90 px-2 py-1 text-xs font-medium text-foreground shadow-sm">
+          <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
+          Ampliar foto
+        </span>
+      </span>
+    </button>
   );
 }
 

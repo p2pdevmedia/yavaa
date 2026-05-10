@@ -240,7 +240,59 @@ describe('admin contractor operations', () => {
     expect(reviewed.approvalStatus).toBe(ContractorApprovalStatus.APPROVED);
   });
 
-  it('rejects review attempts for contractor profiles that were already reviewed', async () => {
+  it('rejects an approved contractor profile so the contractor must submit updated data', async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: 'cp_001',
+      approvalStatus: ContractorApprovalStatus.APPROVED
+    });
+    const update = vi.fn().mockResolvedValue({
+      id: 'cp_001',
+      approvalStatus: ContractorApprovalStatus.REJECTED,
+      reviewNotes: 'DNI vencido. Volver a cargar documentación.',
+      reviewedAt: new Date('2026-05-01T12:00:00.000Z'),
+      reviewedByUserId: activeAdmin.userId
+    });
+
+    const reviewed = await reviewContractorProfileForAdmin(
+      buildPrismaMock({
+        contractorProfile: {
+          findUnique,
+          update
+        }
+      } as unknown as PrismaClient),
+      activeAdmin,
+      'cp_001',
+      {
+        approvalStatus: ContractorApprovalStatus.REJECTED,
+        reviewNotes: 'DNI vencido. Volver a cargar documentación.'
+      }
+    );
+
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'cp_001' },
+      data: {
+        approvalStatus: ContractorApprovalStatus.REJECTED,
+        reviewNotes: 'DNI vencido. Volver a cargar documentación.',
+        reviewedByUserId: activeAdmin.userId,
+        reviewedAt: expect.any(Date)
+      },
+      select: expect.any(Object)
+    });
+    expect(recordAuditLog).toHaveBeenCalledWith({
+      actorUserId: activeAdmin.userId,
+      action: 'contractor_profile.rejected',
+      entityType: 'contractor_profile',
+      entityId: 'cp_001',
+      metadata: {
+        previousApprovalStatus: ContractorApprovalStatus.APPROVED,
+        nextApprovalStatus: ContractorApprovalStatus.REJECTED,
+        reviewNotes: 'DNI vencido. Volver a cargar documentación.'
+      }
+    });
+    expect(reviewed.approvalStatus).toBe(ContractorApprovalStatus.REJECTED);
+  });
+
+  it('rejects invalid review attempts for contractor profiles that were already reviewed', async () => {
     const findUnique = vi.fn().mockResolvedValue({
       id: 'cp_001',
       approvalStatus: ContractorApprovalStatus.APPROVED

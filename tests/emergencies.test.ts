@@ -579,6 +579,23 @@ describe('emergency helpers', () => {
     expect(requests).toHaveLength(1);
   });
 
+  it('excludes cancelled emergencies from the client emergency list', async () => {
+    const { prisma } = buildMockPrisma();
+
+    await listEmergencyRequestsForActor(prisma as never, clientActor, { mode: 'client' });
+
+    expect(prisma.emergencyRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          clientUserId: clientActor.userId,
+          status: {
+            not: 'CANCELLED_BY_CLIENT'
+          }
+        }
+      })
+    );
+  });
+
   it('does not fall back to the admin-wide emergency list when client mode is unavailable', async () => {
     const { prisma } = buildMockPrisma();
 

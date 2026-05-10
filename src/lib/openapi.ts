@@ -2545,7 +2545,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             '401': { description: 'Missing or invalid session token.' },
             '403': { description: 'Only active admins can review contractor profiles.' },
             '404': { description: 'Contractor profile not found.' },
-            '422': { description: 'Only draft or pending contractor profiles can be reviewed.' }
+            '422': { description: 'Draft or pending contractor profiles can be reviewed, and approved profiles can be rejected.' }
           }
         }
       }

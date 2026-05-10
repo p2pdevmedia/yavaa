@@ -394,7 +394,12 @@ export async function listEmergencyRequestsForActor(
     where: mode === 'admin'
       ? undefined
       : mode === 'client'
-        ? { clientUserId: actor.userId }
+        ? {
+            clientUserId: actor.userId,
+            status: {
+              not: 'CANCELLED_BY_CLIENT'
+            }
+          }
         : mode === 'contractor'
           ? contractorWhere ?? { OR: [] }
           : { OR: [] },

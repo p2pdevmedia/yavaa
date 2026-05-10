@@ -368,4 +368,162 @@ describe('me contractor profile API', () => {
       })
     );
   });
+
+  it('syncs contractor work zones from the selected work address market', async () => {
+    const appUser = {
+      id: 'user_001',
+      email: 'worker@yavaa.test',
+      supabaseAuthId: 'auth_001',
+      displayName: 'Worker User',
+      status: UserStatus.ACTIVE,
+      roles: ['client', 'contractor'],
+      profile: null,
+      addresses: [],
+      contractorProfile: null
+    };
+
+    mockedResolveRequestAuth.mockResolvedValue({
+      authenticated: true,
+      configured: true,
+      reason: null,
+      identity: {
+        id: 'auth_001',
+        email: 'worker@yavaa.test'
+      },
+      appUser,
+      matchedBy: 'supabase_auth_id',
+      permissionContext: {
+        userId: 'user_001',
+        status: UserStatus.ACTIVE,
+        roles: ['client', 'contractor']
+      }
+    } as never);
+
+    mockedResolveAppUser.mockResolvedValue({
+      configured: true,
+      matchedBy: 'supabase_auth_id',
+      identity: {
+        id: 'auth_001',
+        email: 'worker@yavaa.test'
+      },
+      user: {
+        ...appUser,
+        contractorProfile: {
+          id: 'contractor_profile_001',
+          approvalStatus: ContractorApprovalStatus.DRAFT,
+          acceptsEmergencies: true,
+          hourlyRateCents: null,
+          dniNumber: null,
+          dniFrontUrl: null,
+          dniBackUrl: null,
+          profilePhotoUrl: null,
+          reviewNotes: null,
+          submittedAt: null,
+          reviewedAt: null,
+          reviewedByUserId: null,
+          addressId: '11111111-1111-4111-8111-111111111111',
+          categories: [],
+          workZones: [
+            {
+              workZone: {
+                id: '22222222-2222-4222-8222-222222222222',
+                slug: 'central',
+                name: 'Centro',
+                description: null,
+                market: {
+                  id: '33333333-3333-4333-8333-333333333333',
+                  slug: 'san-martin-de-los-andes',
+                  city: 'San Martin de los Andes',
+                  province: 'Neuquen',
+                  country: 'Argentina'
+                }
+              }
+            }
+          ]
+        }
+      },
+      permissionContext: {
+        userId: 'user_001',
+        status: UserStatus.ACTIVE,
+        roles: ['client', 'contractor']
+      }
+    } as never);
+
+    const tx = {
+      contractorProfile: {
+        upsert: vi.fn().mockResolvedValue({ id: 'contractor_profile_001' })
+      },
+      contractorWorkZone: {
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+        createMany: vi.fn().mockResolvedValue({ count: 1 })
+      }
+    };
+
+    mockedGetPrismaClient.mockReturnValue({
+      address: {
+        findFirst: vi.fn().mockResolvedValue({
+          id: '11111111-1111-4111-8111-111111111111',
+          market: {
+            workZones: [{ id: '22222222-2222-4222-8222-222222222222' }]
+          }
+        })
+      },
+      $transaction: vi.fn(async (callback: (client: typeof tx) => Promise<void>) => callback(tx))
+    } as never);
+
+    const response = await PATCH({
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: vi.fn().mockResolvedValue({
+        acceptsEmergencies: true,
+        addressId: '11111111-1111-4111-8111-111111111111'
+      })
+    } as never);
+
+    const prisma = mockedGetPrismaClient.mock.results[0]?.value as {
+      address: {
+        findFirst: ReturnType<typeof vi.fn>;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(prisma.address.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: '11111111-1111-4111-8111-111111111111',
+        userId: 'user_001'
+      },
+      select: {
+        id: true,
+        market: {
+          select: {
+            workZones: {
+              select: {
+                id: true
+              }
+            }
+          }
+        }
+      }
+    });
+    expect(tx.contractorWorkZone.deleteMany).toHaveBeenCalledWith({
+      where: {
+        contractorProfileId: 'contractor_profile_001'
+      }
+    });
+    expect(tx.contractorWorkZone.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          contractorProfileId: 'contractor_profile_001',
+          workZoneId: '22222222-2222-4222-8222-222222222222'
+        }
+      ]
+    });
+    expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          addressChanged: true,
+          workZonesChanged: true
+        })
+      })
+    );
+  });
 });

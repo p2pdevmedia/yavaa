@@ -283,6 +283,20 @@ function serializeContractorReview(row: AdminContractorReviewRow): AdminContract
   };
 }
 
+function canReviewProfileTransition(
+  currentStatus: ContractorApprovalStatus,
+  nextStatus: ContractorApprovalStatus
+): boolean {
+  if (
+    currentStatus === ContractorApprovalStatus.DRAFT ||
+    currentStatus === ContractorApprovalStatus.PENDING_REVIEW
+  ) {
+    return true;
+  }
+
+  return currentStatus === ContractorApprovalStatus.APPROVED && nextStatus === ContractorApprovalStatus.REJECTED;
+}
+
 export async function listContractorProfilesForAdmin(
   prisma: PrismaClient,
   actor: AdminContractorActor,
@@ -332,10 +346,7 @@ export async function reviewContractorProfileForAdmin(
     throw new Error('contractor-profile-not-found');
   }
 
-  if (
-    currentProfile.approvalStatus !== ContractorApprovalStatus.DRAFT &&
-    currentProfile.approvalStatus !== ContractorApprovalStatus.PENDING_REVIEW
-  ) {
+  if (!canReviewProfileTransition(currentProfile.approvalStatus, nextStatus)) {
     throw new Error('invalid-state');
   }
 

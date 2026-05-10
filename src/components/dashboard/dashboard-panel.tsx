@@ -175,6 +175,10 @@ type EmergencyApiRequest = Omit<DashboardEmergency, 'assignedContractorName' | '
 
 type DashboardMode = 'client' | 'contractor';
 type ContractorEmergencyTab = 'available' | 'expired';
+type ContractorDniPreviewItem = {
+  label: string;
+  url: string;
+};
 
 function toStringOrEmpty(value: string | null | undefined): string {
   return value ?? '';
@@ -282,6 +286,14 @@ function pesosToCents(value: string): string {
   return Number.isFinite(parsed) ? String(Math.round(parsed * 100)) : '';
 }
 
+function formatContractorHourlyRate(hourlyRateCents: number | null | undefined): string {
+  if (hourlyRateCents === null || hourlyRateCents === undefined) {
+    return 'Sin precio informado';
+  }
+
+  return `$${Math.round(hourlyRateCents / 100).toLocaleString('es-AR')} ARS por hora`;
+}
+
 function formatEmergencyStatus(status: DashboardEmergency['status']): string {
   const labels: Record<DashboardEmergency['status'], string> = {
     OPEN: 'Abierta',
@@ -352,6 +364,42 @@ function getInitialDashboardMode(user: DashboardUser): DashboardMode {
   return hasContractorMode(user) ? 'contractor' : 'client';
 }
 
+function ContractorDniPreview({
+  label,
+  url,
+  onExpand
+}: ContractorDniPreviewItem & {
+  onExpand: (preview: ContractorDniPreviewItem) => void;
+}) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-muted/20 p-2">
+      <button
+        type="button"
+        className="group block w-full overflow-hidden rounded-md border border-border/70 bg-card text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        aria-label={`Ampliar ${label}`}
+        onClick={() => onExpand({ label, url })}
+      >
+        <span
+          role="img"
+          aria-label={`${label} cargado`}
+          className="block aspect-[16/10] w-full bg-cover bg-center transition-transform duration-200 group-hover:scale-[1.02]"
+          style={{ backgroundImage: `url(${url})` }}
+        />
+      </button>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="text-xs font-medium text-foreground">{label}</p>
+        <button
+          type="button"
+          className="text-xs font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          onClick={() => onExpand({ label, url })}
+        >
+          Ver imagen
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardPanel({
   view,
   initialUser,
@@ -399,6 +447,7 @@ export function DashboardPanel({
   );
   const [contractorEmergencyTab, setContractorEmergencyTab] = useState<ContractorEmergencyTab>('available');
   const activeMode = initialMode ?? getInitialDashboardMode(initialUser);
+  const [selectedDniPreview, setSelectedDniPreview] = useState<ContractorDniPreviewItem | null>(null);
   const [contractorProfileError, setContractorProfileError] = useState<string | null>(null);
   const [contractorProfileStatus, setContractorProfileStatus] = useState<string | null>(null);
 
@@ -939,6 +988,14 @@ export function DashboardPanel({
   );
   const selectedAddressMarketId =
     selectedAddressMarket && isUuid(selectedAddressMarket.id) ? selectedAddressMarket.id : null;
+  const contractorProfile = user.contractorProfile;
+  const isContractorProfileApproved = contractorProfile?.approvalStatus === 'APPROVED';
+  const submittedContractorAddress = contractorProfile?.addressId
+    ? user.addresses.find((address) => address.id === contractorProfile.addressId)
+    : null;
+  const submittedContractorCategoryNames =
+    contractorProfile?.categories.map((entry) => entry.category.name) ?? [];
+  const submittedContractorHourlyRate = formatContractorHourlyRate(contractorProfile?.hourlyRateCents);
   const availableContractorEmergencies = emergencies.filter(isAvailableContractorEmergency);
   const expiredContractorEmergencies = emergencies.filter(isExpiredContractorEmergency);
   const visibleEmergencies =
@@ -968,6 +1025,37 @@ export function DashboardPanel({
 
   return (
     <div className="space-y-6">
+      {selectedDniPreview ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Vista ampliada de ${selectedDniPreview.label}`}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 px-4 py-8 backdrop-blur-sm"
+        >
+          <button
+            type="button"
+            className="absolute inset-0 cursor-default"
+            aria-label="Cerrar vista ampliada"
+            onClick={() => setSelectedDniPreview(null)}
+          />
+          <div className="relative z-10 w-full max-w-3xl space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-foreground">{selectedDniPreview.label}</p>
+              <Button type="button" variant="secondary" size="sm" onClick={() => setSelectedDniPreview(null)}>
+                <X className="mr-2 h-4 w-4" aria-hidden="true" />
+                Cerrar
+              </Button>
+            </div>
+            <div
+              role="img"
+              aria-label={`${selectedDniPreview.label} ampliado`}
+              className="h-[min(72vh,720px)] w-full rounded-lg border border-border/70 bg-card bg-contain bg-center bg-no-repeat shadow-soft"
+              style={{ backgroundImage: `url(${selectedDniPreview.url})` }}
+            />
+          </div>
+        </div>
+      ) : null}
+
       {view === 'admin' ? (
         adminData ? (
           <AdminPanel initialData={adminData} />
@@ -1102,6 +1190,77 @@ export function DashboardPanel({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
+            {isContractorProfileApproved ? (
+              <div className="space-y-4">
+                <p className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  Tu perfil laboral ya fue aprobado. Estos son los datos enviados.
+                </p>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">DNI</p>
+                    <p className="mt-1 text-sm font-medium text-foreground">
+                      {contractorProfile?.dniNumber ?? 'Sin DNI informado'}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
+                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Precio por hora</p>
+                    <p className="mt-1 text-sm font-medium text-foreground">{submittedContractorHourlyRate}</p>
+                  </div>
+                  <div className="rounded-lg border border-border/70 bg-muted/20 p-4 sm:col-span-2">
+                    <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Dirección laboral</p>
+                    <p className="mt-1 text-sm font-medium text-foreground">
+                      {submittedContractorAddress
+                        ? `${submittedContractorAddress.label} - ${submittedContractorAddress.city}, ${submittedContractorAddress.province}`
+                        : 'Sin dirección laboral informada'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Categorías</p>
+                  {submittedContractorCategoryNames.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {submittedContractorCategoryNames.map((categoryName, index) => (
+                        <Badge key={categoryName} variant={index === 0 ? 'secondary' : 'outline'}>
+                          {categoryName}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Sin categorías informadas.</p>
+                  )}
+                </div>
+
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Datos enviados</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {contractorProfile?.dniFrontUrl ? (
+                      <ContractorDniPreview
+                        label="DNI frente"
+                        url={contractorProfile.dniFrontUrl}
+                        onExpand={setSelectedDniPreview}
+                      />
+                    ) : (
+                      <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+                        Sin DNI frente cargado.
+                      </p>
+                    )}
+                    {contractorProfile?.dniBackUrl ? (
+                      <ContractorDniPreview
+                        label="DNI dorso"
+                        url={contractorProfile.dniBackUrl}
+                        onExpand={setSelectedDniPreview}
+                      />
+                    ) : (
+                      <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+                        Sin DNI dorso cargado.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
             <form className="space-y-4" onSubmit={handleContractorProfileSubmit}>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
@@ -1219,7 +1378,11 @@ export function DashboardPanel({
                   {contractorDniFrontFile ? (
                     <p className="text-xs text-muted-foreground">{contractorDniFrontFile.name}</p>
                   ) : user.contractorProfile?.dniFrontUrl ? (
-                    <p className="text-xs text-muted-foreground">DNI frente guardado.</p>
+                    <ContractorDniPreview
+                      label="DNI frente"
+                      url={user.contractorProfile.dniFrontUrl}
+                      onExpand={setSelectedDniPreview}
+                    />
                   ) : null}
                 </div>
                 <div className="space-y-2">
@@ -1234,7 +1397,11 @@ export function DashboardPanel({
                   {contractorDniBackFile ? (
                     <p className="text-xs text-muted-foreground">{contractorDniBackFile.name}</p>
                   ) : user.contractorProfile?.dniBackUrl ? (
-                    <p className="text-xs text-muted-foreground">DNI dorso guardado.</p>
+                    <ContractorDniPreview
+                      label="DNI dorso"
+                      url={user.contractorProfile.dniBackUrl}
+                      onExpand={setSelectedDniPreview}
+                    />
                   ) : null}
                 </div>
               </div>
@@ -1265,6 +1432,7 @@ export function DashboardPanel({
                 </Button>
               </div>
             </form>
+            )}
           </CardContent>
         </Card>
       ) : null}

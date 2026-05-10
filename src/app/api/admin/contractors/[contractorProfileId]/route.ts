@@ -49,7 +49,7 @@ function mapAdminContractorReviewError(error: unknown): { status: number; body: 
         status: 422,
         body: {
           error: 'invalid-state',
-          message: 'Only draft or pending contractor profiles can be approved or rejected.'
+          message: 'Draft or pending contractor profiles can be reviewed, and approved profiles can be rejected.'
         }
       };
     }

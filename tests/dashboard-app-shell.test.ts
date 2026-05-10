@@ -187,6 +187,15 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain("fetch('/api/me/contractor-profile'");
   });
 
+  test('shows approved contractor profiles as submitted read-only data', () => {
+    expect(dashboardPanelSource).toContain('isContractorProfileApproved');
+    expect(dashboardPanelSource).toContain('Datos enviados');
+    expect(dashboardPanelSource).toContain('Tu perfil laboral ya fue aprobado.');
+    expect(dashboardPanelSource).toContain('submittedContractorAddress');
+    expect(dashboardPanelSource).toContain('submittedContractorCategoryNames');
+    expect(dashboardPanelSource).toContain('submittedContractorHourlyRate');
+  });
+
   test('uses the account profile photo for contractors and uploads only DNI photos', () => {
     expect(dashboardPanelSource).not.toContain('contractor-profile-photo-file');
     expect(dashboardPanelSource).not.toContain('contractorProfilePhotoFile');
@@ -196,6 +205,17 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).not.toContain('contractor-profile-photo-url');
     expect(dashboardPanelSource).not.toContain('contractor-dni-front-url');
     expect(dashboardPanelSource).not.toContain('contractor-dni-back-url');
+  });
+
+  test('shows saved contractor DNI images as expandable previews', () => {
+    expect(dashboardPanelSource).toContain('ContractorDniPreview');
+    expect(dashboardPanelSource).toContain('aria-label={`Ampliar ${label}`}');
+    expect(dashboardPanelSource).toContain('label="DNI frente"');
+    expect(dashboardPanelSource).toContain('label="DNI dorso"');
+    expect(dashboardPanelSource).toContain('selectedDniPreview');
+    expect(dashboardPanelSource).toContain('Vista ampliada');
+    expect(dashboardPanelSource).not.toContain('DNI frente guardado.');
+    expect(dashboardPanelSource).not.toContain('DNI dorso guardado.');
   });
 
   test('keeps admin pages inside a bottom navigation shell', () => {
