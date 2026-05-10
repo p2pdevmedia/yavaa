@@ -7,26 +7,26 @@
   --font-display: "Bricolage Grotesque", "Avenir Next", Arial, sans-serif;
   --font-serif: "Instrument Serif", Georgia, serif;
   --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-  --background: 36 44% 97%;
-  --foreground: 222 35% 13%;
-  --card: 0 0% 100%;
-  --card-foreground: 222 35% 13%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222 35% 13%;
-  --primary: 165 60% 22%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 24 62% 92%;
-  --secondary-foreground: 20 28% 20%;
-  --muted: 30 22% 94%;
-  --muted-foreground: 225 12% 45%;
-  --accent: 168 46% 90%;
-  --accent-foreground: 165 60% 22%;
+  --background: 37 42% 93%;
+  --foreground: 30 22% 10%;
+  --card: 40 100% 97%;
+  --card-foreground: 30 22% 10%;
+  --popover: 40 100% 97%;
+  --popover-foreground: 30 22% 10%;
+  --primary: 13 64% 46%;
+  --primary-foreground: 32 100% 96%;
+  --secondary: 99 42% 91%;
+  --secondary-foreground: 138 39% 23%;
+  --muted: 37 40% 89%;
+  --muted-foreground: 31 10% 38%;
+  --accent: 39 77% 92%;
+  --accent-foreground: 19 55% 25%;
   --destructive: 0 72% 50%;
   --destructive-foreground: 0 0% 100%;
-  --border: 24 17% 86%;
-  --input: 24 17% 86%;
-  --ring: 165 60% 22%;
-  --radius: 1rem;
+  --border: 36 32% 80%;
+  --input: 36 32% 80%;
+  --ring: 13 64% 46%;
+  --radius: 0.5rem;
 }
 
 .dark {
@@ -63,9 +63,7 @@
   body {
     @apply bg-background text-foreground antialiased;
     background-image:
-      radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 32%),
-      radial-gradient(circle at top right, rgba(249, 115, 22, 0.08), transparent 28%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.72), transparent 24%);
+      linear-gradient(180deg, rgba(255, 251, 243, 0.82), rgba(246, 239, 227, 0) 360px);
   }
 }
 

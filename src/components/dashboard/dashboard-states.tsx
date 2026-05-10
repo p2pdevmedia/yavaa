@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 
 export function DashboardDatabaseUnavailableState({ email }: { email: string | null }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-4 py-8 sm:px-6 lg:px-8">
+    <YavaaPageShell width="sm" className="flex min-h-screen items-center">
       <Card className="w-full border-border/70 bg-card/90 shadow-soft">
         <CardHeader>
           <CardTitle className="font-display text-3xl">Base de datos no disponible</CardTitle>
@@ -15,13 +16,13 @@ export function DashboardDatabaseUnavailableState({ email }: { email: string | n
           <p>Volvé a intentar en unos minutos. Ninguna acción protegida se habilita sin validar la base.</p>
         </CardContent>
       </Card>
-    </main>
+    </YavaaPageShell>
   );
 }
 
 export function DashboardUnlinkedUserState({ email }: { email: string | null }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-4xl items-center px-4 py-8 sm:px-6 lg:px-8">
+    <YavaaPageShell width="sm" className="flex min-h-screen items-center">
       <Card className="w-full border-border/70 bg-card/90 shadow-soft">
         <CardHeader>
           <CardTitle className="font-display text-3xl">Área protegida</CardTitle>
@@ -34,6 +35,6 @@ export function DashboardUnlinkedUserState({ email }: { email: string | null }) 
           <p>Cuando vinculemos el usuario local, vas a ver el panel de perfil y direcciones acá mismo.</p>
         </CardContent>
       </Card>
-    </main>
+    </YavaaPageShell>
   );
 }

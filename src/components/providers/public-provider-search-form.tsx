@@ -12,7 +12,7 @@ type PublicProviderSearchFormProps = {
 };
 
 const selectClassName =
-  'flex h-11 w-full rounded-2xl border border-input bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+  'flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 
 export function PublicProviderSearchForm({
   categories,
@@ -21,7 +21,7 @@ export function PublicProviderSearchForm({
   market
 }: PublicProviderSearchFormProps) {
   return (
-    <Card className="border-border/70 bg-card/95">
+    <Card className="border-border/70 bg-card/95 shadow-soft">
       <CardContent className="grid gap-4 pt-6 md:grid-cols-[1fr_1fr_auto] md:items-end">
         <div className="grid gap-2">
           <Label htmlFor="category">Categoría</Label>

@@ -47,11 +47,27 @@ Blocked actions:
 
 These actions are client-mode surface entry points for this slice.
 
-Visible action groups:
+Bottom menu:
+
+- Yavaa
+- Perfil
+
+Yavaa API-backed surface:
 
 - Search services
 - View providers
+
+Perfil API-backed surface:
+
+- View and edit profile
 - Manage addresses
+- Create address
+- Edit address
+- Delete address
+- Switch to contractor mode when the contractor role exists
+
+Future client actions:
+
 - Create scheduled booking
 - Create emergency request
 - View booking status
@@ -61,25 +77,44 @@ Visible action groups:
 - Confirm completion
 - Report a problem
 - View account status
-- Switch to contractor mode when the contractor role exists
 
 ## Authenticated Contractor Mode
 
 These actions are contractor-mode surface entry points for this slice.
 
-Visible action groups:
+Bottom menu:
+
+- Ofertas
+- Trabajando
+- Perfil
+
+Ofertas API-backed surface:
+
+- View incoming booking offers from `/api/bookings`
+- Accept or reject bookings when the matching action is exposed
+
+Trabajando API-backed surface:
+
+- View accepted work that has not been charged yet from `/api/bookings`
+
+Perfil API-backed surface:
+
+- View and edit profile
+- Create address
+- Edit address
+- Delete address
+- Switch to client mode when the client role exists
+
+Future contractor actions:
 
 - Edit contractor profile
 - Manage services
 - Manage availability
-- View incoming booking requests
-- Accept or reject bookings
 - Respond to emergency requests
 - Open booking chat
 - Upload booking files
 - Mark booking progress
 - View account status
-- Switch to client mode when the client role exists
 
 ## Blocked Or Suspended Account
 

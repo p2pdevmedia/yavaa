@@ -308,7 +308,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
 
   return (
     <section className="space-y-6" aria-labelledby="admin-panel-title">
-      <div className="flex flex-col gap-3 rounded-3xl border border-border/70 bg-card/90 p-6 shadow-soft md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 rounded-lg border border-border/70 bg-card/90 p-6 shadow-soft md:flex-row md:items-center md:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Administración</p>
           <h2 id="admin-panel-title" className="font-display text-3xl text-foreground">
@@ -324,13 +324,13 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
       </div>
 
       {errorMessage ? (
-        <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           {errorMessage}
         </p>
       ) : null}
 
       {statusMessage ? (
-        <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+        <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
           {statusMessage}
         </p>
       ) : null}
@@ -343,7 +343,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
           <a
             key={section.id}
             href={section.href}
-            className="rounded-full border border-border/70 bg-card/90 px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
+            className="rounded-lg border border-border/70 bg-card/90 px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
           >
             {section.label}
           </a>
@@ -358,7 +358,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             {users.map((user) => (
-              <div key={user.id} className="rounded-2xl border border-border/70 bg-background/60 p-4">
+              <div key={user.id} className="rounded-lg border border-border/70 bg-background/60 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-foreground">{user.displayName ?? user.email}</p>
@@ -417,7 +417,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             {contractorProfiles.map((profile) => (
-              <div key={profile.id} className="rounded-2xl border border-border/70 bg-background/60 p-4">
+              <div key={profile.id} className="rounded-lg border border-border/70 bg-background/60 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-foreground">{profile.user.displayName ?? profile.user.email}</p>
@@ -505,7 +505,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
                   <Label htmlFor="admin-category-status">Estado</Label>
                   <select
                     id="admin-category-status"
-                    className="flex h-11 w-full rounded-2xl border border-input bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     value={categoryDraft.status}
                     onChange={(event) =>
                       setCategoryDraft((current) => ({
@@ -530,7 +530,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
 
             <div className="space-y-3">
               {categories.map((category) => (
-                <div key={category.id} className="rounded-2xl border border-border/70 bg-background/60 p-4">
+                <div key={category.id} className="rounded-lg border border-border/70 bg-background/60 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <p className="font-medium text-foreground">{category.name}</p>
@@ -568,7 +568,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             {bookings.map((booking) => (
-              <div key={booking.id} className="rounded-2xl border border-border/70 bg-background/60 p-4">
+              <div key={booking.id} className="rounded-lg border border-border/70 bg-background/60 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="font-medium text-foreground">{booking.description}</p>

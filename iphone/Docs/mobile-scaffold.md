@@ -23,7 +23,7 @@ El proyecto Xcode/app target puede agregarse despues apuntando a `YavaaApp.Yavaa
 `YavaaAPI` consume la API existente del website:
 
 - `APIEnvironment.localWebsite`: `http://localhost:3000`
-- `APIEnvironment.production`: `https://app.yavaa.lat`
+- `APIEnvironment.production`: `https://www.yavaa.lat`
 
 El cliente exige paths bajo `/api/` para evitar consumir rutas de pagina accidentalmente.
 

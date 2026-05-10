@@ -1,5 +1,6 @@
-import { getPrismaClient } from '@/lib/prisma';
+import { YavaaHero, YavaaPageShell } from '@/components/ui/yavaa-layout';
 import { hasDatabaseEnv } from '@/lib/env';
+import { getPrismaClient } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,73 +58,69 @@ export default async function SupabasePage() {
     : [[], [], []];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-5xl items-start px-4 py-12 sm:px-6 lg:px-8">
-      <section className="space-y-8">
-        <div className="space-y-3">
-          <h1 className="text-3xl font-semibold tracking-tight text-foreground">Datos de etapa 01</h1>
-          <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-            Esta vista confirma que la base de datos ya tiene la semilla inicial de la Etapa 1.
-            Si el entorno no está configurado, la página sigue cargando en modo informativo.
-          </p>
-        </div>
+    <YavaaPageShell width="md" className="space-y-8 py-12">
+      <YavaaHero
+        eyebrow="Datos operativos"
+        title="Datos operativos"
+        description="Esta vista confirma que la base de datos ya tiene la semilla inicial. Si el entorno no está configurado, la página sigue cargando en modo informativo."
+      />
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <article className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-sm font-medium text-foreground">Mercados</h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              {configured ? (
-                markets.length > 0 ? (
-                  markets.map((market) => (
-                    <li key={market.id}>
-                      {market.city}, {market.province} - {market.country}
-                      {market.is_primary ? ' (primary)' : ''}
-                    </li>
-                  ))
-                ) : (
-                  <li>No seeded markets found.</li>
-                )
+      <div className="grid gap-4 md:grid-cols-3">
+        <article className="rounded-lg border border-border bg-card/95 p-4 shadow-soft">
+          <h2 className="text-sm font-medium text-foreground">Mercados</h2>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {configured ? (
+              markets.length > 0 ? (
+                markets.map((market) => (
+                  <li key={market.id}>
+                    {market.city}, {market.province} - {market.country}
+                    {market.is_primary ? ' (primary)' : ''}
+                  </li>
+                ))
               ) : (
-                <li>Database env not configured.</li>
-              )}
-            </ul>
-          </article>
+                <li>No seeded markets found.</li>
+              )
+            ) : (
+              <li>Database env not configured.</li>
+            )}
+          </ul>
+        </article>
 
-          <article className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-sm font-medium text-foreground">Categorias</h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              {configured ? (
-                categories.length > 0 ? (
-                  categories.map((category) => (
-                    <li key={category.id}>
-                      {category.name}
-                      {category.category_group ? ` - ${category.category_group}` : ''}
-                    </li>
-                  ))
-                ) : (
-                  <li>No seeded categories found.</li>
-                )
+        <article className="rounded-lg border border-border bg-card/95 p-4 shadow-soft">
+          <h2 className="text-sm font-medium text-foreground">Categorias</h2>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {configured ? (
+              categories.length > 0 ? (
+                categories.map((category) => (
+                  <li key={category.id}>
+                    {category.name}
+                    {category.category_group ? ` - ${category.category_group}` : ''}
+                  </li>
+                ))
               ) : (
-                <li>Database env not configured.</li>
-              )}
-            </ul>
-          </article>
+                <li>No seeded categories found.</li>
+              )
+            ) : (
+              <li>Database env not configured.</li>
+            )}
+          </ul>
+        </article>
 
-          <article className="rounded-lg border border-border bg-card p-4">
-            <h2 className="text-sm font-medium text-foreground">Roles</h2>
-            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-              {configured ? (
-                roles.length > 0 ? (
-                  roles.map((role) => <li key={role.id}>{role.slug}</li>)
-                ) : (
-                  <li>No seeded roles found.</li>
-                )
+        <article className="rounded-lg border border-border bg-card/95 p-4 shadow-soft">
+          <h2 className="text-sm font-medium text-foreground">Roles</h2>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {configured ? (
+              roles.length > 0 ? (
+                roles.map((role) => <li key={role.id}>{role.slug}</li>)
               ) : (
-                <li>Database env not configured.</li>
-              )}
-            </ul>
-          </article>
-        </div>
-      </section>
-    </main>
+                <li>No seeded roles found.</li>
+              )
+            ) : (
+              <li>Database env not configured.</li>
+            )}
+          </ul>
+        </article>
+      </div>
+    </YavaaPageShell>
   );
 }

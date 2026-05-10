@@ -20,7 +20,7 @@ El modo activo no otorga permisos. Solo decide la navegacion visible. Los endpoi
 La base mobile queda preparada para conectarse a la API web de Yavaa:
 
 - entorno local por defecto: `http://localhost:3000`
-- entorno productivo previsto: `https://app.yavaa.lat`
+- entorno productivo: `https://www.yavaa.lat`
 - endpoints iniciales:
   - `GET /api/me`
   - `GET /api/openapi`

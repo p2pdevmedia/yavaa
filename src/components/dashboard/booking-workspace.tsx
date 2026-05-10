@@ -247,7 +247,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
                   type="button"
                   onClick={() => setSelectedBookingId(booking.id)}
                   className={[
-                    'w-full rounded-3xl border p-4 text-left transition',
+                    'w-full rounded-lg border p-4 text-left transition',
                     selected
                       ? 'border-primary/40 bg-primary/5 shadow-soft'
                       : 'border-border/70 bg-background/60 hover:border-border hover:bg-background'
@@ -264,7 +264,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
             })}
           </div>
 
-          <div className="space-y-4 rounded-3xl border border-border/70 bg-background/70 p-5">
+          <div className="space-y-4 rounded-lg border border-border/70 bg-background/70 p-5">
             {selectedBooking ? (
               <>
                 <div className="space-y-2">
@@ -292,14 +292,14 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
                   </div>
 
                   {conversationError ? (
-                    <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                       {conversationError}
                     </p>
                   ) : null}
 
                   <div className="space-y-3">
                     {conversation.messages.length === 0 ? (
-                      <p className="rounded-2xl border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                      <p className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
                         Aún no hay mensajes en este booking.
                       </p>
                     ) : (
@@ -307,7 +307,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
                         <article
                           key={message.id}
                           className={[
-                            'rounded-3xl border px-4 py-3',
+                            'rounded-lg border px-4 py-3',
                             message.kind === 'SYSTEM'
                               ? 'border-border/70 bg-muted/30'
                               : 'border-border/70 bg-card'
@@ -341,13 +341,13 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
                   </div>
 
                   {sendError ? (
-                    <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                       {sendError}
                     </p>
                   ) : null}
 
                   {sendStatus ? (
-                    <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                    <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
                       {sendStatus}
                     </p>
                   ) : null}
@@ -363,13 +363,13 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
                   </h4>
 
                   {conversation.files.length === 0 ? (
-                    <p className="rounded-2xl border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                    <p className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
                       No hay archivos subidos para este booking.
                     </p>
                   ) : (
                     <div className="grid gap-3">
                       {conversation.files.map((file) => (
-                        <article key={file.id} className="rounded-3xl border border-border/70 bg-card px-4 py-3">
+                        <article key={file.id} className="rounded-lg border border-border/70 bg-card px-4 py-3">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div>
                               <p className="text-sm font-medium text-foreground">{file.fileName}</p>
@@ -397,7 +397,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
                   )}
                 </div>
 
-                <form className="space-y-4 rounded-3xl border border-border/70 bg-muted/20 p-4" onSubmit={handleUploadFile}>
+                <form className="space-y-4 rounded-lg border border-border/70 bg-muted/20 p-4" onSubmit={handleUploadFile}>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-foreground" htmlFor="booking-file">
                       Subir archivo
@@ -421,7 +421,7 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
                       </label>
                       <select
                         id="booking-file-purpose"
-                        className="flex h-11 w-full rounded-2xl border border-input bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                         value={uploadPurpose}
                         onChange={(event) => setUploadPurpose(event.target.value as BookingFilePurpose)}
                       >
@@ -439,13 +439,13 @@ export function BookingWorkspace({ bookings }: BookingWorkspaceProps) {
                   </div>
 
                   {uploadError ? (
-                    <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                       {uploadError}
                     </p>
                   ) : null}
 
                   {uploadStatus ? (
-                    <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                    <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
                       {uploadStatus}
                     </p>
                   ) : null}

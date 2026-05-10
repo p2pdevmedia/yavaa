@@ -936,6 +936,50 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           }
         }
       },
+      '/api/me/addresses/{addressId}': {
+        patch: {
+          operationId: 'updateMyAddress',
+          summary: 'Update personal address',
+          tags: ['me'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'addressId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': { description: 'Updated address and refreshed user state.' },
+            '400': { description: 'Invalid address payload.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated user is suspended, blocked, or not the owner.' },
+            '404': { description: 'Address not found.' }
+          }
+        },
+        delete: {
+          operationId: 'deleteMyAddress',
+          summary: 'Delete personal address',
+          tags: ['me'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'addressId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': { description: 'Deleted address and refreshed user state.' },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'The authenticated user is suspended, blocked, or not the owner.' },
+            '404': { description: 'Address not found.' },
+            '409': { description: 'Address is linked to existing work and cannot be deleted.' }
+          }
+        }
+      },
       '/api/me/contractor-profile': {
         get: {
           operationId: 'getMyContractorProfile',

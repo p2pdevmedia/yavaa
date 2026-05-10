@@ -109,6 +109,62 @@ public final class AppContainer: ObservableObject {
         await selectMode(mode)
     }
 
+    public func loadClientHome(category: String?) async throws -> ClientHomeData {
+        async let categories = apiClient.fetchCatalogCategories()
+        async let providers = apiClient.searchProviders(category: category)
+        let loadedCategories = try await categories
+        let loadedProviders = try await providers
+
+        return ClientHomeData(
+            categories: loadedCategories.categories,
+            providers: loadedProviders.items
+        )
+    }
+
+    public func loadBookings() async throws -> [BookingSummary] {
+        try await apiClient.fetchBookings().bookings
+    }
+
+    public func acceptBooking(_ bookingId: String) async throws {
+        _ = try await apiClient.actOnBooking(
+            id: bookingId,
+            input: BookingActionInput(action: .accept)
+        )
+    }
+
+    public func rejectBooking(_ bookingId: String) async throws {
+        _ = try await apiClient.actOnBooking(
+            id: bookingId,
+            input: BookingActionInput(action: .reject)
+        )
+    }
+
+    public func loadProfile() async throws -> WebsiteAppUser? {
+        let response = try await apiClient.fetchCurrentSession()
+        applySessionResponse(response)
+        return response.appUser
+    }
+
+    public func updateProfile(_ input: ProfileUpdateInput) async throws {
+        let response = try await apiClient.updateProfile(input)
+        applySessionResponse(response)
+    }
+
+    public func createAddress(_ input: AddressInput) async throws {
+        let response = try await apiClient.createAddress(input)
+        applySessionResponse(response)
+    }
+
+    public func updateAddress(id: String, input: AddressPatchInput) async throws {
+        let response = try await apiClient.updateAddress(id: id, input: input)
+        applySessionResponse(response)
+    }
+
+    public func deleteAddress(id: String) async throws {
+        let response = try await apiClient.deleteAddress(id: id)
+        applySessionResponse(response)
+    }
+
     fileprivate func updateSelectedModeForPicker(_ mode: AppMode?) {
         guard let mode else {
             return
@@ -141,6 +197,10 @@ public final class AppContainer: ObservableObject {
         }
 
         roleSelectionPresentation = presentation
+    }
+
+    private func applySessionResponse(_ response: WebsiteMeResponse) {
+        sessionState = response.toSessionState(preferredMode: sessionState.mode)
     }
 }
 
@@ -205,74 +265,7 @@ public struct YavaaRootView: View {
     }
 
     private var signedInShell: some View {
-        VStack(alignment: .leading, spacing: YavaaSpacing.lg) {
-            VStack(alignment: .leading, spacing: YavaaSpacing.sm) {
-                Text("Yavaa")
-                    .font(.largeTitle.weight(.bold))
-
-                Text("Marketplace de servicios")
-                    .foregroundStyle(.secondary)
-            }
-
-            VStack(alignment: .leading, spacing: YavaaSpacing.sm) {
-                Text("Website API")
-                    .font(.headline)
-                Text(container.apiStatus)
-                    .foregroundStyle(.secondary)
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(YavaaColor.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-
-            VStack(alignment: .leading, spacing: YavaaSpacing.sm) {
-                Text("Sesion")
-                    .font(.headline)
-                Text("Autenticada")
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("session.status.authenticated")
-            }
-
-            if let account = container.sessionState.account,
-               account.availableModes.count > 1 {
-                ModePickerView(
-                    modes: account.availableModes,
-                    selectedMode: Binding(
-                        get: {
-                            container.sessionState.mode
-                        },
-                        set: { mode in
-                            container.updateSelectedModeForPicker(mode)
-                        }
-                    ),
-                    onSelect: { mode in
-                        await container.selectMode(mode)
-                    }
-                )
-            }
-
-            if container.sessionState.account != nil {
-                ActionListView(
-                    actions: MobileActionMap.actions(for: container.sessionState)
-                ) { action in
-                    if action == .signOut {
-                        Task {
-                            await container.signOut()
-                        }
-                    }
-                }
-            }
-
-            Spacer()
-
-            PrimaryActionButton("Reintentar conexion") {
-                Task {
-                    await container.bootstrap()
-                }
-            }
-        }
-        .padding(YavaaSpacing.lg)
-        .navigationTitle("Inicio")
+        MobileModeShellView(container: container)
     }
 }
 

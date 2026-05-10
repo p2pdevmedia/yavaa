@@ -1,10 +1,12 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { cookies } from 'next/headers';
+import { MapPin, Search, ShieldCheck } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { YavaaHero, YavaaPageShell } from '@/components/ui/yavaa-layout';
 import { PublicProviderCard } from '@/components/providers/public-provider-card';
 import { PublicProviderSearchForm } from '@/components/providers/public-provider-search-form';
 import { listPublicCatalogCategories, listPublicCatalogMarkets } from '@/lib/public-catalog';
@@ -42,20 +44,21 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
   ]);
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-      <section className="space-y-6">
+    <YavaaPageShell width="lg" className="space-y-8">
+      <YavaaHero
+        eyebrow="Descubrimiento público"
+        title="Encontrá proveedores aprobados cerca de tu zona."
+        description="Filtrá por categoría y ubicación antes de entrar al flujo de booking. La información pública se mantiene limitada y segura."
+      >
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="secondary">Flujo público</Badge>
-          <Badge variant="outline">Descubrimiento</Badge>
-        </div>
-
-        <div className="space-y-4">
-          <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl font-display">
-            Proveedores
-          </h1>
-          <p className="max-w-2xl text-lg leading-8 text-muted-foreground">
-            Buscá contractors aprobados por categoría y ubicación antes de entrar al flujo de booking.
-          </p>
+          <Badge variant="secondary" className="gap-1">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Verificados
+          </Badge>
+          <Badge variant="outline" className="gap-1 bg-card">
+            <MapPin className="h-3.5 w-3.5 text-primary" />
+            San Martín de los Andes
+          </Badge>
         </div>
 
         <div className="flex flex-wrap gap-3">
@@ -68,7 +71,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
             </Button>
           ) : null}
         </div>
-      </section>
+      </YavaaHero>
 
       <section className="mt-8 space-y-6">
         <form method="get" className="space-y-4">
@@ -89,7 +92,10 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
         ) : (
           <Card className="border-dashed border-border/80 bg-card/80">
             <CardHeader>
-              <CardTitle className="text-xl">No encontramos resultados</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Search className="h-5 w-5 text-primary" />
+                No encontramos resultados
+              </CardTitle>
               <CardDescription>
                 Probá con otra categoría o ubicación para ver contractors disponibles.
               </CardDescription>
@@ -102,6 +108,6 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
           </Card>
         )}
       </section>
-    </main>
+    </YavaaPageShell>
   );
 }

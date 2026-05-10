@@ -99,8 +99,10 @@ export async function getDashboardViewPageState({
 
 export function DashboardViewPageShell({ children }: { children: ReactNode }) {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl items-start px-4 py-8 sm:px-6 lg:px-8">
-      {children}
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="mx-auto flex w-full max-w-6xl items-start px-4 py-8 sm:px-6 lg:px-8">
+        {children}
+      </div>
     </main>
   );
 }

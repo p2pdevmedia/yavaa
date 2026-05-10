@@ -487,7 +487,7 @@ export function DashboardPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-3xl border border-border/70 bg-card/90 p-6 shadow-soft backdrop-blur md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-card/90 p-6 shadow-soft backdrop-blur md:flex-row md:items-center md:justify-between">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{user.status}</Badge>
@@ -502,11 +502,11 @@ export function DashboardPanel({
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <div className="rounded-2xl border border-border/70 px-4 py-3 text-sm">
+          <div className="rounded-lg border border-border/70 px-4 py-3 text-sm">
             <p className="text-muted-foreground">Direcciones</p>
             <p className="font-mono text-foreground">{user.addresses.length}</p>
           </div>
-          <div className="rounded-2xl border border-border/70 px-4 py-3 text-sm">
+          <div className="rounded-lg border border-border/70 px-4 py-3 text-sm">
             <p className="text-muted-foreground">Contractor</p>
             <p className="font-mono text-foreground">{user.contractorProfile?.approvalStatus ?? 'none'}</p>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -552,13 +552,13 @@ export function DashboardPanel({
             </p>
 
             {modeError ? (
-              <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {modeError}
               </p>
             ) : null}
 
             {modeStatus ? (
-              <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+              <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
                 {modeStatus}
               </p>
             ) : null}
@@ -662,13 +662,13 @@ export function DashboardPanel({
               </div>
 
               {profileError ? (
-                <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                   {profileError}
                 </p>
               ) : null}
 
               {profileStatus ? (
-                <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
                   {profileStatus}
                 </p>
               ) : null}
@@ -692,7 +692,7 @@ export function DashboardPanel({
             <div className="space-y-3">
               {user.addresses.length > 0 ? (
                 user.addresses.map((address) => (
-                  <div key={address.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+                  <div key={address.id} className="rounded-lg border border-border/70 bg-muted/20 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-medium text-foreground">{address.label}</p>
                       {address.isDefault ? <Badge variant="secondary">Default</Badge> : null}
@@ -711,7 +711,7 @@ export function DashboardPanel({
                   </div>
                 ))
               ) : (
-                <p className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+                <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
                   Aún no hay direcciones guardadas.
                 </p>
               )}
@@ -746,7 +746,7 @@ export function DashboardPanel({
                   <Label htmlFor="address-type">Tipo</Label>
                   <select
                     id="address-type"
-                    className="flex h-11 w-full rounded-2xl border border-input bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     value={addressDraft.type}
                     onChange={(event) =>
                       setAddressDraft((current) => ({
@@ -827,13 +827,13 @@ export function DashboardPanel({
               </div>
 
               {addressError ? (
-                <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                   {addressError}
                 </p>
               ) : null}
 
               {addressStatus ? (
-                <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
                   {addressStatus}
                 </p>
               ) : null}
@@ -859,7 +859,7 @@ export function DashboardPanel({
                 <Label htmlFor="emergency-category">Categoría</Label>
                 <select
                   id="emergency-category"
-                  className="flex h-11 w-full rounded-2xl border border-input bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   value={emergencyDraft.categoryId}
                   onChange={(event) =>
                     setEmergencyDraft((current) => ({ ...current, categoryId: event.target.value }))
@@ -878,7 +878,7 @@ export function DashboardPanel({
                 <Label htmlFor="emergency-address">Dirección</Label>
                 <select
                   id="emergency-address"
-                  className="flex h-11 w-full rounded-2xl border border-input bg-background px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   value={emergencyDraft.addressId}
                   onChange={(event) =>
                     setEmergencyDraft((current) => ({ ...current, addressId: event.target.value }))
@@ -908,13 +908,13 @@ export function DashboardPanel({
             </div>
 
             {emergencyError ? (
-              <p className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                 {emergencyError}
               </p>
             ) : null}
 
             {emergencyStatus ? (
-              <p className="rounded-2xl border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+              <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
                 {emergencyStatus}
               </p>
             ) : null}
@@ -930,7 +930,7 @@ export function DashboardPanel({
           {(user.roles.includes('contractor') || user.contractorProfile) ? (
             <>
               <Separator />
-              <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
                 <div className="space-y-1">
                   <p className="font-medium text-foreground">Disponibilidad para urgencias</p>
                   <p className="text-sm text-muted-foreground">
@@ -960,15 +960,15 @@ export function DashboardPanel({
           <CardDescription>Esto refleja los datos que ya expone la API protegida de etapa 02.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+          <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
             <p className="text-sm text-muted-foreground">Estado contractor</p>
             <p className="mt-1 font-mono text-foreground">{user.contractorProfile?.approvalStatus ?? 'no aplica'}</p>
           </div>
-          <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+          <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
             <p className="text-sm text-muted-foreground">Supabase auth ID</p>
             <p className="mt-1 font-mono text-foreground">{user.supabaseAuthId ?? 'sin vincular'}</p>
           </div>
-          <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+          <div className="rounded-lg border border-border/70 bg-muted/20 p-4">
             <p className="text-sm text-muted-foreground">Dirección principal</p>
             <p className="mt-1 text-foreground">
               {primaryAddress ? `${primaryAddress.city}, ${primaryAddress.province}` : 'No definida'}
@@ -991,7 +991,7 @@ export function DashboardPanel({
         <CardContent className="space-y-3">
           {notifications.length > 0 ? (
             notifications.map((notification) => (
-              <div key={notification.id} className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+              <div key={notification.id} className="rounded-lg border border-border/70 bg-muted/20 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={notification.isRead ? 'outline' : 'secondary'}>{notification.typeLabel}</Badge>
                   {!notification.isRead ? <Badge variant="default">Nueva</Badge> : null}
@@ -1002,7 +1002,7 @@ export function DashboardPanel({
               </div>
             ))
           ) : (
-            <p className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+            <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
               La bandeja está vacía por ahora.
             </p>
           )}
