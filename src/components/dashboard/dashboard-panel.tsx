@@ -6,7 +6,6 @@ import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Glasses, HardHat, Pencil, Trash2, X } from 'lucide-react';
 
-import { SignOutButton } from '@/components/auth/sign-out-button';
 import { AdminPanel } from '@/components/dashboard/admin-panel';
 import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
 import { Badge } from '@/components/ui/badge';
@@ -1200,7 +1199,7 @@ export function DashboardPanel({
         </Card>
       ) : null}
 
-      {view === 'perfil' ? (
+      {view === 'perfil' && activeMode === 'client' ? (
         <Card className="border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -1694,19 +1693,6 @@ export function DashboardPanel({
           </div>
         </CardContent>
       </Card>
-      ) : null}
-
-      {view === 'perfil' ? (
-        <Card className="border-border/70 bg-card/90 shadow-soft">
-          <CardHeader>
-            <CardTitle className="font-display text-2xl">Sesión</CardTitle>
-            <CardDescription>Cerrar sesión en este dispositivo y volver al inicio público.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">Salir de la cuenta actual.</p>
-            <SignOutButton variant="destructive" className="w-full sm:w-auto" />
-          </CardContent>
-        </Card>
       ) : null}
 
       {view === 'bookings' ? <BookingWorkspace bookings={bookings} /> : null}

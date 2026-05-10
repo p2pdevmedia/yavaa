@@ -445,15 +445,28 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       {
         type: 'object',
         additionalProperties: true,
-        required: ['contractorProfile', 'bookingsAsClient', 'bookingsAsContractor', 'auditLogs'],
+        required: ['contractorProfile', 'bookingsAsClient', 'bookingsAsContractor'],
         properties: {
           contractorProfile: { anyOf: [{ type: 'object' }, { type: 'null' }] },
           bookingsAsClient: { type: 'array', items: { type: 'object' } },
-          bookingsAsContractor: { type: 'array', items: { type: 'object' } },
-          auditLogs: { type: 'array', items: { type: 'object' } }
+          bookingsAsContractor: { type: 'array', items: { type: 'object' } }
         }
       }
     ]
+  } as const;
+
+  const adminUserAuditLogSchema = {
+    type: 'object',
+    additionalProperties: false,
+    required: ['id', 'action', 'entityType', 'entityId', 'metadata', 'createdAt'],
+    properties: {
+      id: { type: 'string' },
+      action: { type: 'string' },
+      entityType: { type: 'string' },
+      entityId: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      metadata: {},
+      createdAt: { type: 'string', format: 'date-time' }
+    }
   } as const;
 
   const adminCategorySchema = {
@@ -1630,7 +1643,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       '/api/emergencies': {
         get: {
           operationId: 'listEmergencyRequests',
-          summary: 'List emergency requests visible to the active account',
+          summary: 'List emergency requests visible to the active account perspective',
           tags: ['emergencies'],
           security: [{ bearerAuth: [] }],
           parameters: [
@@ -1639,12 +1652,13 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
               name: 'mode',
               required: false,
               schema: { type: 'string', enum: ['client', 'contractor'] },
-              description: 'Optional account perspective for dual-role users.'
+              description:
+                'Optional account perspective for dual-role users. Contractor mode includes assigned or notified requests plus compatible open requests for approved emergency-enabled contractors.'
             }
           ],
           responses: {
             '200': {
-              description: 'Emergency requests visible to the active account.',
+              description: 'Emergency requests visible to the active account perspective.',
               content: {
                 'application/json': {
                   schema: {
@@ -2007,6 +2021,44 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             '403': { description: 'Only active admins can manage users.' },
             '404': { description: 'User not found.' },
             '422': { description: 'The requested status change is not allowed.' }
+          }
+        }
+      },
+      '/api/admin/users/{userId}/audit-logs': {
+        get: {
+          operationId: 'adminListUserAuditLogs',
+          summary: 'List audit activity for an admin user inspection',
+          tags: ['admin'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'userId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': {
+              description: 'Audit activity associated with the inspected user.',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    additionalProperties: false,
+                    required: ['auditLogs'],
+                    properties: {
+                      auditLogs: {
+                        type: 'array',
+                        items: adminUserAuditLogSchema
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Missing or invalid session token.' },
+            '403': { description: 'Only active admins can manage users.' }
           }
         }
       },

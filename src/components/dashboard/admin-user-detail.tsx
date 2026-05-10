@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { Route } from 'next';
-import { Pencil, Save, X } from 'lucide-react';
+import { Activity, Pencil, Save, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -146,6 +146,12 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
             >
               <Pencil className="h-4 w-4" aria-hidden="true" />
               Editar
+            </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href={`/dashboard/admin/usuarios/${currentUser.id}/actividad` as Route}>
+                <Activity className="h-4 w-4" aria-hidden="true" />
+                Ver actividad auditada
+              </Link>
             </Button>
             <Button asChild size="sm" variant="outline">
               <Link href={'/dashboard/admin/usuarios' as Route}>Volver a usuarios</Link>
@@ -312,32 +318,6 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
         <ActivityCard title="Bookings como cliente" items={currentUser.bookingsAsClient} />
         <ActivityCard title="Bookings como contractor" items={currentUser.bookingsAsContractor} />
       </div>
-
-      <Card className="border-border/70 bg-card/90 shadow-soft">
-        <CardHeader>
-          <CardTitle className="font-display text-2xl">Actividad auditada</CardTitle>
-          <CardDescription>Últimos eventos asociados al usuario.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {currentUser.auditLogs.length > 0 ? (
-            currentUser.auditLogs.map((entry) => (
-              <div key={entry.id} className="rounded-lg border border-border/70 bg-background/60 p-3 text-sm">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="font-medium text-foreground">{entry.action}</p>
-                  <span className="text-xs text-muted-foreground">{formatDate(entry.createdAt)}</span>
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {entry.entityType} {entry.entityId ?? ''}
-                </p>
-              </div>
-            ))
-          ) : (
-            <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
-              Sin actividad auditada reciente.
-            </p>
-          )}
-        </CardContent>
-      </Card>
     </section>
   );
 }

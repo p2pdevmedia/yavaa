@@ -12,6 +12,10 @@ describe('dashboard app shell', () => {
     join(process.cwd(), 'src/components/dashboard/dashboard-navigation.tsx'),
     'utf8'
   );
+  const floatingUserControlsSource = readFileSync(
+    join(process.cwd(), 'src/components/app-shell/floating-user-controls.tsx'),
+    'utf8'
+  );
 
   test('exposes profile and notifications as app-style header controls', () => {
     expect(dashboardPanelSource).toContain('aria-label="Abrir menú de perfil"');
@@ -22,7 +26,8 @@ describe('dashboard app shell', () => {
 
   test('keeps account actions inside the profile avatar menu', () => {
     expect(dashboardPanelSource).toContain('Cambiar de modo');
-    expect(dashboardPanelSource).toContain('<SignOutButton');
+    expect(floatingUserControlsSource).toContain('<SignOutButton');
+    expect(dashboardPanelSource).not.toContain('<SignOutButton');
     expect(dashboardPanelSource).not.toContain('Modo de uso');
     expect(dashboardNavigationSource).not.toContain('SignOutButton');
   });
@@ -38,6 +43,15 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('Direcciones guardadas');
     expect(dashboardPanelSource).toContain('Agregar dirección');
     expect(dashboardPanelSource).not.toContain("view === 'direcciones'");
+  });
+
+  test('hides saved address management while the active mode is trabajador', () => {
+    const savedAddressesIndex = dashboardPanelSource.indexOf('Direcciones guardadas');
+    const conditionStart = dashboardPanelSource.lastIndexOf("{view === 'perfil'", savedAddressesIndex);
+    const condition = dashboardPanelSource.slice(conditionStart, savedAddressesIndex);
+
+    expect(savedAddressesIndex).toBeGreaterThan(-1);
+    expect(condition).toContain("activeMode === 'client'");
   });
 
   test('uses Argentina catalog selectors for web address province and city', () => {
@@ -82,11 +96,11 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('/dashboard/trabajador/perfil');
   });
 
-  test('shows sign out as a visible profile action', () => {
-    expect(dashboardPanelSource).toContain('Sesión');
-    expect(dashboardPanelSource).toContain('Salir de la cuenta');
-    expect(dashboardPanelSource).toContain('Cerrar sesión');
-    expect(dashboardPanelSource).toContain('variant="destructive"');
+  test('keeps sign out in the top profile avatar menu only', () => {
+    expect(floatingUserControlsSource).toContain('<SignOutButton');
+    expect(dashboardPanelSource).not.toContain('Cerrar sesión en este dispositivo');
+    expect(dashboardPanelSource).not.toContain('Salir de la cuenta actual.');
+    expect(dashboardPanelSource).not.toContain('<SignOutButton');
   });
 
   test('shows client emergency creation and existing requests in the urgencies view', () => {

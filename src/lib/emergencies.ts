@@ -176,6 +176,7 @@ export type EmergencyRequestRecord = EmergencyRequestRow;
 
 const dispatchBatchSize = 3;
 const emergencyDispatchWindowMinutes = 10;
+const contractorBrowsableEmergencyStatuses: EmergencyRequestStatus[] = ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'];
 
 function isClientActor(actor: EmergencyRequestActor): boolean {
   return actor.status === UserStatus.ACTIVE && actor.roles.includes('client');
@@ -223,6 +224,99 @@ function toEmergencyRecord(row: EmergencyRequestRow): EmergencyRequestRecord {
 
 function toCandidateVisibleContractorIds(row: EmergencyRequestRow): ReadonlyArray<string> {
   return row.candidates.map((candidate) => candidate.contractorProfile.user.id);
+}
+
+async function getContractorEmergencyBrowseScope(
+  prisma: PrismaClient,
+  actor: EmergencyRequestActor
+): Promise<{ categoryIds: string[]; marketIds: string[] } | null> {
+  const contractorProfile = await prisma.contractorProfile.findFirst({
+    where: {
+      userId: actor.userId,
+      approvalStatus: 'APPROVED',
+      acceptsEmergencies: true,
+      user: {
+        status: 'ACTIVE'
+      }
+    },
+    select: {
+      categories: {
+        select: {
+          categoryId: true
+        }
+      },
+      workZones: {
+        select: {
+          workZone: {
+            select: {
+              marketId: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!contractorProfile) {
+    return null;
+  }
+
+  const categoryIds = contractorProfile.categories.map((category) => category.categoryId);
+  const marketIds = contractorProfile.workZones.map((workZone) => workZone.workZone.marketId);
+
+  if (categoryIds.length === 0 || marketIds.length === 0) {
+    return null;
+  }
+
+  return {
+    categoryIds,
+    marketIds
+  };
+}
+
+async function getContractorEmergencyListWhere(
+  prisma: PrismaClient,
+  actor: EmergencyRequestActor
+): Promise<Prisma.EmergencyRequestWhereInput> {
+  const visibleConditions: Prisma.EmergencyRequestWhereInput[] = [
+    {
+      assignedContractorProfile: {
+        userId: actor.userId
+      }
+    },
+    {
+      candidates: {
+        some: {
+          contractorProfile: {
+            userId: actor.userId
+          }
+        }
+      }
+    }
+  ];
+
+  const browseScope = await getContractorEmergencyBrowseScope(prisma, actor);
+
+  if (browseScope) {
+    visibleConditions.push({
+      status: {
+        in: contractorBrowsableEmergencyStatuses
+      },
+      assignedContractorProfileId: null,
+      categoryId: {
+        in: browseScope.categoryIds
+      },
+      address: {
+        marketId: {
+          in: browseScope.marketIds
+        }
+      }
+    });
+  }
+
+  return {
+    OR: visibleConditions
+  };
 }
 
 async function findEligibleContractors(
@@ -291,30 +385,14 @@ export async function listEmergencyRequestsForActor(
   options: { mode?: EmergencyListMode } = {}
 ): Promise<EmergencyRequestRecord[]> {
   const mode = resolveEmergencyListMode(actor, options.mode);
+  const contractorWhere = mode === 'contractor' ? await getContractorEmergencyListWhere(prisma, actor) : null;
   const rows = await prisma.emergencyRequest.findMany({
     where: mode === 'admin'
       ? undefined
       : mode === 'client'
         ? { clientUserId: actor.userId }
         : mode === 'contractor'
-          ? {
-              OR: [
-                {
-                  assignedContractorProfile: {
-                    userId: actor.userId
-                  }
-                },
-                {
-                  candidates: {
-                    some: {
-                      contractorProfile: {
-                        userId: actor.userId
-                      }
-                    }
-                  }
-                }
-              ]
-            }
+          ? contractorWhere ?? { OR: [] }
           : { OR: [] },
     select: emergencyRequestSelect,
     orderBy: [

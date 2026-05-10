@@ -40,6 +40,7 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/admin/emergencies/{emergencyRequestId}/reassign']).toBeDefined();
     expect(document.paths['/api/admin/users']).toBeDefined();
     expect(document.paths['/api/admin/users/{userId}']).toBeDefined();
+    expect(document.paths['/api/admin/users/{userId}/audit-logs']).toBeDefined();
     expect(document.paths['/api/admin/bookings/{bookingId}/correction']).toBeDefined();
     expect(document.paths['/api/admin/categories']).toBeDefined();
     expect(
@@ -50,5 +51,51 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/admin/contractors']).toBeDefined();
     expect(document.paths['/api/admin/contractors/{contractorProfileId}']).toBeDefined();
     expect(document.components?.securitySchemes?.bearerAuth).toBeDefined();
+  });
+
+  it('keeps admin user detail and audit activity as separate API resources', () => {
+    const document = getOpenApiDocument();
+    const userResponseSchema = (
+      document.paths['/api/admin/users/{userId}']?.get?.responses?.['200'] as
+        | {
+            content?: {
+              'application/json'?: {
+                schema?: {
+                  properties?: {
+                    user?: {
+                      allOf?: Array<{
+                        required?: string[];
+                        properties?: Record<string, unknown>;
+                      }>;
+                    };
+                  };
+                };
+              };
+            };
+          }
+        | undefined
+    )?.content?.['application/json']?.schema?.properties?.user;
+    const detailExtension = userResponseSchema?.allOf?.[1];
+
+    expect(detailExtension?.required).not.toContain('auditLogs');
+    expect(detailExtension?.properties).not.toHaveProperty('auditLogs');
+
+    const auditResponseSchema = (
+      document.paths['/api/admin/users/{userId}/audit-logs']?.get?.responses?.['200'] as
+        | {
+            content?: {
+              'application/json'?: {
+                schema?: {
+                  required?: string[];
+                  properties?: Record<string, unknown>;
+                };
+              };
+            };
+          }
+        | undefined
+    )?.content?.['application/json']?.schema;
+
+    expect(auditResponseSchema?.required).toContain('auditLogs');
+    expect(auditResponseSchema?.properties).toHaveProperty('auditLogs');
   });
 });

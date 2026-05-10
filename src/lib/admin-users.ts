@@ -84,14 +84,15 @@ export type AdminUserDetail = AdminUserSummary & {
   } | null;
   bookingsAsClient: AdminUserBookingActivity[];
   bookingsAsContractor: AdminUserBookingActivity[];
-  auditLogs: Array<{
-    id: string;
-    action: string;
-    entityType: string;
-    entityId: string | null;
-    metadata: unknown;
-    createdAt: string;
-  }>;
+};
+
+export type AdminUserAuditLog = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  metadata: unknown;
+  createdAt: string;
 };
 
 export type AdminUserBookingActivity = {
@@ -222,14 +223,15 @@ type AdminUserDetailRow = AdminUserRow & {
       name: string;
     };
   }>;
-  auditLogs: Array<{
-    id: string;
-    action: string;
-    entityType: string;
-    entityId: string | null;
-    metadata: unknown;
-    createdAt: Date;
-  }>;
+};
+
+type AdminUserAuditLogRow = {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string | null;
+  metadata: unknown;
+  createdAt: Date;
 };
 
 const adminUserSelect = {
@@ -394,20 +396,15 @@ const adminUserDetailSelect = {
     },
     take: 20
   },
-  auditLogs: {
-    select: {
-      id: true,
-      action: true,
-      entityType: true,
-      entityId: true,
-      metadata: true,
-      createdAt: true
-    },
-    orderBy: {
-      createdAt: 'desc'
-    },
-    take: 25
-  }
+} as const;
+
+const adminUserAuditLogSelect = {
+  id: true,
+  action: true,
+  entityType: true,
+  entityId: true,
+  metadata: true,
+  createdAt: true
 } as const;
 
 function assertCanManageUsers(actor: AdminUserActor): void {
@@ -501,15 +498,18 @@ function serializeAdminUserDetail(row: AdminUserDetailRow): AdminUserDetail {
         createdAt: booking.createdAt.toISOString(),
         counterparty: booking.client,
         category: booking.category
-      })) ?? [],
-    auditLogs: row.auditLogs.map((entry) => ({
-      id: entry.id,
-      action: entry.action,
-      entityType: entry.entityType,
-      entityId: entry.entityId,
-      metadata: entry.metadata,
-      createdAt: entry.createdAt.toISOString()
-    }))
+      })) ?? []
+  };
+}
+
+function serializeAdminUserAuditLog(row: AdminUserAuditLogRow): AdminUserAuditLog {
+  return {
+    id: row.id,
+    action: row.action,
+    entityType: row.entityType,
+    entityId: row.entityId,
+    metadata: row.metadata,
+    createdAt: row.createdAt.toISOString()
   };
 }
 
@@ -549,6 +549,30 @@ export async function getUserForAdmin(
   }
 
   return serializeAdminUserDetail(row);
+}
+
+export async function listUserAuditLogsForAdmin(
+  prisma: PrismaClient,
+  actor: AdminUserActor,
+  userId: string
+): Promise<AdminUserAuditLog[]> {
+  assertCanManageUsers(actor);
+
+  const rows = (await prisma.auditLog.findMany({
+    where: {
+      OR: [
+        { actorUserId: userId },
+        { entityType: 'user', entityId: userId }
+      ]
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: adminUserAuditLogSelect,
+    take: 50
+  })) as AdminUserAuditLogRow[];
+
+  return rows.map(serializeAdminUserAuditLog);
 }
 
 export async function updateUserStatusForAdmin(

@@ -330,6 +330,7 @@ function buildMockPrisma() {
       })
     },
     contractorProfile: {
+      findFirst: vi.fn().mockResolvedValue(contractorProfile),
       findMany: vi.fn().mockResolvedValue([contractorProfile])
     }
   };
@@ -503,13 +504,13 @@ describe('emergency helpers', () => {
     expect(prisma.emergencyRequest.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          OR: [
-            {
+          OR: expect.arrayContaining([
+            expect.objectContaining({
               assignedContractorProfile: {
                 userId: dualRoleActor.userId
               }
-            },
-            {
+            }),
+            expect.objectContaining({
               candidates: {
                 some: {
                   contractorProfile: {
@@ -517,8 +518,60 @@ describe('emergency helpers', () => {
                   }
                 }
               }
-            }
-          ]
+            })
+          ])
+        }
+      })
+    );
+  });
+
+  it('lists compatible open emergencies for contractors before they are dispatch candidates', async () => {
+    const { prisma } = buildMockPrisma();
+
+    await listEmergencyRequestsForActor(prisma as never, contractorActor, { mode: 'contractor' });
+
+    expect(prisma.contractorProfile.findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userId: contractorActor.userId,
+          approvalStatus: 'APPROVED',
+          acceptsEmergencies: true
+        })
+      })
+    );
+    expect(prisma.emergencyRequest.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: expect.arrayContaining([
+            expect.objectContaining({
+              assignedContractorProfile: {
+                userId: contractorActor.userId
+              }
+            }),
+            expect.objectContaining({
+              candidates: {
+                some: {
+                  contractorProfile: {
+                    userId: contractorActor.userId
+                  }
+                }
+              }
+            }),
+            expect.objectContaining({
+              status: {
+                in: ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED']
+              },
+              assignedContractorProfileId: null,
+              categoryId: {
+                in: ['88888888-8888-4888-8888-888888888888']
+              },
+              address: {
+                marketId: {
+                  in: ['99999999-9999-4999-8999-999999999999']
+                }
+              }
+            })
+          ])
         }
       })
     );

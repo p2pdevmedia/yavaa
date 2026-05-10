@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   getUserForAdmin,
+  listUserAuditLogsForAdmin,
   listUsersForAdmin,
   updateUserProfileForAdmin,
   updateUserStatusForAdmin,
@@ -179,7 +180,7 @@ describe('admin user operations', () => {
     ).rejects.toThrow('self-status-change-forbidden');
   });
 
-  it('returns a user inspection detail with contractor profile, bookings and audit activity', async () => {
+  it('returns a user inspection detail without loading audit activity', async () => {
     const findUnique = vi.fn().mockResolvedValue({
       id: 'user_001',
       email: 'worker@yavaa.test',
@@ -292,18 +293,7 @@ describe('admin user operations', () => {
           }
         }
       ],
-      auditLogs: [
-        {
-          id: 'audit_001',
-          action: 'user.status_changed',
-          entityType: 'user',
-          entityId: 'user_001',
-          metadata: {
-            nextStatus: UserStatus.ACTIVE
-          },
-          createdAt: new Date('2026-05-01T16:00:00.000Z')
-        }
-      ]
+      auditLogs: []
     });
 
     const detail = await getUserForAdmin(
@@ -320,13 +310,68 @@ describe('admin user operations', () => {
       where: { id: 'user_001' },
       select: expect.any(Object)
     });
+    expect(findUnique.mock.calls[0]?.[0].select).not.toHaveProperty('auditLogs');
     expect(detail.contractorProfile?.approvalStatus).toBe('APPROVED');
     expect(detail.bookingsAsClient).toHaveLength(1);
     expect(detail.bookingsAsContractor).toHaveLength(1);
-    expect(detail.auditLogs[0]).toMatchObject({
-      action: 'user.status_changed',
-      createdAt: '2026-05-01T16:00:00.000Z'
+    expect(detail).not.toHaveProperty('auditLogs');
+  });
+
+  it('loads user audit activity separately for active admins', async () => {
+    const findMany = vi.fn().mockResolvedValue([
+      {
+        id: 'audit_001',
+        action: 'user.status_changed',
+        entityType: 'user',
+        entityId: 'user_001',
+        metadata: {
+          nextStatus: UserStatus.ACTIVE
+        },
+        createdAt: new Date('2026-05-01T16:00:00.000Z')
+      }
+    ]);
+
+    const auditLogs = await listUserAuditLogsForAdmin(
+      buildPrismaMock({
+        auditLog: {
+          findMany
+        }
+      } as unknown as PrismaClient),
+      activeAdmin,
+      'user_001'
+    );
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        OR: [
+          { actorUserId: 'user_001' },
+          { entityType: 'user', entityId: 'user_001' }
+        ]
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      select: expect.any(Object),
+      take: 50
     });
+    expect(auditLogs).toEqual([
+      {
+        id: 'audit_001',
+        action: 'user.status_changed',
+        entityType: 'user',
+        entityId: 'user_001',
+        metadata: {
+          nextStatus: UserStatus.ACTIVE
+        },
+        createdAt: '2026-05-01T16:00:00.000Z'
+      }
+    ]);
+  });
+
+  it('blocks suspended admins from loading user audit activity', async () => {
+    await expect(
+      listUserAuditLogsForAdmin(buildPrismaMock(), suspendedAdmin, 'user_001')
+    ).rejects.toThrow('forbidden');
   });
 
   it('throws user-not-found when an inspected user does not exist', async () => {
