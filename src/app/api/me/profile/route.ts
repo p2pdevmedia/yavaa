@@ -28,7 +28,7 @@ export async function PATCH(request: NextRequest) {
     return jsonResponse(auth, { status: 401 });
   }
 
-  if (!auth.permissionContext || !canManageOwnProfile(auth.permissionContext, auth.identity.id)) {
+  if (!auth.permissionContext || !auth.appUser || !canManageOwnProfile(auth.permissionContext, auth.appUser.id)) {
     return jsonResponse(
       {
         error: 'forbidden',

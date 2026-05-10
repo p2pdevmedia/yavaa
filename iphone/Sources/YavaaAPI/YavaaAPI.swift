@@ -1,6 +1,19 @@
 import Foundation
 import YavaaCore
 
+private func trimmedRequiredString(_ value: String) -> String {
+    value.trimmingCharacters(in: .whitespacesAndNewlines)
+}
+
+private func trimmedOptionalString(_ value: String?) -> String? {
+    guard let value else {
+        return nil
+    }
+
+    let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+    return trimmed.isEmpty ? nil : trimmed
+}
+
 public enum APIError: Error, Equatable, Sendable {
     case invalidPath(String)
     case invalidResponse
@@ -348,12 +361,12 @@ public struct ProfileUpdateInput: Encodable, Equatable, Sendable {
         phone: String? = nil,
         bio: String? = nil
     ) {
-        self.displayName = displayName
-        self.firstName = firstName
-        self.lastName = lastName
-        self.avatarUrl = avatarUrl
-        self.phone = phone
-        self.bio = bio
+        self.displayName = trimmedOptionalString(displayName)
+        self.firstName = trimmedOptionalString(firstName)
+        self.lastName = trimmedOptionalString(lastName)
+        self.avatarUrl = trimmedOptionalString(avatarUrl)
+        self.phone = trimmedOptionalString(phone)
+        self.bio = trimmedOptionalString(bio)
     }
 }
 
@@ -381,13 +394,13 @@ public struct AddressInput: Encodable, Equatable, Sendable {
         isDefault: Bool = false,
         marketId: String? = nil
     ) {
-        self.label = label
-        self.line1 = line1
-        self.line2 = line2
-        self.city = city
-        self.province = province
-        self.postalCode = postalCode
-        self.notes = notes
+        self.label = trimmedRequiredString(label)
+        self.line1 = trimmedRequiredString(line1)
+        self.line2 = trimmedOptionalString(line2)
+        self.city = trimmedRequiredString(city)
+        self.province = trimmedRequiredString(province)
+        self.postalCode = trimmedOptionalString(postalCode)
+        self.notes = trimmedOptionalString(notes)
         self.type = type
         self.isDefault = isDefault
         self.marketId = marketId
@@ -431,14 +444,14 @@ public struct AddressPatchInput: Encodable, Equatable, Sendable {
         isDefault: Bool? = nil,
         marketId: String? = nil
     ) {
-        self.label = label
-        self.line1 = line1
-        self.line2 = line2
-        self.city = city
-        self.province = province
-        self.postalCode = postalCode
-        self.notes = notes
-        self.type = type
+        self.label = trimmedOptionalString(label)
+        self.line1 = trimmedOptionalString(line1)
+        self.line2 = trimmedOptionalString(line2)
+        self.city = trimmedOptionalString(city)
+        self.province = trimmedOptionalString(province)
+        self.postalCode = trimmedOptionalString(postalCode)
+        self.notes = trimmedOptionalString(notes)
+        self.type = trimmedOptionalString(type)
         self.isDefault = isDefault
         self.marketId = marketId
     }

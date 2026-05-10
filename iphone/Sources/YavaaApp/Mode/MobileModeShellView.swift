@@ -536,6 +536,7 @@ private struct ProfileWorkspaceView: View {
                         await saveAddress()
                     }
                 }
+                .disabled(!canSaveAddress)
             }
 
             if let alternateMode {
@@ -579,6 +580,13 @@ private struct ProfileWorkspaceView: View {
 
     private var alternateMode: AppMode? {
         availableModes.first { $0 != currentMode }
+    }
+
+    private var canSaveAddress: Bool {
+        !addressLabel.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !addressLine1.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !addressCity.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && !addressProvince.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     private func reload() async {

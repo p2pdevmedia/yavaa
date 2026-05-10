@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import type { Route } from 'next';
-import { Bell } from 'lucide-react';
+import { Bell, Glasses, HardHat } from 'lucide-react';
 
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import { AdminPanel } from '@/components/dashboard/admin-panel';
 import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
 import { Badge } from '@/components/ui/badge';
@@ -250,6 +251,7 @@ export function DashboardPanel({
   const [activeMode, setActiveMode] = useState<DashboardMode>(() => getInitialDashboardMode(initialUser));
   const [modeError, setModeError] = useState<string | null>(null);
   const [modeStatus, setModeStatus] = useState<string | null>(null);
+  const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
   const [notificationPopoverOpen, setNotificationPopoverOpen] = useState(false);
 
   async function parseEnvelope(response: Response): Promise<UserEnvelope | null> {
@@ -499,21 +501,37 @@ export function DashboardPanel({
     }
   }
 
+  async function handleModeToggle() {
+    if (activeMode === 'contractor') {
+      setModeError(null);
+      setActiveMode('client');
+      setModeStatus('Modo cliente activo.');
+      return;
+    }
+
+    await handleContractorModeSelect();
+  }
+
   const primaryAddress = user.addresses.find((address) => address.isDefault) ?? user.addresses[0] ?? null;
   const unreadNotificationCount = notifications.filter((notification) => !notification.isRead).length;
   const userInitials = getUserInitials(user);
+  const activeModeLabel = activeMode === 'contractor' ? 'contratista' : 'cliente';
+  const ActiveModeIcon = activeMode === 'contractor' ? HardHat : Glasses;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-card/90 p-6 shadow-soft backdrop-blur md:flex-row md:items-center md:justify-between">
+      <div className="relative flex flex-col gap-4 rounded-lg border border-border/70 bg-card/90 p-6 pr-16 shadow-soft backdrop-blur md:flex-row md:items-center md:justify-between">
+        <div
+          aria-label={`Modo activo: ${activeModeLabel}`}
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full border border-border/70 bg-background/80 text-primary shadow-soft backdrop-blur"
+          title={`Modo ${activeModeLabel}`}
+        >
+          <ActiveModeIcon className="h-4 w-4" aria-hidden="true" />
+        </div>
+
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">{user.status}</Badge>
-            {user.roles.map((role) => (
-              <Badge key={role} variant="outline">
-                {role}
-              </Badge>
-            ))}
           </div>
           <h2 className="font-display text-3xl text-foreground">{formatName(user)}</h2>
           <p className="text-sm text-muted-foreground">{email ?? user.email}</p>
@@ -526,7 +544,10 @@ export function DashboardPanel({
               aria-label="Abrir notificaciones"
               aria-expanded={notificationPopoverOpen}
               className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-card text-foreground transition hover:border-primary/40 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              onClick={() => setNotificationPopoverOpen((current) => !current)}
+              onClick={() => {
+                setNotificationPopoverOpen((current) => !current);
+                setAccountPopoverOpen(false);
+              }}
             >
               <Bell className="h-5 w-5" aria-hidden="true" />
               {unreadNotificationCount > 0 ? (
@@ -537,7 +558,7 @@ export function DashboardPanel({
             </button>
 
             {notificationPopoverOpen ? (
-              <div className="absolute right-0 top-14 z-20 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border/80 bg-card p-4 shadow-soft">
+              <div className="absolute left-0 top-14 z-20 w-[min(22rem,calc(100vw-2rem))] rounded-lg border border-border/80 bg-card p-4 shadow-soft sm:left-auto sm:right-0">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Campana</p>
@@ -589,85 +610,84 @@ export function DashboardPanel({
             ) : null}
           </div>
 
-          <Link
-            href={dashboardProfilePath}
-            aria-label="Abrir perfil"
-            className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-muted font-display text-sm font-semibold text-muted-foreground transition hover:border-primary/50 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            {user.profile?.avatarUrl ? (
-              <span
-                aria-hidden="true"
-                className="h-full w-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${user.profile.avatarUrl})` }}
-              />
-            ) : (
-              userInitials
-            )}
-          </Link>
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Abrir menú de perfil"
+              aria-expanded={accountPopoverOpen}
+              className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-muted font-display text-sm font-semibold text-muted-foreground transition hover:border-primary/50 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onClick={() => {
+                setAccountPopoverOpen((current) => !current);
+                setNotificationPopoverOpen(false);
+              }}
+            >
+              {user.profile?.avatarUrl ? (
+                <span
+                  aria-hidden="true"
+                  className="h-full w-full bg-cover bg-center"
+                  style={{ backgroundImage: `url(${user.profile.avatarUrl})` }}
+                />
+              ) : (
+                userInitials
+              )}
+            </button>
+
+            {accountPopoverOpen ? (
+              <div className="absolute left-0 top-14 z-20 w-[min(16rem,calc(100vw-2rem))] rounded-lg border border-border/80 bg-card p-3 shadow-soft sm:left-auto sm:right-0">
+                <div className="border-b border-border/70 px-2 pb-3">
+                  <p className="text-sm font-semibold text-foreground">{formatName(user)}</p>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">{email ?? user.email}</p>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  <Link
+                    href={dashboardProfilePath}
+                    className="flex w-full items-center rounded-lg px-3 py-2 text-sm font-medium text-foreground transition hover:bg-accent"
+                    onClick={() => setAccountPopoverOpen(false)}
+                  >
+                    Perfil
+                  </Link>
+
+                  {!isAdminUser(user) ? (
+                    <button
+                      type="button"
+                      className="flex w-full flex-col items-start rounded-lg px-3 py-2 text-left transition hover:bg-accent disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={handleModeToggle}
+                      disabled={isSwitchingContractorMode}
+                    >
+                      <span className="text-sm font-medium text-foreground">
+                        {isSwitchingContractorMode ? 'Cambiando modo...' : 'Cambiar de modo'}
+                      </span>
+                      <span className="mt-1 text-xs text-muted-foreground">
+                        Actual: {activeMode === 'contractor' ? 'contratista' : 'cliente'}
+                      </span>
+                    </button>
+                  ) : null}
+
+                  {modeError ? (
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs text-destructive">
+                      {modeError}
+                    </p>
+                  ) : null}
+
+                  {modeStatus ? (
+                    <p className="rounded-lg border border-border/70 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                      {modeStatus}
+                    </p>
+                  ) : null}
+
+                  <SignOutButton className="w-full justify-start border-border/70 bg-card px-3" />
+                </div>
+              </div>
+            ) : null}
+          </div>
 
           <div className="rounded-lg border border-border/70 px-4 py-3 text-sm">
             <p className="text-muted-foreground">Direcciones</p>
             <p className="font-mono text-foreground">{user.addresses.length}</p>
           </div>
-          <div className="rounded-lg border border-border/70 px-4 py-3 text-sm">
-            <p className="text-muted-foreground">Contractor</p>
-            <p className="font-mono text-foreground">{user.contractorProfile?.approvalStatus ?? 'none'}</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Urgencias: {user.contractorProfile?.acceptsEmergencies ? 'activa' : 'inactiva'}
-            </p>
-          </div>
         </div>
       </div>
-
-      {!isAdminUser(user) ? (
-        <Card className="border-border/70 bg-card/90 shadow-soft">
-          <CardHeader>
-            <CardTitle className="font-display text-2xl">Modo de uso</CardTitle>
-            <CardDescription>Podés operar como cliente o activar tu perfil contratista sin aprobación previa.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Modo activo del dashboard">
-              <Button
-                type="button"
-                variant={activeMode === 'client' ? 'default' : 'outline'}
-                onClick={() => {
-                  setActiveMode('client');
-                  setModeError(null);
-                  setModeStatus('Modo cliente activo.');
-                }}
-              >
-                Modo cliente
-              </Button>
-              <Button
-                type="button"
-                variant={activeMode === 'contractor' ? 'default' : 'outline'}
-                onClick={handleContractorModeSelect}
-                disabled={isSwitchingContractorMode}
-              >
-                {isSwitchingContractorMode ? 'Activando...' : 'Modo contratista'}
-              </Button>
-            </div>
-
-            <p className="text-sm text-muted-foreground">
-              {activeMode === 'contractor'
-                ? `Perfil contratista: ${user.contractorProfile?.approvalStatus ?? 'DRAFT'}`
-                : 'Modo cliente activo para buscar servicios, crear urgencias y manejar tus bookings.'}
-            </p>
-
-            {modeError ? (
-              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                {modeError}
-              </p>
-            ) : null}
-
-            {modeStatus ? (
-              <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                {modeStatus}
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
 
       {view === 'admin' ? (
         adminData ? (

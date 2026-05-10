@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { SignOutButton } from '@/components/auth/sign-out-button';
 import { dashboardNavigationItems } from '@/lib/dashboard-routes';
 
 export function DashboardNavigation() {
@@ -12,12 +11,9 @@ export function DashboardNavigation() {
   return (
     <header className="w-full border-b border-border/70 bg-card/85 backdrop-blur">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Yavaa</p>
-            <h1 className="font-display text-3xl font-semibold tracking-normal text-foreground">Dashboard</h1>
-          </div>
-          <SignOutButton />
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Yavaa</p>
+          <h1 className="font-display text-3xl font-semibold tracking-normal text-foreground">Dashboard</h1>
         </div>
 
         <nav className="flex gap-2 overflow-x-auto pb-1" aria-label="Secciones del dashboard">

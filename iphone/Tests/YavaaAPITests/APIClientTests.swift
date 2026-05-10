@@ -103,4 +103,40 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(object?["addressId"] as? String, "66666666-6666-4666-8666-666666666666")
         XCTAssertEqual(object?["description"] as? String, "Necesito resolver una perdida de agua hoy.")
     }
+
+    func testProfileUpdateInputOmitsEmptyFieldsRejectedByNextValidation() throws {
+        let input = ProfileUpdateInput(
+            displayName: "  Maria  ",
+            firstName: "",
+            lastName: "   ",
+            phone: "",
+            bio: "  Disponible por la tarde  "
+        )
+        let data = try JSONEncoder().encode(input)
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+
+        XCTAssertEqual(object?["displayName"] as? String, "Maria")
+        XCTAssertNil(object?["firstName"])
+        XCTAssertNil(object?["lastName"])
+        XCTAssertNil(object?["phone"])
+        XCTAssertEqual(object?["bio"] as? String, "Disponible por la tarde")
+    }
+
+    func testAddressPatchInputOmitsEmptyFieldsRejectedByNextValidation() throws {
+        let input = AddressPatchInput(
+            label: " Casa ",
+            line1: "",
+            city: "   ",
+            province: "Salta",
+            isDefault: true
+        )
+        let data = try JSONEncoder().encode(input)
+        let object = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+
+        XCTAssertEqual(object?["label"] as? String, "Casa")
+        XCTAssertNil(object?["line1"])
+        XCTAssertNil(object?["city"])
+        XCTAssertEqual(object?["province"] as? String, "Salta")
+        XCTAssertEqual(object?["isDefault"] as? Bool, true)
+    }
 }
