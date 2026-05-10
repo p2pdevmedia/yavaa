@@ -137,7 +137,8 @@ export async function POST(request: NextRequest) {
     entityId: createdAddress.id,
     metadata: {
       isDefault: data.isDefault,
-      hasGeolocation: data.latitude !== null && data.latitude !== undefined && data.longitude !== null && data.longitude !== undefined,
+      hasGeolocation:
+        data.latitude !== null && data.latitude !== undefined && data.longitude !== null && data.longitude !== undefined,
       type: data.type
     }
   });

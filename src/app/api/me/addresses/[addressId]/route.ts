@@ -23,14 +23,16 @@ const addressPatchSchema = z.object({
   isDefault: z.boolean().optional(),
   marketId: z.string().uuid().nullable().optional()
 }).superRefine((data, context) => {
-  const hasLatitude = data.latitude !== undefined && data.latitude !== null;
-  const hasLongitude = data.longitude !== undefined && data.longitude !== null;
+  const hasLatitudeField = data.latitude !== undefined;
+  const hasLongitudeField = data.longitude !== undefined;
+  const hasLatitudeValue = data.latitude !== undefined && data.latitude !== null;
+  const hasLongitudeValue = data.longitude !== undefined && data.longitude !== null;
 
-  if (hasLatitude !== hasLongitude) {
+  if (hasLatitudeField !== hasLongitudeField || hasLatitudeValue !== hasLongitudeValue) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'Latitude and longitude must be provided together.',
-      path: hasLatitude ? ['longitude'] : ['latitude']
+      path: hasLatitudeField ? ['longitude'] : ['latitude']
     });
   }
 });
