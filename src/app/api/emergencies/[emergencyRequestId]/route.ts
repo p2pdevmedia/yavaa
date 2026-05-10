@@ -5,6 +5,7 @@ import {
   cancelEmergencyRequest,
   emergencyOwnerPatchSchema,
   loadEmergencyRequest,
+  republishEmergencyRequest,
   resolveEmergencyRequest,
   updateEmergencyRequest
 } from '@/lib/emergencies';
@@ -61,7 +62,7 @@ function mapEmergencyMutationError(error: unknown): { status: number; body: { er
       };
     }
 
-    if (error.message === 'invalid-address' || error.message === 'invalid-category') {
+    if (error.message === 'invalid-address' || error.message === 'invalid-category' || error.message === 'invalid-address-market') {
       return {
         status: 422,
         body: {
@@ -169,7 +170,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         })
       : parsedBody.action === 'resolve'
         ? await resolveEmergencyRequest(prisma, auth.permissionContext, emergencyRequestId)
-        : await cancelEmergencyRequest(prisma, auth.permissionContext, emergencyRequestId);
+        : parsedBody.action === 'republish'
+          ? await republishEmergencyRequest(prisma, auth.permissionContext, emergencyRequestId)
+          : await cancelEmergencyRequest(prisma, auth.permissionContext, emergencyRequestId);
 
     return jsonResponse(
       {

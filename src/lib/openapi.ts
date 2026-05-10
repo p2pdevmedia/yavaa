@@ -783,7 +783,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
         additionalProperties: false,
         required: ['action'],
         properties: {
-          action: { type: 'string', enum: ['resolve', 'cancel'] }
+          action: { type: 'string', enum: ['resolve', 'republish', 'cancel'] }
         }
       }
     ]
@@ -1813,7 +1813,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
         },
         patch: {
           operationId: 'mutateOwnEmergencyRequest',
-          summary: 'Update, cancel, or resolve an owned emergency request',
+          summary: 'Update, cancel, resolve, or republish an owned emergency request',
           tags: ['emergencies'],
           security: [{ bearerAuth: [] }],
           parameters: [

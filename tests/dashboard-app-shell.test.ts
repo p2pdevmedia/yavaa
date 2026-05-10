@@ -114,6 +114,7 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('Editar urgencia');
     expect(dashboardPanelSource).toContain('Borrar urgencia');
     expect(dashboardPanelSource).toContain('Marcar resuelta');
+    expect(dashboardPanelSource).toContain('Republicar urgencia');
   });
 
   test('shows emergency availability only while the active mode is trabajador', () => {

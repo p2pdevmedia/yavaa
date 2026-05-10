@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, type FormEvent } from 'react';
-import { CheckCircle2, Pencil, Trash2, X } from 'lucide-react';
+import { CheckCircle2, Pencil, RefreshCcw, Trash2, X } from 'lucide-react';
 
 import { AdminPanel } from '@/components/dashboard/admin-panel';
 import { BookingWorkspace } from '@/components/dashboard/booking-workspace';
@@ -264,6 +264,10 @@ function canEditClientEmergency(emergency: DashboardEmergency): boolean {
 
 function canResolveClientEmergency(emergency: DashboardEmergency): boolean {
   return !['CANCELLED_BY_CLIENT', 'RESOLVED_BY_CLIENT', 'EXPIRED'].includes(emergency.status);
+}
+
+function canRepublishClientEmergency(emergency: DashboardEmergency): boolean {
+  return emergency.status === 'EXPIRED';
 }
 
 function toDashboardEmergencyFromApi(request: EmergencyApiRequest): DashboardEmergency {
@@ -732,6 +736,45 @@ export function DashboardPanel({
       setEmergencyStatus('Urgencia marcada como resuelta.');
     } catch {
       setEmergencyError('No pudimos marcar la urgencia como resuelta.');
+    } finally {
+      setMutatingEmergencyId(null);
+    }
+  }
+
+  async function handleEmergencyRepublish(emergencyId: string) {
+    setEmergencyError(null);
+    setEmergencyStatus(null);
+    setMutatingEmergencyId(emergencyId);
+
+    try {
+      const response = await fetch(`/api/emergencies/${emergencyId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          action: 'republish'
+        })
+      });
+
+      const payload = await parseEnvelope<EmergencyEnvelope>(response);
+
+      if (!response.ok) {
+        setEmergencyError(
+          (payload as { message?: string; error?: string } | null)?.message ??
+            (payload as { error?: string } | null)?.error ??
+            'No pudimos republicar la urgencia.'
+        );
+        return;
+      }
+
+      if (payload?.request) {
+        setEmergencies((current) => [toDashboardEmergencyFromApi(payload.request as EmergencyApiRequest), ...current]);
+      }
+
+      setEmergencyStatus('Urgencia republicada.');
+    } catch {
+      setEmergencyError('No pudimos republicar la urgencia.');
     } finally {
       setMutatingEmergencyId(null);
     }
@@ -1339,6 +1382,18 @@ export function DashboardPanel({
                               >
                                 <CheckCircle2 className="mr-2 h-4 w-4" aria-hidden="true" />
                                 Marcar resuelta
+                              </Button>
+                            ) : null}
+                            {canRepublishClientEmergency(emergency) ? (
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => void handleEmergencyRepublish(emergency.id)}
+                                disabled={isMutating}
+                              >
+                                <RefreshCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                                Republicar urgencia
                               </Button>
                             ) : null}
                             {canEditClientEmergency(emergency) ? (

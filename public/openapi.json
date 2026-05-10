@@ -5885,7 +5885,7 @@
       },
       "patch": {
         "operationId": "mutateOwnEmergencyRequest",
-        "summary": "Update, cancel, or resolve an owned emergency request",
+        "summary": "Update, cancel, resolve, or republish an owned emergency request",
         "tags": [
           "emergencies"
         ],
@@ -5952,6 +5952,7 @@
                         "type": "string",
                         "enum": [
                           "resolve",
+                          "republish",
                           "cancel"
                         ]
                       }
@@ -10035,7 +10036,7 @@
             "description": "Contractor profile not found."
           },
           "422": {
-            "description": "Only pending contractor profiles can be reviewed."
+            "description": "Only draft or pending contractor profiles can be reviewed."
           }
         }
       }

@@ -7,6 +7,7 @@ import {
   createEmergencyRequest,
   listEmergencyRequestsForActor,
   reassignEmergencyRequest,
+  republishEmergencyRequest,
   resolveEmergencyRequest,
   respondToEmergencyRequest,
   updateEmergencyRequest,
@@ -42,7 +43,7 @@ const adminActor: EmergencyRequestActor = {
   roles: ['admin']
 };
 
-function buildMockPrisma() {
+function buildMockPrisma(options: { status?: string } = {}) {
   const categoryId = '88888888-8888-4888-8888-888888888888';
   const addressId = '66666666-6666-4666-8666-666666666666';
   const contractorProfileId = '55555555-5555-4555-8555-555555555555';
@@ -185,7 +186,7 @@ function buildMockPrisma() {
 
   let requestRow: MockEmergencyRequestRow = {
     id: requestId,
-    status: 'DISPATCHING',
+    status: options.status ?? 'DISPATCHING',
     dispatchRound: 1,
     expiresAt: new Date('2026-05-09T12:30:00.000Z'),
     description: 'Pipe burst and water is flooding the kitchen',
@@ -241,7 +242,30 @@ function buildMockPrisma() {
 
   const tx = {
     emergencyRequest: {
-      create: vi.fn().mockImplementation(async () => requestRow),
+      create: vi.fn().mockImplementation(async ({ data }: { data: { clientUserId: string; categoryId: string; addressId: string; description: string; status: string; dispatchRound: number; expiresAt: Date } }) => {
+        requestRow = {
+          ...requestRow,
+          id: '99999999-9999-4999-8999-000000000001',
+          status: data.status,
+          dispatchRound: data.dispatchRound,
+          expiresAt: data.expiresAt,
+          description: data.description,
+          acceptedAt: null,
+          cancelledAt: null,
+          resolvedAt: null,
+          category: {
+            ...requestRow.category,
+            id: data.categoryId
+          },
+          address: {
+            ...requestRow.address,
+            id: data.addressId
+          },
+          candidates: []
+        };
+
+        return requestRow;
+      }),
       findMany: vi.fn().mockImplementation(async () => [requestRow]),
       findUnique: vi.fn().mockImplementation(async () => requestRow),
       update: vi.fn().mockImplementation(async ({ data }: { data: { status?: string; assignedContractorProfileId?: string | null; acceptedAt?: Date | null; cancelledAt?: Date | null; resolvedAt?: Date | null; dispatchRound?: number; expiresAt?: Date; description?: string; categoryId?: string; addressId?: string } }) => {
@@ -276,7 +300,23 @@ function buildMockPrisma() {
       })
     },
     emergencyRequestCandidate: {
-      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+      createMany: vi.fn().mockImplementation(async ({ data }: { data: Array<{ emergencyRequestId: string; contractorProfileId: string; dispatchRound: number; status: string; notifiedAt: Date }> }) => {
+        requestRow = {
+          ...requestRow,
+          candidates: data.map((candidateData, index) => ({
+            id: index === 0 ? candidateId : `${candidateId}-${index}`,
+            contractorProfileId: candidateData.contractorProfileId,
+            dispatchRound: candidateData.dispatchRound,
+            status: candidateData.status,
+            notifiedAt: candidateData.notifiedAt,
+            respondedAt: null,
+            responseNote: null,
+            contractorProfile
+          }))
+        };
+
+        return { count: data.length };
+      }),
       update: vi.fn().mockImplementation(async ({ data }: { data: { status: string; respondedAt?: Date | null; responseNote?: string | null } }) => {
         requestRow = {
           ...requestRow,
@@ -435,6 +475,42 @@ describe('emergency helpers', () => {
       expect.objectContaining({
         action: 'emergency_request.updated',
         actorUserId: clientActor.userId
+      })
+    );
+  });
+
+  it('lets a client republish their own expired emergency as a new request', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-09T13:00:00.000Z'));
+    const { prisma, tx } = buildMockPrisma({ status: 'EXPIRED' });
+
+    const request = await republishEmergencyRequest(
+      prisma as never,
+      clientActor,
+      '44444444-4444-4444-8444-444444444444'
+    );
+
+    expect(request.id).not.toBe('44444444-4444-4444-8444-444444444444');
+    expect(request.status).toBe('DISPATCHING');
+    expect(request.description).toBe('Pipe burst and water is flooding the kitchen');
+    expect(tx.emergencyRequest.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          categoryId: '88888888-8888-4888-8888-888888888888',
+          addressId: '66666666-6666-4666-8666-666666666666',
+          description: 'Pipe burst and water is flooding the kitchen',
+          expiresAt: new Date('2026-05-10T13:00:00.000Z')
+        })
+      })
+    );
+    expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'emergency_request.republished',
+        actorUserId: clientActor.userId,
+        entityId: '44444444-4444-4444-8444-444444444444',
+        metadata: expect.objectContaining({
+          republishedEmergencyRequestId: request.id
+        })
       })
     );
   });

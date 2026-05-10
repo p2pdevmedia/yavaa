@@ -58,6 +58,33 @@ describe('openapi foundation', () => {
     expect(document.components?.securitySchemes?.bearerAuth).toBeDefined();
   });
 
+  it('documents client republishing for expired emergency requests', () => {
+    const document = getOpenApiDocument();
+    const patchRequestSchema = (
+      document.paths['/api/emergencies/{emergencyRequestId}']?.patch?.requestBody as
+        | {
+            content?: {
+              'application/json'?: {
+                schema?: {
+                  oneOf?: Array<{
+                    properties?: {
+                      action?: {
+                        enum?: string[];
+                      };
+                    };
+                  }>;
+                };
+              };
+            };
+          }
+        | undefined
+    )?.content?.['application/json']?.schema;
+
+    expect(
+      patchRequestSchema?.oneOf?.some((variant) => variant.properties?.action?.enum?.includes('republish'))
+    ).toBe(true);
+  });
+
   it('keeps admin user detail and audit activity as separate API resources', () => {
     const document = getOpenApiDocument();
     const userResponseSchema = (

@@ -47,6 +47,9 @@ export const emergencyOwnerPatchSchema = z.discriminatedUnion('action', [
     action: z.literal('resolve')
   }),
   z.object({
+    action: z.literal('republish')
+  }),
+  z.object({
     action: z.literal('cancel')
   })
 ]);
@@ -783,6 +786,42 @@ export async function updateEmergencyRequest(
   }
 
   return toEmergencyRecord(loaded);
+}
+
+export async function republishEmergencyRequest(
+  prisma: PrismaClient,
+  actor: EmergencyRequestActor,
+  emergencyRequestId: string
+): Promise<EmergencyRequestRecord> {
+  const row = await loadEmergencyRequest(prisma, emergencyRequestId);
+
+  if (!row) {
+    throw new Error('not-found');
+  }
+
+  ensureOwnClientEmergency(actor, row);
+
+  if (row.status !== 'EXPIRED') {
+    throw new Error('invalid-state');
+  }
+
+  const republished = await createEmergencyRequest(prisma, actor, {
+    categoryId: row.category.id,
+    addressId: row.address.id,
+    description: row.description
+  });
+
+  await recordAuditLog({
+    actorUserId: actor.userId,
+    action: 'emergency_request.republished',
+    entityType: 'emergency_request',
+    entityId: emergencyRequestId,
+    metadata: {
+      republishedEmergencyRequestId: republished.id
+    }
+  });
+
+  return republished;
 }
 
 export async function resolveEmergencyRequest(
