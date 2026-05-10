@@ -6,7 +6,7 @@ const CONTRACTOR_PROFILE_IMAGE_CONTENT_TYPES = new Set(['image/jpeg', 'image/png
 type ContractorProfileFileKind = 'profile-photo' | 'dni-front' | 'dni-back';
 
 const contractorProfileFileAccess = {
-  'profile-photo': 'public',
+  'profile-photo': 'private',
   'dni-front': 'private',
   'dni-back': 'private'
 } as const satisfies Record<ContractorProfileFileKind, 'public' | 'private'>;

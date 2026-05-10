@@ -321,7 +321,7 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       profilePhotoFile: {
         type: 'string',
         format: 'binary',
-        description: 'Public labor profile photo upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB.'
+        description: 'Private labor profile photo upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB.'
       },
       dniFrontFile: {
         type: 'string',

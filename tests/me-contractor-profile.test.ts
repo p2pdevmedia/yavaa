@@ -136,7 +136,7 @@ describe('me contractor profile API', () => {
     expect(mockedPut).toHaveBeenCalledWith(
       expect.stringMatching(/^contractor-profiles\/user_001\/profile-photo\/[0-9a-f-]{36}-foto-laboral\.jpg$/),
       expect.any(File),
-      { access: 'public' }
+      { access: 'private' }
     );
     expect(mockedPut).toHaveBeenCalledWith(
       expect.stringMatching(/^contractor-profiles\/user_001\/dni-front\/[0-9a-f-]{36}-dni-frente\.png$/),
