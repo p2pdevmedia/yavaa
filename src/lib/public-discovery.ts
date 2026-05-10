@@ -1,4 +1,4 @@
-import { ContractorApprovalStatus, UserStatus } from '@prisma/client';
+import { ContractorApprovalStatus, Prisma, UserStatus } from '@prisma/client';
 
 import { hasDatabaseEnv } from '@/lib/env';
 import { getPrismaClient } from '@/lib/prisma';
@@ -7,6 +7,7 @@ import { isDatabaseUnavailableError, shouldUsePublicDemoFallback } from '@/lib/p
 export type PublicProviderSearchFilters = {
   category?: string | null;
   market?: string | null;
+  query?: string | null;
 };
 
 export type PublicProviderCard = {
@@ -190,28 +191,137 @@ function mapProviderProfile(record: PublicProviderRecord): PublicProviderProfile
   };
 }
 
+function providerMatchesTextSearch(provider: PublicProviderProfile, query: string | null): boolean {
+  if (!query) {
+    return true;
+  }
+
+  const normalizedQuery = query.toLocaleLowerCase();
+  const searchableValues = [
+    provider.displayName,
+    provider.bio,
+    provider.marketCity,
+    provider.marketProvince,
+    provider.marketSlug,
+    ...provider.categories.flatMap((category) => [category.name, category.group, category.slug]),
+    ...provider.workZones.flatMap((workZone) => [workZone.name, workZone.description, workZone.slug])
+  ];
+
+  return searchableValues.some((value) => value?.toLocaleLowerCase().includes(normalizedQuery));
+}
+
 export async function listPublicProviders(
   filters: PublicProviderSearchFilters
 ): Promise<{ items: PublicProviderCard[] }> {
   const category = filters.category?.trim() ?? null;
   const market = filters.market?.trim() ?? null;
+  const query = filters.query?.trim() ?? null;
 
   if (!hasDatabaseEnv()) {
     const matchesCategory = !category || demoPublicProvider.categories.some((item) => item.slug === category);
     const matchesMarket = !market || demoPublicProvider.marketSlug === market;
+    const matchesQuery = providerMatchesTextSearch(demoPublicProvider, query);
 
     return {
-      items: matchesCategory && matchesMarket ? [demoPublicProvider] : []
+      items: matchesCategory && matchesMarket && matchesQuery ? [demoPublicProvider] : []
     };
   }
 
   try {
     const prisma = getPrismaClient();
-    const where = {
+    const textSearchMode = 'insensitive' as const;
+    const textSearchClauses: Prisma.ContractorProfileWhereInput[] = query
+      ? [
+          {
+            user: {
+              displayName: {
+                contains: query,
+                mode: textSearchMode
+              }
+            }
+          },
+          {
+            user: {
+              profile: {
+                is: {
+                  firstName: {
+                    contains: query,
+                    mode: textSearchMode
+                  }
+                }
+              }
+            }
+          },
+          {
+            user: {
+              profile: {
+                is: {
+                  lastName: {
+                    contains: query,
+                    mode: textSearchMode
+                  }
+                }
+              }
+            }
+          },
+          {
+            user: {
+              profile: {
+                is: {
+                  bio: {
+                    contains: query,
+                    mode: textSearchMode
+                  }
+                }
+              }
+            }
+          },
+          {
+            categories: {
+              some: {
+                category: {
+                  name: {
+                    contains: query,
+                    mode: textSearchMode
+                  }
+                }
+              }
+            }
+          },
+          {
+            workZones: {
+              some: {
+                workZone: {
+                  name: {
+                    contains: query,
+                    mode: textSearchMode
+                  }
+                }
+              }
+            }
+          },
+          {
+            workZones: {
+              some: {
+                workZone: {
+                  market: {
+                    city: {
+                      contains: query,
+                      mode: textSearchMode
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      : [];
+    const where: Prisma.ContractorProfileWhereInput = {
       approvalStatus: ContractorApprovalStatus.APPROVED,
       user: {
         status: UserStatus.ACTIVE
       },
+      ...(textSearchClauses.length > 0 ? { OR: textSearchClauses } : {}),
       ...(category
         ? {
             categories: {
@@ -299,9 +409,10 @@ export async function listPublicProviders(
     if (records.length === 0 && shouldUsePublicDemoFallback()) {
       const matchesCategory = !category || demoPublicProvider.categories.some((item) => item.slug === category);
       const matchesMarket = !market || demoPublicProvider.marketSlug === market;
+      const matchesQuery = providerMatchesTextSearch(demoPublicProvider, query);
 
       return {
-        items: matchesCategory && matchesMarket ? [demoPublicProvider] : []
+        items: matchesCategory && matchesMarket && matchesQuery ? [demoPublicProvider] : []
       };
     }
 
@@ -312,9 +423,10 @@ export async function listPublicProviders(
     if (isDatabaseUnavailableError(error)) {
       const matchesCategory = !category || demoPublicProvider.categories.some((item) => item.slug === category);
       const matchesMarket = !market || demoPublicProvider.marketSlug === market;
+      const matchesQuery = providerMatchesTextSearch(demoPublicProvider, query);
 
       return {
-        items: shouldUsePublicDemoFallback() && matchesCategory && matchesMarket ? [demoPublicProvider] : []
+        items: shouldUsePublicDemoFallback() && matchesCategory && matchesMarket && matchesQuery ? [demoPublicProvider] : []
       };
     }
 

@@ -89,6 +89,55 @@ describe('public discovery', () => {
     expect(result.items[0]).not.toHaveProperty('supabaseAuthId');
   });
 
+  it('filters active approved providers by a free-text worker search', async () => {
+    mockedHasDatabaseEnv.mockReturnValue(true);
+
+    const findMany = vi.fn().mockResolvedValue([]);
+
+    mockedGetPrismaClient.mockReturnValue({
+      contractorProfile: {
+        findMany
+      }
+    } as never);
+
+    await listPublicProviders({
+      query: 'plomero'
+    });
+
+    expect(findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          approvalStatus: 'APPROVED',
+          user: expect.objectContaining({
+            status: 'ACTIVE'
+          }),
+          OR: expect.arrayContaining([
+            {
+              user: {
+                displayName: {
+                  contains: 'plomero',
+                  mode: 'insensitive'
+                }
+              }
+            },
+            {
+              categories: {
+                some: {
+                  category: {
+                    name: {
+                      contains: 'plomero',
+                      mode: 'insensitive'
+                    }
+                  }
+                }
+              }
+            }
+          ])
+        })
+      })
+    );
+  });
+
   it('exposes public contact phone only on approved provider profiles', async () => {
     mockedHasDatabaseEnv.mockReturnValue(true);
 
