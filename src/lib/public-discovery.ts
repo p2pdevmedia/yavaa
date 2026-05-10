@@ -27,6 +27,7 @@ export type PublicProviderCard = {
 };
 
 export type PublicProviderProfile = PublicProviderCard & {
+  phone: string | null;
   workZones: Array<{
     slug: string;
     name: string;
@@ -44,6 +45,7 @@ type PublicProviderRecord = {
       firstName: string | null;
       lastName: string | null;
       bio: string | null;
+      phone: string | null;
     } | null;
   };
   categories: Array<{
@@ -73,6 +75,7 @@ const demoPublicProvider = {
   contractorProfileId: demoPublicProviderId,
   displayName: 'Carlos Perez',
   bio: 'Approved deterministic contractor used by public discovery tests.',
+  phone: '+5492975550101',
   profilePhotoUrl: null,
   acceptsEmergencies: true,
   marketSlug: 'san-martin-de-los-andes',
@@ -181,6 +184,7 @@ function mapProviderProfile(record: PublicProviderRecord): PublicProviderProfile
 
   return {
     ...mapProviderRecord(record),
+    phone: record.user.profile?.phone ?? null,
     workZones
   };
 }
@@ -246,7 +250,8 @@ export async function listPublicProviders(
               select: {
                 firstName: true,
                 lastName: true,
-                bio: true
+                bio: true,
+                phone: true
               }
             }
           }
@@ -343,7 +348,8 @@ export async function getPublicProviderProfile(
               select: {
                 firstName: true,
                 lastName: true,
-                bio: true
+                bio: true,
+                phone: true
               }
             }
           }

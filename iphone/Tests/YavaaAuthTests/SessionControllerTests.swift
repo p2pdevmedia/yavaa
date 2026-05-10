@@ -53,6 +53,10 @@ private actor StubAuthService: AuthenticationService {
         AuthSessionCredentials(accessToken: "access-token", refreshToken: "refresh-token")
     }
 
+    func signInWithGoogle() async throws -> AuthSessionCredentials {
+        AuthSessionCredentials(accessToken: "google-access-token", refreshToken: "google-refresh-token")
+    }
+
     func signUp(email: String, password: String) async throws -> AuthSessionCredentials {
         if shouldRequireConfirmationOnSignUp {
             throw AuthServiceError.confirmationRequired
@@ -119,6 +123,23 @@ final class SessionControllerTests: XCTestCase {
         }
 
         XCTAssertNil(try await tokenStore.loadAccessToken())
+    }
+
+    func testGoogleSignInStoresReturnedCredentials() async throws {
+        let tokenStore = StubTokenStore()
+        let controller = SessionController(
+            apiClient: APIClient(),
+            tokenStore: tokenStore,
+            preferredModeStore: InMemoryPreferredModeStore(),
+            authService: StubAuthService()
+        )
+
+        _ = try await controller.signInWithGoogle()
+
+        XCTAssertEqual(
+            try await tokenStore.loadSessionCredentials(),
+            AuthSessionCredentials(accessToken: "google-access-token", refreshToken: "google-refresh-token")
+        )
     }
 
     func testInMemorySessionTokenStoreSavesCredentialsAndExposesAccessToken() async throws {

@@ -249,6 +249,7 @@ public enum AuthServiceError: Error, Equatable, Sendable {
 
 public protocol AuthenticationService: Sendable {
     func signIn(email: String, password: String) async throws -> AuthSessionCredentials
+    func signInWithGoogle() async throws -> AuthSessionCredentials
     func signUp(email: String, password: String) async throws -> AuthSessionCredentials
     func signOut() async throws
 }
@@ -256,16 +257,28 @@ public protocol AuthenticationService: Sendable {
 public final class SupabaseAuthenticationService: AuthenticationService, @unchecked Sendable {
     private let client: SupabaseClient
 
-    public init(url: URL, publishableKey: String) {
+    public init(url: URL, publishableKey: String, redirectURL: URL? = nil) {
         self.client = SupabaseClient(
             supabaseURL: url,
             supabaseKey: publishableKey,
-            options: .init()
+            options: .init(auth: .init(redirectToURL: redirectURL))
         )
     }
 
     public func signIn(email: String, password: String) async throws -> AuthSessionCredentials {
         let session = try await client.auth.signIn(email: email, password: password)
+        guard !session.accessToken.isEmpty else {
+            throw AuthServiceError.missingAccessToken
+        }
+
+        return AuthSessionCredentials(
+            accessToken: session.accessToken,
+            refreshToken: session.refreshToken
+        )
+    }
+
+    public func signInWithGoogle() async throws -> AuthSessionCredentials {
+        let session = try await client.auth.signInWithOAuth(provider: .google)
         guard !session.accessToken.isEmpty else {
             throw AuthServiceError.missingAccessToken
         }
@@ -340,6 +353,16 @@ public actor SessionController {
         }
 
         let credentials = try await authService.signIn(email: email, password: password)
+        try await tokenStore.saveSessionCredentials(credentials)
+        return await refreshSession()
+    }
+
+    public func signInWithGoogle() async throws -> SessionState {
+        guard let authService else {
+            throw AuthServiceError.missingAuthService
+        }
+
+        let credentials = try await authService.signInWithGoogle()
         try await tokenStore.saveSessionCredentials(credentials)
         return await refreshSession()
     }

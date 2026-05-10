@@ -78,6 +78,7 @@ final class APIClientTests: XCTestCase {
             "contractorProfileId": "provider_001",
             "displayName": "Carlos Perez",
             "bio": "Albanil con experiencia.",
+            "phone": "+5493875551234",
             "profilePhotoUrl": null,
             "acceptsEmergencies": true,
             "marketSlug": "salta",
@@ -105,6 +106,7 @@ final class APIClientTests: XCTestCase {
         let response = try JSONDecoder().decode(PublicProviderProfileResponse.self, from: json)
 
         XCTAssertEqual(response.provider?.displayName, "Carlos Perez")
+        XCTAssertEqual(response.provider?.phone, "+5493875551234")
         XCTAssertEqual(response.provider?.workZones.first?.name, "Centro")
     }
 

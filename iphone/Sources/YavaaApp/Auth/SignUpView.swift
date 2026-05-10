@@ -4,50 +4,96 @@ import YavaaDesign
 
 public struct SignUpView: View {
     private let onSubmit: (String, String) async throws -> Void
+    private let onGoogleSignIn: () async throws -> Void
 
     @State private var email = ""
     @State private var password = ""
     @State private var message: String?
     @State private var isMessageError = false
     @State private var isSubmitting = false
+    @State private var isSigningInWithGoogle = false
 
-    public init(onSubmit: @escaping (String, String) async throws -> Void) {
+    public init(
+        onSubmit: @escaping (String, String) async throws -> Void,
+        onGoogleSignIn: @escaping () async throws -> Void
+    ) {
         self.onSubmit = onSubmit
+        self.onGoogleSignIn = onGoogleSignIn
     }
 
     public var body: some View {
-        Form {
-            Section {
-                TextField("Email", text: $email)
-                    .textContentType(.emailAddress)
-                    .autocorrectionDisabled()
+        ZStack {
+            YavaaBackground()
 
-                SecureField("Password", text: $password)
-                    .textContentType(.newPassword)
-            } footer: {
-                Text("Usa al menos 6 caracteres.")
-            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: YavaaSpacing.lg) {
+                    YavaaBrandHeader(
+                        title: "Crear cuenta",
+                        subtitle: "Activa tu acceso para pedir trabajos, guardar direcciones y coordinar urgencias."
+                    )
 
-            if let message {
-                Section {
-                    Text(message)
-                        .foregroundStyle(isMessageError ? YavaaColor.warning : .secondary)
-                }
-            }
+                    YavaaCard {
+                        VStack(alignment: .leading, spacing: YavaaSpacing.md) {
+                            VStack(alignment: .leading, spacing: YavaaSpacing.xs) {
+                                Text("Correo electronico")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(YavaaColor.foreground)
 
-            Section {
-                Button {
-                    submit()
-                } label: {
-                    if isSubmitting {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Text("Crear cuenta")
-                            .frame(maxWidth: .infinity)
+                                TextField("tu@email.com", text: $email)
+                                    .textContentType(.emailAddress)
+                                    .autocorrectionDisabled()
+                                    .yavaaInputField()
+                            }
+
+                            VStack(alignment: .leading, spacing: YavaaSpacing.xs) {
+                                Text("Contrasena")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(YavaaColor.foreground)
+
+                                SecureField("Minimo 6 caracteres", text: $password)
+                                    .textContentType(.newPassword)
+                                    .yavaaInputField()
+                            }
+
+                            Text("Usa al menos 6 caracteres.")
+                                .font(.caption)
+                                .foregroundStyle(YavaaColor.mutedForeground)
+
+                            if let message {
+                                YavaaStatusBanner(message, isError: isMessageError)
+                            }
+
+                            PrimaryActionButton(isSubmitting ? "Creando..." : "Crear cuenta") {
+                                submit()
+                            }
+                            .disabled(isSubmitDisabled)
+
+                            Button {
+                                signInWithGoogle()
+                            } label: {
+                                HStack(spacing: YavaaSpacing.sm) {
+                                    Text("G")
+                                        .font(.headline.weight(.bold))
+
+                                    Text(isSigningInWithGoogle ? "Conectando..." : "Continuar con Google")
+                                        .font(.headline)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(YavaaColor.foreground)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .disabled(isSigningInWithGoogle || isSubmitting)
+                        }
                     }
+
+                    Text("La cuenta puede operar como jefe, constructor o ambos segun los roles aprobados por Yavaa.")
+                        .font(.footnote)
+                        .foregroundStyle(YavaaColor.mutedForeground)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .disabled(isSubmitDisabled)
+                .padding(YavaaSpacing.lg)
             }
         }
         .navigationTitle("Crear cuenta")
@@ -58,7 +104,7 @@ public struct SignUpView: View {
     }
 
     private var isSubmitDisabled: Bool {
-        isSubmitting || trimmedEmail.isEmpty || password.count < 6
+        isSubmitting || isSigningInWithGoogle || trimmedEmail.isEmpty || password.count < 6
     }
 
     private func submit() {
@@ -82,6 +128,27 @@ public struct SignUpView: View {
             }
 
             isSubmitting = false
+        }
+    }
+
+    private func signInWithGoogle() {
+        guard !isSigningInWithGoogle && !isSubmitting else {
+            return
+        }
+
+        message = nil
+        isMessageError = false
+        isSigningInWithGoogle = true
+
+        Task {
+            do {
+                try await onGoogleSignIn()
+            } catch {
+                message = "No pudimos continuar con Google. Intenta de nuevo."
+                isMessageError = true
+            }
+
+            isSigningInWithGoogle = false
         }
     }
 }

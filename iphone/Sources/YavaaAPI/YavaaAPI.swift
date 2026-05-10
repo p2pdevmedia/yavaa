@@ -406,6 +406,7 @@ public struct PublicProviderProfile: Decodable, Equatable, Identifiable, Sendabl
     public let contractorProfileId: String
     public let displayName: String
     public let bio: String?
+    public let phone: String?
     public let profilePhotoUrl: String?
     public let acceptsEmergencies: Bool
     public let marketSlug: String?

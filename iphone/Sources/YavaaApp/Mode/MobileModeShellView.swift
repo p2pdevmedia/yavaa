@@ -5,21 +5,37 @@ import YavaaDesign
 
 public struct MobileModeShellView: View {
     @ObservedObject private var container: AppContainer
+    @State private var selectedTab: MobileTab = .home
 
     public init(container: AppContainer) {
         self.container = container
     }
 
     public var body: some View {
-        TabView {
+        TabView(selection: selectedTabBinding) {
             ForEach(activeTabs, id: \.self) { tab in
-                tabView(tab)
+                NavigationStack {
+                    tabView(tab)
+                        .navigationTitle(tab.title)
+                }
                     .tabItem {
                         Label(tab.title, systemImage: tab.systemImageName)
                     }
+                    .tag(tab)
             }
         }
+        #if os(iOS)
+        .toolbar(.visible, for: .tabBar)
+        .toolbarBackground(.visible, for: .tabBar)
+        .toolbarBackground(YavaaColor.surface, for: .tabBar)
+        #endif
         .navigationTitle(container.sessionState.mode?.title ?? "Yavaa")
+        .onAppear {
+            keepSelectedTabInActiveTabs()
+        }
+        .onChange(of: container.sessionState.mode) { _, _ in
+            keepSelectedTabInActiveTabs()
+        }
     }
 
     private var activeTabs: [MobileTab] {
@@ -28,6 +44,23 @@ public struct MobileModeShellView: View {
         }
 
         return MobileTabMap.tabs(for: mode)
+    }
+
+    private var selectedTabBinding: Binding<MobileTab> {
+        Binding {
+            activeTabs.contains(selectedTab) ? selectedTab : activeTabs.first ?? .profile
+        } set: { nextTab in
+            selectedTab = nextTab
+        }
+    }
+
+    private func keepSelectedTabInActiveTabs() {
+        guard !activeTabs.contains(selectedTab),
+              let firstTab = activeTabs.first else {
+            return
+        }
+
+        selectedTab = firstTab
     }
 
     @ViewBuilder
@@ -336,6 +369,30 @@ private struct ProviderProfileView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("Contacto") {
+                    Button("Chat interno") {
+                    }
+                    .disabled(true)
+
+                    if let phoneURL = provider.phoneURL {
+                        Link("Llamar", destination: phoneURL)
+                    } else {
+                        Text("Telefono no publicado")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if let whatsappURL = provider.whatsappURL {
+                        Link("WhatsApp", destination: whatsappURL)
+                    } else {
+                        Text("WhatsApp no disponible")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text("El chat interno se activa cuando existe una reserva o urgencia con este trabajador.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Trabajos") {
                     ForEach(provider.categories, id: \.slug) { category in
                         Text(category.name)
@@ -377,6 +434,33 @@ private struct ProviderProfileView: View {
             errorMessage = "No se pudo cargar /api/providers/\(providerId)."
         }
         isLoading = false
+    }
+}
+
+private extension PublicProviderProfile {
+    var phoneURL: URL? {
+        guard let normalizedPhone else {
+            return nil
+        }
+
+        return URL(string: "tel://\(normalizedPhone)")
+    }
+
+    var whatsappURL: URL? {
+        guard let normalizedPhone else {
+            return nil
+        }
+
+        return URL(string: "https://wa.me/\(normalizedPhone)")
+    }
+
+    var normalizedPhone: String? {
+        guard let phone else {
+            return nil
+        }
+
+        let digits = phone.filter(\.isNumber)
+        return digits.isEmpty ? nil : digits
     }
 }
 

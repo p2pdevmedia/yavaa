@@ -49,11 +49,12 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
   const publicProviderProfileSchema = {
     type: 'object',
     additionalProperties: false,
-    required: ['contractorProfileId', 'displayName', 'bio', 'profilePhotoUrl', 'acceptsEmergencies', 'marketSlug', 'marketCity', 'marketProvince', 'categories', 'workZones'],
+    required: ['contractorProfileId', 'displayName', 'bio', 'phone', 'profilePhotoUrl', 'acceptsEmergencies', 'marketSlug', 'marketCity', 'marketProvince', 'categories', 'workZones'],
     properties: {
       contractorProfileId: { type: 'string' },
       displayName: { type: 'string' },
       bio: { anyOf: [{ type: 'string' }, { type: 'null' }] },
+      phone: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       profilePhotoUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
       acceptsEmergencies: { type: 'boolean' },
       marketSlug: { anyOf: [{ type: 'string' }, { type: 'null' }] },

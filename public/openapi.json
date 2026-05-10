@@ -1250,6 +1250,7 @@
                             "contractorProfileId",
                             "displayName",
                             "bio",
+                            "phone",
                             "profilePhotoUrl",
                             "acceptsEmergencies",
                             "marketSlug",
@@ -1266,6 +1267,16 @@
                               "type": "string"
                             },
                             "bio": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "phone": {
                               "anyOf": [
                                 {
                                   "type": "string"

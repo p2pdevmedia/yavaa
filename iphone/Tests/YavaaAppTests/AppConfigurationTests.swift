@@ -8,7 +8,8 @@ final class AppConfigurationTests: XCTestCase {
             bundleInfo: [
                 "YAVAA_API_BASE_URL": "https://www.yavaa.lat",
                 "YAVAA_SUPABASE_URL": "https://mvzkbhnfuhjvnojncwbf.supabase.co",
-                "YAVAA_SUPABASE_PUBLISHABLE_KEY": "publishable-key"
+                "YAVAA_SUPABASE_PUBLISHABLE_KEY": "publishable-key",
+                "YAVAA_AUTH_REDIRECT_URL": "lat.yavaa.iphone://login-callback"
             ]
         )
 
@@ -21,12 +22,14 @@ final class AppConfigurationTests: XCTestCase {
             environment: [
                 "YAVAA_API_BASE_URL": "https://api.override.test",
                 "YAVAA_SUPABASE_URL": "https://override.supabase.co",
-                "YAVAA_SUPABASE_PUBLISHABLE_KEY": "override-key"
+                "YAVAA_SUPABASE_PUBLISHABLE_KEY": "override-key",
+                "YAVAA_AUTH_REDIRECT_URL": "lat.yavaa.iphone://login-callback"
             ],
             bundleInfo: [
                 "YAVAA_API_BASE_URL": "https://www.yavaa.lat",
                 "YAVAA_SUPABASE_URL": "https://mvzkbhnfuhjvnojncwbf.supabase.co",
-                "YAVAA_SUPABASE_PUBLISHABLE_KEY": "publishable-key"
+                "YAVAA_SUPABASE_PUBLISHABLE_KEY": "publishable-key",
+                "YAVAA_AUTH_REDIRECT_URL": "ignored://callback"
             ]
         )
 

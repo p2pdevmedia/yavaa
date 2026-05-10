@@ -3,51 +3,96 @@ import YavaaDesign
 
 public struct LoginView: View {
     private let onSubmit: (String, String) async throws -> Void
+    private let onGoogleSignIn: () async throws -> Void
 
     @State private var email = ""
     @State private var password = ""
     @State private var errorMessage: String?
     @State private var isSubmitting = false
+    @State private var isSigningInWithGoogle = false
 
-    public init(onSubmit: @escaping (String, String) async throws -> Void) {
+    public init(
+        onSubmit: @escaping (String, String) async throws -> Void,
+        onGoogleSignIn: @escaping () async throws -> Void
+    ) {
         self.onSubmit = onSubmit
+        self.onGoogleSignIn = onGoogleSignIn
     }
 
     public var body: some View {
-        Form {
-            Section {
-                TextField("Email", text: $email)
-                    .textContentType(.emailAddress)
-                    .autocorrectionDisabled()
-                    .accessibilityIdentifier("login.email")
+        ZStack {
+            YavaaBackground()
 
-                SecureField("Password", text: $password)
-                    .textContentType(.password)
-                    .accessibilityIdentifier("login.password")
-            }
+            ScrollView {
+                VStack(alignment: .leading, spacing: YavaaSpacing.lg) {
+                    YavaaBrandHeader(
+                        title: "Iniciar sesion",
+                        subtitle: "Entra con tu correo para coordinar trabajos, urgencias y conversaciones."
+                    )
 
-            if let errorMessage {
-                Section {
-                    Text(errorMessage)
-                        .foregroundStyle(YavaaColor.warning)
-                        .accessibilityIdentifier("login.error")
-                }
-            }
+                    YavaaCard {
+                        VStack(alignment: .leading, spacing: YavaaSpacing.md) {
+                            VStack(alignment: .leading, spacing: YavaaSpacing.xs) {
+                                Text("Correo electronico")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(YavaaColor.foreground)
 
-            Section {
-                Button {
-                    submit()
-                } label: {
-                    if isSubmitting {
-                        ProgressView()
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Text("Ingresar")
-                            .frame(maxWidth: .infinity)
+                                TextField("tu@email.com", text: $email)
+                                    .textContentType(.emailAddress)
+                                    .autocorrectionDisabled()
+                                    .yavaaInputField()
+                                    .accessibilityIdentifier("login.email")
+                            }
+
+                            VStack(alignment: .leading, spacing: YavaaSpacing.xs) {
+                                Text("Contrasena")
+                                    .font(.footnote.weight(.semibold))
+                                    .foregroundStyle(YavaaColor.foreground)
+
+                                SecureField("Minimo 6 caracteres", text: $password)
+                                    .textContentType(.password)
+                                    .yavaaInputField()
+                                    .accessibilityIdentifier("login.password")
+                            }
+
+                            if let errorMessage {
+                                YavaaStatusBanner(errorMessage, isError: true)
+                                    .accessibilityIdentifier("login.error")
+                            }
+
+                            PrimaryActionButton(isSubmitting ? "Ingresando..." : "Ingresar") {
+                                submit()
+                            }
+                            .disabled(isSubmitDisabled)
+                            .accessibilityIdentifier("login.submit")
+
+                            Button {
+                                signInWithGoogle()
+                            } label: {
+                                HStack(spacing: YavaaSpacing.sm) {
+                                    Text("G")
+                                        .font(.headline.weight(.bold))
+
+                                    Text(isSigningInWithGoogle ? "Conectando..." : "Continuar con Google")
+                                        .font(.headline)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                            }
+                            .buttonStyle(.bordered)
+                            .tint(YavaaColor.foreground)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .disabled(isSigningInWithGoogle || isSubmitting)
+                            .accessibilityIdentifier("login.google")
+                        }
                     }
+
+                    Text("Yavaa conecta clientes, trabajadores y agentes con reglas claras y datos confiables.")
+                        .font(.footnote)
+                        .foregroundStyle(YavaaColor.mutedForeground)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .disabled(isSubmitDisabled)
-                .accessibilityIdentifier("login.submit")
+                .padding(YavaaSpacing.lg)
             }
         }
         .navigationTitle("Ingresar")
@@ -58,7 +103,7 @@ public struct LoginView: View {
     }
 
     private var isSubmitDisabled: Bool {
-        isSubmitting || trimmedEmail.isEmpty || password.isEmpty
+        isSubmitting || isSigningInWithGoogle || trimmedEmail.isEmpty || password.isEmpty
     }
 
     private func submit() {
@@ -77,6 +122,25 @@ public struct LoginView: View {
             }
 
             isSubmitting = false
+        }
+    }
+
+    private func signInWithGoogle() {
+        guard !isSigningInWithGoogle && !isSubmitting else {
+            return
+        }
+
+        errorMessage = nil
+        isSigningInWithGoogle = true
+
+        Task {
+            do {
+                try await onGoogleSignIn()
+            } catch {
+                errorMessage = "No pudimos iniciar sesion con Google. Intenta de nuevo."
+            }
+
+            isSigningInWithGoogle = false
         }
     }
 }

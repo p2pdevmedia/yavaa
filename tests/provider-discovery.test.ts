@@ -29,7 +29,8 @@ describe('public discovery', () => {
           profile: {
             firstName: 'Carlos',
             lastName: 'Perez',
-            bio: 'Plomero'
+            bio: 'Plomero',
+            phone: '+5493875551234'
           }
         },
         categories: [
@@ -82,7 +83,43 @@ describe('public discovery', () => {
       marketProvince: 'Neuquen'
     });
     expect(result.items[0]).not.toHaveProperty('email');
+    expect(result.items[0]).not.toHaveProperty('phone');
     expect(result.items[0]).not.toHaveProperty('supabaseAuthId');
+  });
+
+  it('exposes public contact phone only on approved provider profiles', async () => {
+    mockedHasDatabaseEnv.mockReturnValue(true);
+
+    const findFirst = vi.fn().mockResolvedValue({
+      id: 'cp_001',
+      acceptsEmergencies: true,
+      profilePhotoUrl: null,
+      user: {
+        displayName: 'Foundation Contractor',
+        profile: {
+          firstName: 'Carlos',
+          lastName: 'Perez',
+          bio: 'Plomero',
+          phone: '+5493875551234'
+        }
+      },
+      categories: [],
+      workZones: []
+    });
+
+    mockedGetPrismaClient.mockReturnValue({
+      contractorProfile: {
+        findFirst
+      }
+    } as never);
+
+    const result = await getPublicProviderProfile('cp_001');
+
+    expect(findFirst).toHaveBeenCalledTimes(1);
+    expect(result).toMatchObject({
+      contractorProfileId: 'cp_001',
+      phone: '+5493875551234'
+    });
   });
 
   it('hides unapproved providers from public profile lookups', async () => {

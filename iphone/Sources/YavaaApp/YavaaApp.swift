@@ -61,6 +61,13 @@ public final class AppContainer: ObservableObject {
         presentRoleSelectionIfNeeded(for: sessionState)
     }
 
+    public func signInWithGoogle() async throws {
+        modeSelectionRevision += 1
+        sessionState = try await sessionController.signInWithGoogle()
+        completedRoleSelectionAccountID = nil
+        presentRoleSelectionIfNeeded(for: sessionState)
+    }
+
     public func signUp(email: String, password: String) async throws {
         modeSelectionRevision += 1
         sessionState = try await sessionController.signUp(email: email, password: password)
@@ -243,44 +250,64 @@ public struct YavaaRootView: View {
     }
 
     public var body: some View {
-        NavigationStack {
+        Group {
             if container.isBootstrapping {
-                bootstrappingView
+                NavigationStack {
+                    bootstrappingView
+                }
             } else if container.roleSelectionPresentation != .none {
-                RoleSelectionView(
-                    presentation: container.roleSelectionPresentation
-                ) { mode in
-                    await container.finishRoleSelection(with: mode)
+                NavigationStack {
+                    RoleSelectionView(
+                        presentation: container.roleSelectionPresentation
+                    ) { mode in
+                        await container.finishRoleSelection(with: mode)
+                    }
                 }
             } else if container.sessionState.isAuthenticated {
                 signedInShell
             } else {
-                authTabs
+                NavigationStack {
+                    authTabs
+                }
             }
         }
+        .tint(YavaaColor.accent)
         .task {
             await container.bootstrap()
         }
     }
 
     private var bootstrappingView: some View {
-        ProgressView()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .navigationTitle("Inicio")
+        ZStack {
+            YavaaBackground()
+            ProgressView()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .navigationTitle("Inicio")
     }
 
     private var authTabs: some View {
         TabView {
-            LoginView { email, password in
-                try await container.signIn(email: email, password: password)
-            }
+            LoginView(
+                onSubmit: { email, password in
+                    try await container.signIn(email: email, password: password)
+                },
+                onGoogleSignIn: {
+                    try await container.signInWithGoogle()
+                }
+            )
             .tabItem {
                 Text("Ingresar")
             }
 
-            SignUpView { email, password in
-                try await container.signUp(email: email, password: password)
-            }
+            SignUpView(
+                onSubmit: { email, password in
+                    try await container.signUp(email: email, password: password)
+                },
+                onGoogleSignIn: {
+                    try await container.signInWithGoogle()
+                }
+            )
             .tabItem {
                 Text("Crear cuenta")
             }
@@ -321,9 +348,17 @@ struct YavaaAppConfiguration {
                 bundleInfo: bundleInfo
            ),
            !publishableKey.isEmpty {
+            let redirectURL = configurationValue(
+                "YAVAA_AUTH_REDIRECT_URL",
+                environment: environment,
+                bundleInfo: bundleInfo
+            )
+                .flatMap(URL.init(string:))
+
             authService = SupabaseAuthenticationService(
                 url: supabaseURL,
-                publishableKey: publishableKey
+                publishableKey: publishableKey,
+                redirectURL: redirectURL
             )
         } else {
             authService = nil
