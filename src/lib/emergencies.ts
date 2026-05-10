@@ -233,7 +233,7 @@ function toCandidateVisibleContractorIds(row: EmergencyRequestRow): ReadonlyArra
 async function getContractorEmergencyBrowseScope(
   prisma: PrismaClient,
   actor: EmergencyRequestActor
-): Promise<{ categoryIds: string[]; marketIds: string[] } | null> {
+): Promise<{ marketIds: string[] } | null> {
   const contractorProfile = await prisma.contractorProfile.findFirst({
     where: {
       userId: actor.userId,
@@ -244,11 +244,6 @@ async function getContractorEmergencyBrowseScope(
       }
     },
     select: {
-      categories: {
-        select: {
-          categoryId: true
-        }
-      },
       workZones: {
         select: {
           workZone: {
@@ -265,15 +260,13 @@ async function getContractorEmergencyBrowseScope(
     return null;
   }
 
-  const categoryIds = contractorProfile.categories.map((category) => category.categoryId);
   const marketIds = contractorProfile.workZones.map((workZone) => workZone.workZone.marketId);
 
-  if (categoryIds.length === 0 || marketIds.length === 0) {
+  if (marketIds.length === 0) {
     return null;
   }
 
   return {
-    categoryIds,
     marketIds
   };
 }
@@ -307,9 +300,6 @@ async function getContractorEmergencyListWhere(
         in: contractorBrowsableEmergencyStatuses
       },
       assignedContractorProfileId: null,
-      categoryId: {
-        in: browseScope.categoryIds
-      },
       address: {
         marketId: {
           in: browseScope.marketIds
@@ -336,11 +326,6 @@ async function findEligibleContractors(
       user: {
         status: 'ACTIVE'
       },
-      categories: {
-        some: {
-          categoryId
-        }
-      },
       workZones: {
         some: {
           workZone: {
@@ -357,10 +342,26 @@ async function findEligibleContractors(
         : {})
     },
     select: {
-      id: true
+      id: true,
+      categories: {
+        select: {
+          categoryId: true
+        }
+      }
     },
     orderBy: [{ id: 'asc' }]
-  });
+  }).then((contractors) =>
+    [...contractors].sort((left, right) => {
+      const leftMatchesCategory = left.categories.some((category) => category.categoryId === categoryId);
+      const rightMatchesCategory = right.categories.some((category) => category.categoryId === categoryId);
+
+      if (leftMatchesCategory !== rightMatchesCategory) {
+        return leftMatchesCategory ? -1 : 1;
+      }
+
+      return left.id.localeCompare(right.id);
+    })
+  );
 }
 
 export async function loadEmergencyRequest(

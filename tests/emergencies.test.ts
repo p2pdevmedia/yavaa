@@ -404,6 +404,13 @@ describe('emergency helpers', () => {
     expect(prisma.address.findFirst).toHaveBeenCalledTimes(1);
     expect(prisma.category.findFirst).toHaveBeenCalledTimes(1);
     expect(prisma.contractorProfile.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.contractorProfile.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.not.objectContaining({
+          categories: expect.anything()
+        })
+      })
+    );
     expect(tx.emergencyRequest.create).toHaveBeenCalledTimes(1);
     expect(tx.emergencyRequestCandidate.createMany).toHaveBeenCalledTimes(1);
     expect(mockedRecordAuditLog).toHaveBeenCalledTimes(1);
@@ -678,9 +685,6 @@ describe('emergency helpers', () => {
                 in: ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED']
               },
               assignedContractorProfileId: null,
-              categoryId: {
-                in: ['88888888-8888-4888-8888-888888888888']
-              },
               address: {
                 marketId: {
                   in: ['99999999-9999-4999-8999-999999999999']

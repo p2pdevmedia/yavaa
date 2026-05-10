@@ -126,8 +126,9 @@ When the client creates an urgent request, the system should select contractors 
 - user is active
 - contractor profile is approved
 - contractor profile has `acceptsEmergencies = true`
-- contractor has the requested category
 - contractor works in the market of the selected address
+
+The requested category is a ranking signal, not a hard visibility limit. Dispatch should prefer contractors with the requested category, but approved emergency-enabled contractors in the same market can still see and receive the urgent request.
 
 The first dispatch round can use a small deterministic batch. The exact batch size should be fixed in code so tests are predictable.
 
