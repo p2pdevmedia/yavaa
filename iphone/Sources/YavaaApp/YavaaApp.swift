@@ -10,11 +10,13 @@ public final class AppContainer: ObservableObject {
     @Published public private(set) var sessionState: SessionState = .signedOut
     @Published public private(set) var apiStatus: String = "Sin verificar"
     @Published public private(set) var isBootstrapping = true
+    @Published public private(set) var roleSelectionPresentation: RoleSelectionPresentation = .none
 
     private let apiClient: APIClient
     private let sessionController: SessionController
     private var modeSelectionRevision = 0
     private var latestPickerRequestedMode: AppMode?
+    private var completedRoleSelectionAccountID: String?
 
     public init(
         apiEnvironment: APIEnvironment = .localWebsite,
@@ -55,11 +57,15 @@ public final class AppContainer: ObservableObject {
     public func signIn(email: String, password: String) async throws {
         modeSelectionRevision += 1
         sessionState = try await sessionController.signIn(email: email, password: password)
+        completedRoleSelectionAccountID = nil
+        presentRoleSelectionIfNeeded(for: sessionState)
     }
 
     public func signUp(email: String, password: String) async throws {
         modeSelectionRevision += 1
         sessionState = try await sessionController.signUp(email: email, password: password)
+        completedRoleSelectionAccountID = nil
+        presentRoleSelectionIfNeeded(for: sessionState)
     }
 
     public func signOut() async {
@@ -69,6 +75,8 @@ public final class AppContainer: ObservableObject {
         } catch {
             sessionState = .signedOut
         }
+        roleSelectionPresentation = .none
+        completedRoleSelectionAccountID = nil
     }
 
     public func selectMode(_ mode: AppMode) async {
@@ -95,6 +103,12 @@ public final class AppContainer: ObservableObject {
         }
     }
 
+    public func finishRoleSelection(with mode: AppMode) async {
+        completedRoleSelectionAccountID = sessionState.account?.id
+        roleSelectionPresentation = .none
+        await selectMode(mode)
+    }
+
     fileprivate func updateSelectedModeForPicker(_ mode: AppMode?) {
         guard let mode else {
             return
@@ -111,6 +125,22 @@ public final class AppContainer: ObservableObject {
     private func isCurrentModeSelection(revision: Int, mode: AppMode) -> Bool {
         revision == modeSelectionRevision
             && (latestPickerRequestedMode == nil || latestPickerRequestedMode == mode)
+    }
+
+    private func presentRoleSelectionIfNeeded(for state: SessionState) {
+        guard let account = state.account else {
+            roleSelectionPresentation = .none
+            return
+        }
+
+        let presentation = RoleSelectionPresentation.presentation(for: state)
+        guard presentation != .none,
+              completedRoleSelectionAccountID != account.id else {
+            roleSelectionPresentation = .none
+            return
+        }
+
+        roleSelectionPresentation = presentation
     }
 }
 
@@ -133,6 +163,12 @@ public struct YavaaRootView: View {
         NavigationStack {
             if container.isBootstrapping {
                 bootstrappingView
+            } else if container.roleSelectionPresentation != .none {
+                RoleSelectionView(
+                    presentation: container.roleSelectionPresentation
+                ) { mode in
+                    await container.finishRoleSelection(with: mode)
+                }
             } else if container.sessionState.isAuthenticated {
                 signedInShell
             } else {

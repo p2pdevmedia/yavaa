@@ -4,7 +4,13 @@
 
 This document defines the first native iPhone action map slice.
 
-The slice starts at app launch, covers authentication, resolves the linked Yavaa account through `GET /api/me`, and then lets the user choose between client and contractor mode when both roles exist.
+The slice starts at app launch, covers authentication, resolves the linked Yavaa account through `GET /api/me`, and then shows the first post-login native role screen.
+
+Client mode is presented to the user as `jefe`. Contractor mode is presented to the user as `constructor`.
+
+When only client mode is available, the role screen shows the default jefe illustration for one second and advances to the client side automatically.
+
+When client and contractor modes are both available, the user explicitly chooses between jefe and constructor. Changing to constructor flips the floor and changes the scenario before continuing.
 
 Admin and support remain web-only in this slice.
 
@@ -96,10 +102,11 @@ Hidden actions:
 3. Call `GET /api/me`.
 4. If unauthenticated, show auth tabs.
 5. If authenticated but account status is `BLOCKED` or `SUSPENDED`, show account status and sign out.
-6. If authenticated with one mobile role, enter that mode.
-7. If authenticated with client and contractor roles, restore the previous mode when it is still allowed.
-8. If the restored mode is no longer allowed, default to client when available.
-9. If no mobile role exists, show account status and sign out.
+6. After a successful native login, if authenticated with client mode only, show the jefe intro for one second and enter client mode.
+7. After a successful native login, if authenticated with client and contractor roles, show the jefe/constructor choice screen.
+8. If authenticated from a stored token, restore the previous mode when it is still allowed.
+9. If the restored mode is no longer allowed, default to client when available.
+10. If no mobile role exists, show account status and sign out.
 
 ## Test IDs
 
@@ -107,8 +114,11 @@ Hidden actions:
 - IOS-GUEST-AUTH-002: successful login stores the token and resolves `/api/me`.
 - IOS-GUEST-AUTH-003: failed login shows an error and does not enter the app.
 - IOS-CLIENT-MODE-001: client-only account enters client mode.
+- IOS-CLIENT-MODE-002: client-only account sees the jefe intro for one second after native login before entering client mode.
 - IOS-CONTRACTOR-MODE-001: contractor-only account enters contractor mode.
 - IOS-MODE-SWITCH-001: dual-role account can switch from client to contractor mode.
+- IOS-MODE-SWITCH-003: dual-role account sees a jefe/constructor choice screen after native login.
+- IOS-MODE-SWITCH-004: selecting constructor flips the floor and changes the scenario before entering contractor mode.
 - IOS-MODE-SWITCH-002: client-only account cannot switch to contractor mode.
 - IOS-MODE-RESTORE-001: dual-role account restores the previous mode when it is `client` or `contractor`, exists in latest `/api/me` roles, and account status permits app entry.
 - IOS-MODE-RESTORE-002: app falls back from a disallowed restored mode to client mode when client is available.

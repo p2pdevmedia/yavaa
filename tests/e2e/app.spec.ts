@@ -13,7 +13,9 @@ test('landing page loads and health endpoint responds', async ({ page, request }
   expect(health.status).toBe('ok');
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /Etapa 01/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Qué necesitás resolver hoy/i })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Buscar servicios/i }).first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Profesionales verificados/i })).toBeVisible();
   await expect(page.getByRole('link', { name: /Iniciar sesión/i })).toBeVisible();
 });
 

@@ -40,9 +40,9 @@ private extension AppMode {
     var title: String {
         switch self {
         case .client:
-            "Cliente"
+            "Jefe"
         case .contractor:
-            "Contratista"
+            "Constructor"
         }
     }
 }
