@@ -89,6 +89,13 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('longitude: addressLongitude');
   });
 
+  test('does not submit fallback demo market ids when saving addresses', () => {
+    expect(dashboardPanelSource).toContain('selectedAddressMarketId');
+    expect(dashboardPanelSource).toContain('isUuid');
+    expect(dashboardPanelSource).toContain('marketId: selectedAddressMarketId');
+    expect(dashboardPanelSource).not.toContain('marketId: selectedAddressMarket.id');
+  });
+
   test('uses the editable dashboard profile inside each mode profile route', () => {
     const jefeProfilePage = readFileSync(join(process.cwd(), 'src/app/dashboard/jefe/perfil/page.tsx'), 'utf8');
     const trabajadorProfilePage = readFileSync(
@@ -131,6 +138,20 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('Borrar urgencia');
     expect(dashboardPanelSource).toContain('Marcar resuelta');
     expect(dashboardPanelSource).toContain('Republicar urgencia');
+  });
+
+  test('formats emergency timestamps with the browser local timezone helper', () => {
+    expect(dashboardPanelSource).toContain("import { formatLocalDateTime } from '@/lib/date-format'");
+    expect(dashboardPanelSource).not.toContain('function formatUtcDateTime');
+    expect(dashboardPanelSource).toContain('formatLocalDateTime(emergency.createdAt)');
+    expect(dashboardPanelSource).toContain('formatLocalDateTime(emergency.expiresAt)');
+  });
+
+  test('replaces the expired emergency card locally after republishing', () => {
+    expect(dashboardPanelSource).toContain('const republishedEmergency = toDashboardEmergencyFromApi');
+    expect(dashboardPanelSource).toContain(
+      'current.filter((emergency) => emergency.id !== emergencyId && emergency.id !== republishedEmergency.id)'
+    );
   });
 
   test('shows emergency availability only while the active mode is trabajador', () => {

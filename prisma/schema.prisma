@@ -304,6 +304,7 @@ model ContractorProfile {
   addressId        String?                  @unique @map("address_id") @db.Uuid
   approvalStatus   ContractorApprovalStatus @default(DRAFT) @map("approval_status")
   acceptsEmergencies Boolean                @default(false) @map("accepts_emergencies")
+  hourlyRateCents Int?                      @map("hourly_rate_cents")
   dniNumber        String?                  @unique @map("dni_number")
   dniFrontUrl      String?                  @map("dni_front_url")
   dniBackUrl       String?                  @map("dni_back_url")

@@ -1,4 +1,4 @@
-import { ContractorApprovalStatus } from '@prisma/client';
+import { CategoryStatus, ContractorApprovalStatus } from '@prisma/client';
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 
@@ -17,6 +17,8 @@ import { resolveAppUser } from '@/lib/app-user';
 const contractorProfileUpdateSchema = z.object({
   acceptsEmergencies: z.boolean().optional().default(false),
   addressId: z.string().uuid().nullable().optional(),
+  hourlyRateCents: z.number().int().min(0).max(2_000_000_000).nullable().optional(),
+  categoryIds: z.array(z.string().uuid()).max(20).optional(),
   dniNumber: z.string().trim().min(6).max(32).nullable().optional(),
   dniFrontUrl: z.string().url().nullable().optional(),
   dniBackUrl: z.string().url().nullable().optional(),
@@ -58,6 +60,48 @@ function formValueToBoolean(value: FormDataEntryValue | null): boolean | undefin
   }
 
   return undefined;
+}
+
+function formValueToNullableInteger(value: FormDataEntryValue | null): number | null | undefined {
+  if (value === null || value instanceof File) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    return null;
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isInteger(parsed) ? parsed : Number.NaN;
+}
+
+function parseCategoryIdsJson(value: FormDataEntryValue | null): string[] | undefined {
+  if (value === null || value instanceof File) {
+    return undefined;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string') ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function getFormCategoryIds(formData: FormData): string[] | undefined {
+  const jsonCategoryIds = parseCategoryIdsJson(formData.get('categoryIdsJson'));
+
+  if (jsonCategoryIds) {
+    return jsonCategoryIds;
+  }
+
+  const categoryIds = formData
+    .getAll('categoryIds')
+    .filter((value): value is string => typeof value === 'string' && value.trim().length > 0);
+
+  return categoryIds.length > 0 ? categoryIds : undefined;
 }
 
 function getOptionalFile(formData: FormData, fieldName: string): File | undefined {
@@ -103,6 +147,8 @@ async function parseContractorProfileUpdateRequest(request: NextRequest): Promis
   const parsedBody = contractorProfileUpdateSchema.safeParse({
     acceptsEmergencies: formValueToBoolean(formData.get('acceptsEmergencies')),
     addressId: formValueToNullableString(formData.get('addressId')),
+    hourlyRateCents: formValueToNullableInteger(formData.get('hourlyRateCents')),
+    categoryIds: getFormCategoryIds(formData),
     dniNumber: formValueToNullableString(formData.get('dniNumber')),
     reviewNotes: formValueToNullableString(formData.get('reviewNotes')),
     submitForReview: formValueToBoolean(formData.get('submitForReview'))
@@ -201,6 +247,8 @@ export async function PATCH(request: NextRequest) {
 
   const prisma = getPrismaClient();
   const data = parsedBody.data;
+  const categoryIds =
+    data.categoryIds === undefined ? undefined : Array.from(new Set(data.categoryIds.filter((id) => id.length > 0)));
 
   if (data.addressId) {
     const ownershipCheck = await prisma.address.findFirst({
@@ -224,6 +272,30 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
+  if (categoryIds !== undefined && categoryIds.length > 0) {
+    const activeCategories = await prisma.category.findMany({
+      where: {
+        id: {
+          in: categoryIds
+        },
+        status: CategoryStatus.ACTIVE
+      },
+      select: {
+        id: true
+      }
+    });
+
+    if (activeCategories.length !== categoryIds.length) {
+      return jsonResponse(
+        {
+          error: 'invalid-categories',
+          message: 'All selected contractor categories must be active catalog categories.'
+        },
+        { status: 422 }
+      );
+    }
+  }
+
   const uploadedDniFront = parsedBody.files.dniFrontFile
     ? await uploadContractorProfileFileToBlob(appUser.id, 'dni-front', parsedBody.files.dniFrontFile)
     : null;
@@ -239,13 +311,15 @@ export async function PATCH(request: NextRequest) {
   };
 
   await prisma.$transaction(async (tx) => {
-    await tx.contractorProfile.upsert({
+    const contractorProfile = await tx.contractorProfile.upsert({
       where: {
         userId: appUser.id
       },
       update: {
         acceptsEmergencies: contractorProfileData.acceptsEmergencies,
         addressId: contractorProfileData.addressId ?? undefined,
+        hourlyRateCents:
+          contractorProfileData.hourlyRateCents === undefined ? undefined : contractorProfileData.hourlyRateCents,
         dniNumber: contractorProfileData.dniNumber ?? undefined,
         dniFrontUrl: contractorProfileData.dniFrontUrl ?? undefined,
         dniBackUrl: contractorProfileData.dniBackUrl ?? undefined,
@@ -258,6 +332,7 @@ export async function PATCH(request: NextRequest) {
         userId: appUser.id,
         acceptsEmergencies: contractorProfileData.acceptsEmergencies,
         addressId: contractorProfileData.addressId ?? null,
+        hourlyRateCents: contractorProfileData.hourlyRateCents ?? null,
         dniNumber: contractorProfileData.dniNumber ?? null,
         dniFrontUrl: contractorProfileData.dniFrontUrl ?? null,
         dniBackUrl: contractorProfileData.dniBackUrl ?? null,
@@ -270,6 +345,24 @@ export async function PATCH(request: NextRequest) {
       }
     });
 
+    if (categoryIds !== undefined) {
+      await tx.contractorCategory.deleteMany({
+        where: {
+          contractorProfileId: contractorProfile.id
+        }
+      });
+
+      if (categoryIds.length > 0) {
+        await tx.contractorCategory.createMany({
+          data: categoryIds.map((categoryId, index) => ({
+            contractorProfileId: contractorProfile.id,
+            categoryId,
+            isPrimary: index === 0
+          }))
+        });
+      }
+    }
+
     await ensureContractorRoleForUser(tx, appUser.id);
   });
 
@@ -280,7 +373,9 @@ export async function PATCH(request: NextRequest) {
     entityId: appUser.id,
     metadata: {
       addressChanged: contractorProfileData.addressId !== undefined,
+      categoriesChanged: categoryIds !== undefined,
       contractorRoleEnsured: true,
+      hourlyRateChanged: contractorProfileData.hourlyRateCents !== undefined,
       submittedForReview: contractorProfileData.submitForReview
     }
   });

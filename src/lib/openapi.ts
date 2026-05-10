@@ -348,6 +348,12 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     properties: {
       acceptsEmergencies: { type: 'boolean' },
       addressId: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
+      hourlyRateCents: { anyOf: [{ type: 'integer', minimum: 0, maximum: 2000000000 }, { type: 'null' }] },
+      categoryIds: {
+        type: 'array',
+        maxItems: 20,
+        items: { type: 'string', format: 'uuid' }
+      },
       dniNumber: { anyOf: [{ type: 'string', minLength: 6, maxLength: 32 }, { type: 'null' }] },
       dniFrontUrl: { anyOf: [{ type: 'string', format: 'uri' }, { type: 'null' }] },
       dniBackUrl: { anyOf: [{ type: 'string', format: 'uri' }, { type: 'null' }] },
@@ -362,6 +368,16 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     properties: {
       acceptsEmergencies: { type: 'boolean' },
       addressId: { type: 'string', format: 'uuid' },
+      hourlyRateCents: { type: 'integer', minimum: 0, maximum: 2000000000 },
+      categoryIds: {
+        type: 'array',
+        maxItems: 20,
+        items: { type: 'string', format: 'uuid' }
+      },
+      categoryIdsJson: {
+        type: 'string',
+        description: 'JSON array of active category UUIDs. Used by multipart clients that need to send an empty category selection.'
+      },
       dniNumber: { type: 'string', minLength: 6, maxLength: 32 },
       reviewNotes: { type: 'string', maxLength: 1000 },
       submitForReview: { type: 'boolean' },
@@ -1118,11 +1134,12 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
                                   {
                                     type: 'object',
                                     additionalProperties: false,
-                                    required: ['id', 'approvalStatus', 'acceptsEmergencies', 'dniNumber', 'dniFrontUrl', 'dniBackUrl', 'profilePhotoUrl', 'reviewNotes', 'submittedAt', 'reviewedAt', 'reviewedByUserId', 'addressId', 'categories', 'workZones'],
+                                    required: ['id', 'approvalStatus', 'acceptsEmergencies', 'hourlyRateCents', 'dniNumber', 'dniFrontUrl', 'dniBackUrl', 'profilePhotoUrl', 'reviewNotes', 'submittedAt', 'reviewedAt', 'reviewedByUserId', 'addressId', 'categories', 'workZones'],
                                     properties: {
                                       id: { type: 'string' },
                                       approvalStatus: { type: 'string', enum: ['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'REJECTED'] },
                                       acceptsEmergencies: { type: 'boolean' },
+                                      hourlyRateCents: { anyOf: [{ type: 'integer' }, { type: 'null' }] },
                                       dniNumber: { anyOf: [{ type: 'string' }, { type: 'null' }] },
                                       dniFrontUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },
                                       dniBackUrl: { anyOf: [{ type: 'string' }, { type: 'null' }] },

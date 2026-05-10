@@ -74,6 +74,7 @@ export type AppUserContractorProfile = {
   id: string;
   approvalStatus: string;
   acceptsEmergencies: boolean;
+  hourlyRateCents: number | null;
   dniNumber: string | null;
   dniFrontUrl: string | null;
   dniBackUrl: string | null;
@@ -151,6 +152,7 @@ type AppUserRecordQuery = {
     id: string;
     approvalStatus: string;
     acceptsEmergencies: boolean;
+    hourlyRateCents: number | null;
     dniNumber: string | null;
     dniFrontUrl: string | null;
     dniBackUrl: string | null;
@@ -250,6 +252,7 @@ function mapAppUserRecord(record: AppUserRecordQuery | null): AppUserSummary | n
         id: record.contractorProfile.id,
         approvalStatus: record.contractorProfile.approvalStatus,
         acceptsEmergencies: record.contractorProfile.acceptsEmergencies,
+        hourlyRateCents: record.contractorProfile.hourlyRateCents,
         dniNumber: record.contractorProfile.dniNumber,
         dniFrontUrl: record.contractorProfile.dniFrontUrl,
         dniBackUrl: record.contractorProfile.dniBackUrl,
@@ -372,6 +375,7 @@ export async function resolveAppUser(identity: AppUserIdentity): Promise<Resolve
           id: true,
           approvalStatus: true,
           acceptsEmergencies: true,
+          hourlyRateCents: true,
           dniNumber: true,
           dniFrontUrl: true,
           dniBackUrl: true,
@@ -505,6 +509,7 @@ export async function resolveAppUser(identity: AppUserIdentity): Promise<Resolve
           id: true,
           approvalStatus: true,
           acceptsEmergencies: true,
+          hourlyRateCents: true,
           dniNumber: true,
           dniFrontUrl: true,
           dniBackUrl: true,

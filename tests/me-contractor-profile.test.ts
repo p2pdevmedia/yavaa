@@ -1,4 +1,4 @@
-import { ContractorApprovalStatus, UserStatus } from '@prisma/client';
+import { CategoryStatus, ContractorApprovalStatus, UserStatus } from '@prisma/client';
 import { put } from '@vercel/blob';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -96,6 +96,7 @@ describe('me contractor profile API', () => {
           id: 'contractor_profile_001',
           approvalStatus: ContractorApprovalStatus.DRAFT,
           acceptsEmergencies: true,
+          hourlyRateCents: null,
           dniNumber: '12345678',
           dniFrontUrl: 'https://blob.vercel-storage.com/contractor-profiles/user_001/dni-front/front.jpg',
           dniBackUrl: 'https://blob.vercel-storage.com/contractor-profiles/user_001/dni-back/back.jpg',
@@ -156,6 +157,7 @@ describe('me contractor profile API', () => {
       update: {
         acceptsEmergencies: true,
         addressId: undefined,
+        hourlyRateCents: undefined,
         dniNumber: '12345678',
         dniFrontUrl: expect.stringMatching(/^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/dni-front\//),
         dniBackUrl: expect.stringMatching(/^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/dni-back\//),
@@ -168,6 +170,7 @@ describe('me contractor profile API', () => {
         userId: 'user_001',
         acceptsEmergencies: true,
         addressId: null,
+        hourlyRateCents: null,
         dniNumber: '12345678',
         dniFrontUrl: expect.stringMatching(/^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/dni-front\//),
         dniBackUrl: expect.stringMatching(/^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/dni-back\//),
@@ -185,9 +188,184 @@ describe('me contractor profile API', () => {
       entityId: 'user_001',
       metadata: {
         addressChanged: false,
+        categoriesChanged: false,
         contractorRoleEnsured: true,
+        hourlyRateChanged: false,
         submittedForReview: false
       }
     });
+  });
+
+  it('stores hourly rate and selected active categories server-side', async () => {
+    const appUser = {
+      id: 'user_001',
+      email: 'worker@yavaa.test',
+      supabaseAuthId: 'auth_001',
+      displayName: 'Worker User',
+      status: UserStatus.ACTIVE,
+      roles: ['client', 'contractor'],
+      profile: null,
+      addresses: [],
+      contractorProfile: null
+    };
+
+    mockedResolveRequestAuth.mockResolvedValue({
+      authenticated: true,
+      configured: true,
+      reason: null,
+      identity: {
+        id: 'auth_001',
+        email: 'worker@yavaa.test'
+      },
+      appUser,
+      matchedBy: 'supabase_auth_id',
+      permissionContext: {
+        userId: 'user_001',
+        status: UserStatus.ACTIVE,
+        roles: ['client', 'contractor']
+      }
+    } as never);
+
+    mockedResolveAppUser.mockResolvedValue({
+      configured: true,
+      matchedBy: 'supabase_auth_id',
+      identity: {
+        id: 'auth_001',
+        email: 'worker@yavaa.test'
+      },
+      user: {
+        ...appUser,
+        contractorProfile: {
+          id: 'contractor_profile_001',
+          approvalStatus: ContractorApprovalStatus.DRAFT,
+          acceptsEmergencies: false,
+          hourlyRateCents: 125000,
+          dniNumber: '12345678',
+          dniFrontUrl: null,
+          dniBackUrl: null,
+          profilePhotoUrl: null,
+          reviewNotes: null,
+          submittedAt: null,
+          reviewedAt: null,
+          reviewedByUserId: null,
+          addressId: null,
+          categories: [
+            {
+              category: {
+                id: '55555555-5555-4555-8555-555555555555',
+                slug: 'plomeria',
+                name: 'Plomería',
+                group: null
+              },
+              isPrimary: true
+            },
+            {
+              category: {
+                id: '66666666-6666-4666-8666-666666666666',
+                slug: 'electricidad',
+                name: 'Electricidad',
+                group: null
+              },
+              isPrimary: false
+            }
+          ],
+          workZones: []
+        }
+      },
+      permissionContext: {
+        userId: 'user_001',
+        status: UserStatus.ACTIVE,
+        roles: ['client', 'contractor']
+      }
+    } as never);
+
+    const tx = {
+      contractorProfile: {
+        upsert: vi.fn().mockResolvedValue({ id: 'contractor_profile_001' })
+      },
+      contractorCategory: {
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+        createMany: vi.fn().mockResolvedValue({ count: 2 })
+      }
+    };
+
+    mockedGetPrismaClient.mockReturnValue({
+      category: {
+        findMany: vi.fn().mockResolvedValue([
+          { id: '55555555-5555-4555-8555-555555555555' },
+          { id: '66666666-6666-4666-8666-666666666666' }
+        ])
+      },
+      $transaction: vi.fn(async (callback: (client: typeof tx) => Promise<void>) => callback(tx))
+    } as never);
+
+    const formData = new FormData();
+    formData.set('dniNumber', '12345678');
+    formData.set('hourlyRateCents', '125000');
+    formData.set('acceptsEmergencies', 'false');
+    formData.append('categoryIds', '55555555-5555-4555-8555-555555555555');
+    formData.append('categoryIds', '66666666-6666-4666-8666-666666666666');
+
+    const response = await PATCH({
+      headers: new Headers({ 'content-type': 'multipart/form-data; boundary=test' }),
+      formData: vi.fn().mockResolvedValue(formData)
+    } as never);
+
+    const prisma = mockedGetPrismaClient.mock.results[0]?.value as {
+      category: {
+        findMany: ReturnType<typeof vi.fn>;
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(prisma.category.findMany).toHaveBeenCalledWith({
+      where: {
+        id: {
+          in: ['55555555-5555-4555-8555-555555555555', '66666666-6666-4666-8666-666666666666']
+        },
+        status: CategoryStatus.ACTIVE
+      },
+      select: {
+        id: true
+      }
+    });
+    expect(tx.contractorProfile.upsert).toHaveBeenCalledWith({
+      where: {
+        userId: 'user_001'
+      },
+      update: expect.objectContaining({
+        hourlyRateCents: 125000
+      }),
+      create: expect.objectContaining({
+        hourlyRateCents: 125000
+      })
+    });
+    expect(tx.contractorCategory.deleteMany).toHaveBeenCalledWith({
+      where: {
+        contractorProfileId: 'contractor_profile_001'
+      }
+    });
+    expect(tx.contractorCategory.createMany).toHaveBeenCalledWith({
+      data: [
+        {
+          contractorProfileId: 'contractor_profile_001',
+          categoryId: '55555555-5555-4555-8555-555555555555',
+          isPrimary: true
+        },
+        {
+          contractorProfileId: 'contractor_profile_001',
+          categoryId: '66666666-6666-4666-8666-666666666666',
+          isPrimary: false
+        }
+      ]
+    });
+    expect(mockedRecordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          categoriesChanged: true,
+          hourlyRateChanged: true
+        })
+      })
+    );
   });
 });

@@ -15,6 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import type { DashboardView } from '@/lib/dashboard-routes';
 import type { DashboardAdminData } from '@/lib/dashboard-admin';
 import type { DashboardBooking, DashboardEmergency } from '@/lib/dashboard-workspace';
+import { formatLocalDateTime } from '@/lib/date-format';
 import type { PublicCatalogLocation, PublicCatalogMarket } from '@/lib/public-catalog';
 
 type DashboardUserStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
@@ -59,6 +60,7 @@ type DashboardUser = {
     id: string;
     approvalStatus: string;
     acceptsEmergencies: boolean;
+    hourlyRateCents: number | null;
     dniNumber: string | null;
     dniFrontUrl: string | null;
     dniBackUrl: string | null;
@@ -150,6 +152,8 @@ type ContractorProfileDraft = {
   dniNumber: string;
   addressId: string;
   acceptsEmergencies: boolean;
+  hourlyRatePesos: string;
+  categoryIds: string[];
 };
 
 type EmergencyEnvelope = {
@@ -181,6 +185,10 @@ function normalizeLocationName(value: string): string {
     .replace(/[\u0300-\u036f]/g, '')
     .trim()
     .toLowerCase();
+}
+
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function getProvinceOptions(locations: PublicCatalogLocation[]): string[] {
@@ -253,12 +261,24 @@ function buildContractorProfileDraft(user: DashboardUser): ContractorProfileDraf
   return {
     dniNumber: toStringOrEmpty(contractorProfile?.dniNumber),
     addressId: toStringOrEmpty(contractorProfile?.addressId ?? user.addresses[0]?.id),
-    acceptsEmergencies: contractorProfile?.acceptsEmergencies ?? false
+    acceptsEmergencies: contractorProfile?.acceptsEmergencies ?? false,
+    hourlyRatePesos:
+      contractorProfile?.hourlyRateCents === null || contractorProfile?.hourlyRateCents === undefined
+        ? ''
+        : String(contractorProfile.hourlyRateCents / 100),
+    categoryIds: contractorProfile?.categories.map((entry) => entry.category.id) ?? []
   };
 }
 
-function formatUtcDateTime(value: string): string {
-  return `${value.slice(0, 10)} ${value.slice(11, 16)} UTC`;
+function pesosToCents(value: string): string {
+  const trimmed = value.trim();
+
+  if (trimmed.length === 0) {
+    return '';
+  }
+
+  const parsed = Number(trimmed);
+  return Number.isFinite(parsed) ? String(Math.round(parsed * 100)) : '';
 }
 
 function formatEmergencyStatus(status: DashboardEmergency['status']): string {
@@ -440,6 +460,8 @@ export function DashboardPanel({
       const formData = new FormData();
       formData.set('dniNumber', contractorProfileDraft.dniNumber);
       formData.set('addressId', contractorProfileDraft.addressId);
+      formData.set('hourlyRateCents', pesosToCents(contractorProfileDraft.hourlyRatePesos));
+      formData.set('categoryIdsJson', JSON.stringify(contractorProfileDraft.categoryIds));
       formData.set('acceptsEmergencies', String(contractorProfileDraft.acceptsEmergencies));
       formData.set('submitForReview', String(submitForReview));
 
@@ -573,7 +595,7 @@ export function DashboardPanel({
           longitude: addressLongitude,
           type: addressDraft.type,
           isDefault: true,
-          ...(selectedAddressMarket ? { marketId: selectedAddressMarket.id } : {})
+          ...(selectedAddressMarketId ? { marketId: selectedAddressMarketId } : {})
         })
       });
 
@@ -843,7 +865,11 @@ export function DashboardPanel({
       }
 
       if (payload?.request) {
-        setEmergencies((current) => [toDashboardEmergencyFromApi(payload.request as EmergencyApiRequest), ...current]);
+        const republishedEmergency = toDashboardEmergencyFromApi(payload.request as EmergencyApiRequest);
+        setEmergencies((current) => [
+          republishedEmergency,
+          ...current.filter((emergency) => emergency.id !== emergencyId && emergency.id !== republishedEmergency.id)
+        ]);
       }
 
       setEmergencyStatus('Urgencia republicada.');
@@ -902,6 +928,8 @@ export function DashboardPanel({
       normalizeLocationName(market.city) === normalizeLocationName(addressDraft.city) &&
       normalizeLocationName(market.province) === normalizeLocationName(addressDraft.province)
   );
+  const selectedAddressMarketId =
+    selectedAddressMarket && isUuid(selectedAddressMarket.id) ? selectedAddressMarket.id : null;
   const visibleEmergencies =
     activeMode === 'contractor' ? emergencies.filter(isAvailableContractorEmergency) : emergencies;
   const emergencyListTitle = activeMode === 'contractor' ? 'Urgencias disponibles' : 'Mis urgencias creadas';
@@ -1081,6 +1109,74 @@ export function DashboardPanel({
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="contractor-hourly-rate">Precio por hora</Label>
+                  <Input
+                    id="contractor-hourly-rate"
+                    type="number"
+                    min="0"
+                    step="100"
+                    inputMode="decimal"
+                    value={contractorProfileDraft.hourlyRatePesos}
+                    onChange={(event) =>
+                      setContractorProfileDraft((current) => ({
+                        ...current,
+                        hourlyRatePesos: event.target.value
+                      }))
+                    }
+                    placeholder="15000"
+                  />
+                  <p className="text-xs text-muted-foreground">ARS por hora.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Categorías</Label>
+                  <div className="grid max-h-48 gap-2 overflow-y-auto rounded-lg border border-border/70 bg-muted/10 p-3">
+                    {categories.map((category) => {
+                      const checked = contractorProfileDraft.categoryIds.includes(category.id);
+
+                      return (
+                        <label key={category.id} className="flex items-center gap-2 text-sm text-foreground">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-border text-primary focus:ring-ring"
+                            checked={checked}
+                            onChange={(event) =>
+                              setContractorProfileDraft((current) => {
+                                const nextCategoryIds = event.target.checked
+                                  ? [...current.categoryIds, category.id]
+                                  : current.categoryIds.filter((categoryId) => categoryId !== category.id);
+
+                                return {
+                                  ...current,
+                                  categoryIds: nextCategoryIds
+                                };
+                              })
+                            }
+                          />
+                          <span>{category.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  {contractorProfileDraft.categoryIds.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {contractorProfileDraft.categoryIds.map((categoryId, index) => {
+                        const category = categories.find((item) => item.id === categoryId);
+
+                        return category ? (
+                          <Badge key={categoryId} variant={index === 0 ? 'secondary' : 'outline'}>
+                            {category.name}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Sin categorías seleccionadas.</p>
+                  )}
                 </div>
               </div>
 
@@ -1614,8 +1710,8 @@ export function DashboardPanel({
                       )}
 
                       <div className="mt-3 grid gap-2 text-xs text-muted-foreground sm:grid-cols-3">
-                        <span>Creada: {formatUtcDateTime(emergency.createdAt)}</span>
-                        <span>Vence: {formatUtcDateTime(emergency.expiresAt)}</span>
+                        <span>Creada: {formatLocalDateTime(emergency.createdAt)}</span>
+                        <span>Vence: {formatLocalDateTime(emergency.expiresAt)}</span>
                         <span>Candidatos: {emergency.candidateCount}</span>
                       </div>
                       {emergency.assignedContractorName ? (
