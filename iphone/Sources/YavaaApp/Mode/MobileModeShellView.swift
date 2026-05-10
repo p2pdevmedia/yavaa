@@ -187,6 +187,7 @@ private struct ClientYavaaView: View {
 
     @State private var categories: [CatalogCategory] = []
     @State private var providers: [PublicProviderCard] = []
+    @State private var addresses: [WebsiteAddress] = []
     @State private var selectedCategory: String?
     @State private var query = ""
     @State private var isLoading = false
@@ -208,6 +209,22 @@ private struct ClientYavaaView: View {
                         }
                     }
                     .padding(.vertical, YavaaSpacing.xs)
+                }
+            }
+
+            Section("Trabajadores") {
+                if let referenceLabel = NearbyWorkerMatcher.referenceLabel(addresses: addresses) {
+                    Text("Cercanos a \(referenceLabel)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Agrega una direccion en Perfil para ordenar trabajadores cercanos.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(nearbyProviders.prefix(5)) { provider in
+                    ProviderRow(provider: provider)
                 }
             }
 
@@ -249,6 +266,13 @@ private struct ClientYavaaView: View {
         }
     }
 
+    private var nearbyProviders: [PublicProviderCard] {
+        NearbyWorkerMatcher.closestProviders(
+            providers: providers,
+            addresses: addresses
+        )
+    }
+
     private func categoryButton(title: String, slug: String?) -> some View {
         Button {
             selectedCategory = slug
@@ -269,6 +293,7 @@ private struct ClientYavaaView: View {
             let data = try await load(category)
             categories = data.categories
             providers = data.providers
+            addresses = data.addresses
         } catch {
             errorMessage = "No se pudo cargar la API de Yavaa."
         }
@@ -698,10 +723,16 @@ private struct ProfileWorkspaceView: View {
 public struct ClientHomeData: Equatable, Sendable {
     public let categories: [CatalogCategory]
     public let providers: [PublicProviderCard]
+    public let addresses: [WebsiteAddress]
 
-    public init(categories: [CatalogCategory], providers: [PublicProviderCard]) {
+    public init(
+        categories: [CatalogCategory],
+        providers: [PublicProviderCard],
+        addresses: [WebsiteAddress]
+    ) {
         self.categories = categories
         self.providers = providers
+        self.addresses = addresses
     }
 }
 

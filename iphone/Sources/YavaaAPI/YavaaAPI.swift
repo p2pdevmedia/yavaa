@@ -285,6 +285,30 @@ public struct WebsiteAddress: Decodable, Equatable, Sendable {
     public let notes: String?
     public let type: String
     public let isDefault: Bool
+
+    public init(
+        id: String,
+        label: String,
+        line1: String,
+        line2: String?,
+        city: String,
+        province: String,
+        postalCode: String?,
+        notes: String?,
+        type: String,
+        isDefault: Bool
+    ) {
+        self.id = id
+        self.label = label
+        self.line1 = line1
+        self.line2 = line2
+        self.city = city
+        self.province = province
+        self.postalCode = postalCode
+        self.notes = notes
+        self.type = type
+        self.isDefault = isDefault
+    }
 }
 
 public struct WebsiteContractorProfile: Decodable, Equatable, Sendable {
@@ -332,6 +356,28 @@ public struct PublicProviderCard: Decodable, Equatable, Identifiable, Sendable {
     public var id: String {
         contractorProfileId
     }
+
+    public init(
+        contractorProfileId: String,
+        displayName: String,
+        bio: String?,
+        profilePhotoUrl: String?,
+        acceptsEmergencies: Bool,
+        marketSlug: String?,
+        marketCity: String?,
+        marketProvince: String?,
+        categories: [PublicProviderCategory]
+    ) {
+        self.contractorProfileId = contractorProfileId
+        self.displayName = displayName
+        self.bio = bio
+        self.profilePhotoUrl = profilePhotoUrl
+        self.acceptsEmergencies = acceptsEmergencies
+        self.marketSlug = marketSlug
+        self.marketCity = marketCity
+        self.marketProvince = marketProvince
+        self.categories = categories
+    }
 }
 
 public struct PublicProviderCategory: Decodable, Equatable, Sendable {
@@ -339,6 +385,13 @@ public struct PublicProviderCategory: Decodable, Equatable, Sendable {
     public let name: String
     public let group: String?
     public let isPrimary: Bool
+
+    public init(slug: String, name: String, group: String?, isPrimary: Bool) {
+        self.slug = slug
+        self.name = name
+        self.group = group
+        self.isPrimary = isPrimary
+    }
 }
 
 public struct AddressesResponse: Decodable, Equatable, Sendable {

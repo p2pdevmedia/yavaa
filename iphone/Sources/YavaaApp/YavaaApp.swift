@@ -112,12 +112,15 @@ public final class AppContainer: ObservableObject {
     public func loadClientHome(category: String?) async throws -> ClientHomeData {
         async let categories = apiClient.fetchCatalogCategories()
         async let providers = apiClient.searchProviders(category: category)
+        async let addresses = apiClient.fetchAddresses()
         let loadedCategories = try await categories
         let loadedProviders = try await providers
+        let loadedAddresses = try await addresses
 
         return ClientHomeData(
             categories: loadedCategories.categories,
-            providers: loadedProviders.items
+            providers: loadedProviders.items,
+            addresses: loadedAddresses.addresses
         )
     }
 
