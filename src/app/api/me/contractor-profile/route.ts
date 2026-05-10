@@ -250,11 +250,19 @@ export async function PATCH(request: NextRequest) {
   const categoryIds =
     data.categoryIds === undefined ? undefined : Array.from(new Set(data.categoryIds.filter((id) => id.length > 0)));
   let selectedAddressWorkZoneIds: string[] | undefined;
+  const defaultAddressId = appUser.addresses.find((address) => address.isDefault)?.id;
+  const contractorAddressId =
+    data.addressId === undefined ? appUser.contractorProfile?.addressId : data.addressId;
+  const coverageAddressIds = Array.from(
+    new Set([contractorAddressId, defaultAddressId].filter((id): id is string => typeof id === 'string'))
+  );
 
-  if (data.addressId) {
-    const ownershipCheck = await prisma.address.findFirst({
+  if (coverageAddressIds.length > 0) {
+    const coverageAddresses = await prisma.address.findMany({
       where: {
-        id: data.addressId,
+        id: {
+          in: coverageAddressIds
+        },
         userId: appUser.id
       },
       select: {
@@ -271,7 +279,7 @@ export async function PATCH(request: NextRequest) {
       }
     });
 
-    if (!ownershipCheck) {
+    if (data.addressId && !coverageAddresses.some((address) => address.id === data.addressId)) {
       return jsonResponse(
         {
           error: 'invalid-address',
@@ -281,7 +289,13 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    selectedAddressWorkZoneIds = ownershipCheck.market?.workZones.map((workZone) => workZone.id) ?? [];
+    selectedAddressWorkZoneIds = Array.from(
+      new Set(
+        coverageAddresses.flatMap((address) => address.market?.workZones.map((workZone) => workZone.id) ?? [])
+      )
+    );
+  } else if (data.addressId === null) {
+    selectedAddressWorkZoneIds = [];
   }
 
   if (categoryIds !== undefined && categoryIds.length > 0) {

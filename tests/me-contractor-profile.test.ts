@@ -369,7 +369,7 @@ describe('me contractor profile API', () => {
     );
   });
 
-  it('syncs contractor work zones from the selected work address market', async () => {
+  it('syncs contractor work zones from the selected work address and default address markets', async () => {
     const appUser = {
       id: 'user_001',
       email: 'worker@yavaa.test',
@@ -378,7 +378,12 @@ describe('me contractor profile API', () => {
       status: UserStatus.ACTIVE,
       roles: ['client', 'contractor'],
       profile: null,
-      addresses: [],
+      addresses: [
+        {
+          id: '33333333-3333-4333-8333-333333333333',
+          isDefault: true
+        }
+      ],
       contractorProfile: null
     };
 
@@ -455,18 +460,26 @@ describe('me contractor profile API', () => {
       },
       contractorWorkZone: {
         deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
-        createMany: vi.fn().mockResolvedValue({ count: 1 })
+        createMany: vi.fn().mockResolvedValue({ count: 2 })
       }
     };
 
     mockedGetPrismaClient.mockReturnValue({
       address: {
-        findFirst: vi.fn().mockResolvedValue({
-          id: '11111111-1111-4111-8111-111111111111',
-          market: {
-            workZones: [{ id: '22222222-2222-4222-8222-222222222222' }]
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: '11111111-1111-4111-8111-111111111111',
+            market: {
+              workZones: [{ id: '22222222-2222-4222-8222-222222222222' }]
+            }
+          },
+          {
+            id: '33333333-3333-4333-8333-333333333333',
+            market: {
+              workZones: [{ id: '44444444-4444-4444-8444-444444444444' }]
+            }
           }
-        })
+        ])
       },
       $transaction: vi.fn(async (callback: (client: typeof tx) => Promise<void>) => callback(tx))
     } as never);
@@ -481,14 +494,16 @@ describe('me contractor profile API', () => {
 
     const prisma = mockedGetPrismaClient.mock.results[0]?.value as {
       address: {
-        findFirst: ReturnType<typeof vi.fn>;
+        findMany: ReturnType<typeof vi.fn>;
       };
     };
 
     expect(response.status).toBe(200);
-    expect(prisma.address.findFirst).toHaveBeenCalledWith({
+    expect(prisma.address.findMany).toHaveBeenCalledWith({
       where: {
-        id: '11111111-1111-4111-8111-111111111111',
+        id: {
+          in: ['11111111-1111-4111-8111-111111111111', '33333333-3333-4333-8333-333333333333']
+        },
         userId: 'user_001'
       },
       select: {
@@ -514,6 +529,10 @@ describe('me contractor profile API', () => {
         {
           contractorProfileId: 'contractor_profile_001',
           workZoneId: '22222222-2222-4222-8222-222222222222'
+        },
+        {
+          contractorProfileId: 'contractor_profile_001',
+          workZoneId: '44444444-4444-4444-8444-444444444444'
         }
       ]
     });
