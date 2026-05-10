@@ -146,6 +146,15 @@ type EmergencyDraft = {
   description: string;
 };
 
+type ContractorProfileDraft = {
+  dniNumber: string;
+  addressId: string;
+  profilePhotoUrl: string;
+  dniFrontUrl: string;
+  dniBackUrl: string;
+  acceptsEmergencies: boolean;
+};
+
 type EmergencyEnvelope = {
   request?: EmergencyApiRequest;
 };
@@ -221,6 +230,25 @@ function buildEmergencyDraft(user: DashboardUser, categories: DashboardCategory[
     addressId: user.addresses[0]?.id ?? '',
     description: ''
   };
+}
+
+function buildContractorProfileDraft(user: DashboardUser): ContractorProfileDraft {
+  const contractorProfile = user.contractorProfile;
+
+  return {
+    dniNumber: toStringOrEmpty(contractorProfile?.dniNumber),
+    addressId: toStringOrEmpty(contractorProfile?.addressId ?? user.addresses[0]?.id),
+    profilePhotoUrl: toStringOrEmpty(contractorProfile?.profilePhotoUrl),
+    dniFrontUrl: toStringOrEmpty(contractorProfile?.dniFrontUrl),
+    dniBackUrl: toStringOrEmpty(contractorProfile?.dniBackUrl),
+    acceptsEmergencies: contractorProfile?.acceptsEmergencies ?? false
+  };
+}
+
+function toNullableTrimmedString(value: string): string | null {
+  const trimmed = value.trim();
+
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 function formatUtcDateTime(value: string): string {
@@ -300,6 +328,9 @@ export function DashboardPanel({
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
   const [profilePhotoInputKey, setProfilePhotoInputKey] = useState(0);
+  const [contractorProfileDraft, setContractorProfileDraft] = useState<ContractorProfileDraft>(() =>
+    buildContractorProfileDraft(initialUser)
+  );
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(() => buildAddressDraft(initialUser));
   const [emergencyDraft, setEmergencyDraft] = useState<EmergencyDraft>(() =>
     buildEmergencyDraft(initialUser, categories)
@@ -318,6 +349,7 @@ export function DashboardPanel({
   const [mutatingEmergencyId, setMutatingEmergencyId] = useState<string | null>(null);
   const [isSavingEmergencyAvailability, setIsSavingEmergencyAvailability] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingContractorProfile, setIsSavingContractorProfile] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
   const [isSwitchingContractorMode, setIsSwitchingContractorMode] = useState(false);
   const [acceptsEmergencies, setAcceptsEmergencies] = useState(
@@ -326,6 +358,8 @@ export function DashboardPanel({
   const [activeMode, setActiveMode] = useState<DashboardMode>(() => initialMode ?? getInitialDashboardMode(initialUser));
   const [modeError, setModeError] = useState<string | null>(null);
   const [modeStatus, setModeStatus] = useState<string | null>(null);
+  const [contractorProfileError, setContractorProfileError] = useState<string | null>(null);
+  const [contractorProfileStatus, setContractorProfileStatus] = useState<string | null>(null);
 
   async function parseEnvelope<TEnvelope = UserEnvelope>(response: Response): Promise<TEnvelope | null> {
     try {
@@ -372,6 +406,7 @@ export function DashboardPanel({
       if (payload?.appUser) {
         setUser(payload.appUser);
         setProfileDraft(buildProfileDraft(payload.appUser));
+        setContractorProfileDraft(buildContractorProfileDraft(payload.appUser));
         setAddressDraft(buildAddressDraft(payload.appUser));
       }
 
@@ -383,6 +418,62 @@ export function DashboardPanel({
     } finally {
       setIsSavingProfile(false);
     }
+  }
+
+  async function saveContractorProfile(submitForReview: boolean) {
+    setContractorProfileError(null);
+    setContractorProfileStatus(null);
+    setIsSavingContractorProfile(true);
+
+    try {
+      const response = await fetch('/api/me/contractor-profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          dniNumber: toNullableTrimmedString(contractorProfileDraft.dniNumber),
+          addressId: contractorProfileDraft.addressId || null,
+          profilePhotoUrl: toNullableTrimmedString(contractorProfileDraft.profilePhotoUrl),
+          dniFrontUrl: toNullableTrimmedString(contractorProfileDraft.dniFrontUrl),
+          dniBackUrl: toNullableTrimmedString(contractorProfileDraft.dniBackUrl),
+          acceptsEmergencies: contractorProfileDraft.acceptsEmergencies,
+          submitForReview
+        })
+      });
+
+      const payload = await parseEnvelope(response);
+
+      if (!response.ok) {
+        setContractorProfileError(
+          (payload as { message?: string; error?: string } | null)?.message ??
+            (payload as { error?: string } | null)?.error ??
+            'No pudimos guardar los datos de trabajador.'
+        );
+        return;
+      }
+
+      if (payload?.appUser) {
+        setUser(payload.appUser);
+        setProfileDraft(buildProfileDraft(payload.appUser));
+        setContractorProfileDraft(buildContractorProfileDraft(payload.appUser));
+        setAddressDraft(buildAddressDraft(payload.appUser));
+        setAcceptsEmergencies(payload.appUser.contractorProfile?.acceptsEmergencies ?? false);
+      }
+
+      setContractorProfileStatus(
+        submitForReview ? 'Perfil laboral enviado a revisión.' : 'Datos de trabajador guardados.'
+      );
+    } catch {
+      setContractorProfileError('No pudimos guardar los datos de trabajador.');
+    } finally {
+      setIsSavingContractorProfile(false);
+    }
+  }
+
+  function handleContractorProfileSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    void saveContractorProfile(false);
   }
 
   async function handleAddressSubmit(event: FormEvent<HTMLFormElement>) {
@@ -428,6 +519,7 @@ export function DashboardPanel({
         const hadNoAddresses = user.addresses.length === 0;
         setUser(nextAppUser);
         setProfileDraft(buildProfileDraft(nextAppUser));
+        setContractorProfileDraft(buildContractorProfileDraft(nextAppUser));
         setAddressDraft(buildAddressDraft(nextAppUser));
         setEmergencyDraft((current) => ({
           ...current,
@@ -521,6 +613,7 @@ export function DashboardPanel({
 
       if (payload?.appUser?.contractorProfile) {
         setUser(payload.appUser);
+        setContractorProfileDraft(buildContractorProfileDraft(payload.appUser));
         setAcceptsEmergencies(payload.appUser.contractorProfile.acceptsEmergencies);
       } else {
         setAcceptsEmergencies((current) => !current);
@@ -724,6 +817,7 @@ export function DashboardPanel({
       if (payload?.appUser) {
         setUser(payload.appUser);
         setProfileDraft(buildProfileDraft(payload.appUser));
+        setContractorProfileDraft(buildContractorProfileDraft(payload.appUser));
         setAddressDraft(buildAddressDraft(payload.appUser));
         setAcceptsEmergencies(payload.appUser.contractorProfile?.acceptsEmergencies ?? false);
       }
@@ -948,6 +1042,160 @@ export function DashboardPanel({
                 {modeStatus}
               </p>
             ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {view === 'perfil' && activeMode === 'contractor' ? (
+        <Card className="border-border/70 bg-card/90 shadow-soft">
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1.5">
+                <CardTitle className="font-display text-2xl">Perfil laboral</CardTitle>
+                <CardDescription>Cargá los datos de trabajador que revisa Yavaa antes de publicar tu perfil.</CardDescription>
+              </div>
+              <Badge variant={user.contractorProfile?.approvalStatus === 'APPROVED' ? 'secondary' : 'outline'}>
+                {user.contractorProfile?.approvalStatus ?? 'DRAFT'}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <form className="space-y-4" onSubmit={handleContractorProfileSubmit}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="contractor-dni">DNI</Label>
+                  <Input
+                    id="contractor-dni"
+                    value={contractorProfileDraft.dniNumber}
+                    onChange={(event) =>
+                      setContractorProfileDraft((current) => ({ ...current, dniNumber: event.target.value }))
+                    }
+                    minLength={6}
+                    maxLength={32}
+                    placeholder="12345678"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contractor-address">Dirección laboral</Label>
+                  <select
+                    id="contractor-address"
+                    className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+                    value={contractorProfileDraft.addressId}
+                    onChange={(event) =>
+                      setContractorProfileDraft((current) => ({ ...current, addressId: event.target.value }))
+                    }
+                    disabled={user.addresses.length === 0}
+                  >
+                    {user.addresses.length === 0 ? <option value="">Sin direcciones guardadas</option> : null}
+                    {user.addresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {address.label} - {address.city}, {address.province}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="contractor-profile-photo-url">Foto laboral</Label>
+                  <Input
+                    id="contractor-profile-photo-url"
+                    type="url"
+                    value={contractorProfileDraft.profilePhotoUrl}
+                    onChange={(event) =>
+                      setContractorProfileDraft((current) => ({
+                        ...current,
+                        profilePhotoUrl: event.target.value
+                      }))
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contractor-dni-front-url">DNI frente</Label>
+                  <Input
+                    id="contractor-dni-front-url"
+                    type="url"
+                    value={contractorProfileDraft.dniFrontUrl}
+                    onChange={(event) =>
+                      setContractorProfileDraft((current) => ({ ...current, dniFrontUrl: event.target.value }))
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="contractor-dni-back-url">DNI dorso</Label>
+                  <Input
+                    id="contractor-dni-back-url"
+                    type="url"
+                    value={contractorProfileDraft.dniBackUrl}
+                    onChange={(event) =>
+                      setContractorProfileDraft((current) => ({ ...current, dniBackUrl: event.target.value }))
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+              </div>
+
+              {contractorProfileError ? (
+                <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                  {contractorProfileError}
+                </p>
+              ) : null}
+
+              {contractorProfileStatus ? (
+                <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                  {contractorProfileStatus}
+                </p>
+              ) : null}
+
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button type="submit" disabled={isSavingContractorProfile}>
+                  {isSavingContractorProfile ? 'Guardando...' : 'Guardar datos de trabajador'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  disabled={isSavingContractorProfile}
+                  onClick={() => void saveContractorProfile(true)}
+                >
+                  Enviar a revisión
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {view === 'perfil' && activeMode === 'contractor' ? (
+        <Card className="border-border/70 bg-card/90 shadow-soft">
+          <CardHeader>
+            <CardTitle className="font-display text-2xl">Disponibilidad para urgencias</CardTitle>
+            <CardDescription>
+              Controlá si tu perfil entra en el dispatch de solicitudes urgentes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
+              <div className="space-y-1">
+                <p className="font-medium text-foreground">
+                  {acceptsEmergencies ? 'Urgencias activas' : 'Urgencias pausadas'}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {acceptsEmergencies
+                    ? 'Tu perfil aparece en dispatch de urgencias.'
+                    : 'Tu perfil no aparece en dispatch de urgencias.'}
+                </p>
+              </div>
+              <Button type="button" variant="secondary" onClick={handleEmergencyAvailabilityToggle}>
+                {isSavingEmergencyAvailability
+                  ? 'Guardando...'
+                  : acceptsEmergencies
+                    ? 'Desactivar urgencias'
+                    : 'Activar urgencias'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : null}
@@ -1419,38 +1667,6 @@ export function DashboardPanel({
           </form>
             </CardContent>
           </Card>
-          ) : null}
-
-          {activeMode === 'contractor' ? (
-            <Card className="border-border/70 bg-card/90 shadow-soft">
-              <CardHeader>
-                <CardTitle className="font-display text-2xl">Disponibilidad para urgencias</CardTitle>
-                <CardDescription>
-                  Controlá si tu perfil entra en el dispatch de solicitudes urgentes.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-4 rounded-lg border border-border/70 bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-1">
-                    <p className="font-medium text-foreground">
-                      {acceptsEmergencies ? 'Urgencias activas' : 'Urgencias pausadas'}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {acceptsEmergencies
-                        ? 'Tu perfil aparece en dispatch de urgencias.'
-                        : 'Tu perfil no aparece en dispatch de urgencias.'}
-                    </p>
-                  </div>
-                  <Button type="button" variant="secondary" onClick={handleEmergencyAvailabilityToggle}>
-                    {isSavingEmergencyAvailability
-                      ? 'Guardando...'
-                      : acceptsEmergencies
-                        ? 'Desactivar urgencias'
-                        : 'Activar urgencias'}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
           ) : null}
         </>
       ) : null}

@@ -105,6 +105,24 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).not.toContain("(user.roles.includes('contractor') || user.contractorProfile) ? (");
   });
 
+  test('places emergency availability inside the trabajador profile area', () => {
+    const contractorProfileIndex = dashboardPanelSource.indexOf('Perfil laboral');
+    const emergencyAvailabilityIndex = dashboardPanelSource.indexOf('Disponibilidad para urgencias');
+    const addressesIndex = dashboardPanelSource.indexOf('Direcciones guardadas');
+
+    expect(contractorProfileIndex).toBeGreaterThan(-1);
+    expect(emergencyAvailabilityIndex).toBeGreaterThan(contractorProfileIndex);
+    expect(emergencyAvailabilityIndex).toBeLessThan(addressesIndex);
+  });
+
+  test('shows the contractor profile form only while the active mode is trabajador', () => {
+    expect(dashboardPanelSource).toContain("activeMode === 'contractor' ? (");
+    expect(dashboardPanelSource).toContain('Perfil laboral');
+    expect(dashboardPanelSource).toContain('DNI');
+    expect(dashboardPanelSource).toContain('Guardar datos de trabajador');
+    expect(dashboardPanelSource).toContain("fetch('/api/me/contractor-profile'");
+  });
+
   test('keeps admin pages inside a bottom navigation shell', () => {
     const adminLayoutSource = readFileSync(join(process.cwd(), 'src/app/dashboard/admin/layout.tsx'), 'utf8');
 
