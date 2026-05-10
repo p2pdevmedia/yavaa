@@ -7426,8 +7426,8 @@
         }
       },
       "patch": {
-        "operationId": "adminUpdateUserStatus",
-        "summary": "Update user operational status",
+        "operationId": "adminUpdateUser",
+        "summary": "Update user operational status or editable profile fields",
         "tags": [
           "admin"
         ],
@@ -7451,26 +7451,95 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "additionalProperties": false,
-                "required": [
-                  "status"
-                ],
-                "properties": {
-                  "status": {
-                    "type": "string",
-                    "enum": [
-                      "ACTIVE",
-                      "SUSPENDED",
-                      "BLOCKED"
-                    ]
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "status"
+                    ],
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "ACTIVE",
+                          "SUSPENDED",
+                          "BLOCKED"
+                        ]
+                      },
+                      "reason": {
+                        "type": "string",
+                        "minLength": 8,
+                        "maxLength": 1000
+                      }
+                    }
                   },
-                  "reason": {
-                    "type": "string",
-                    "minLength": 8,
-                    "maxLength": 1000
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "displayName": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "firstName": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "lastName": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 120
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "phone": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "minLength": 5,
+                            "maxLength": 40
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "bio": {
+                        "anyOf": [
+                          {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    }
                   }
-                }
+                ]
               }
             }
           }
@@ -7488,125 +7557,169 @@
                   ],
                   "properties": {
                     "user": {
-                      "type": "object",
-                      "additionalProperties": false,
-                      "required": [
-                        "id",
-                        "email",
-                        "displayName",
-                        "status",
-                        "createdAt",
-                        "updatedAt",
-                        "profile",
-                        "roles"
-                      ],
-                      "properties": {
-                        "id": {
-                          "type": "string"
-                        },
-                        "email": {
-                          "type": "string"
-                        },
-                        "displayName": {
-                          "anyOf": [
-                            {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "additionalProperties": false,
+                          "required": [
+                            "id",
+                            "email",
+                            "displayName",
+                            "status",
+                            "createdAt",
+                            "updatedAt",
+                            "profile",
+                            "roles"
+                          ],
+                          "properties": {
+                            "id": {
                               "type": "string"
                             },
-                            {
-                              "type": "null"
-                            }
-                          ]
-                        },
-                        "status": {
-                          "type": "string",
-                          "enum": [
-                            "ACTIVE",
-                            "SUSPENDED",
-                            "BLOCKED"
-                          ]
-                        },
-                        "createdAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "updatedAt": {
-                          "type": "string",
-                          "format": "date-time"
-                        },
-                        "profile": {
-                          "anyOf": [
-                            {
-                              "type": "object",
-                              "additionalProperties": false,
-                              "required": [
-                                "firstName",
-                                "lastName",
-                                "phone"
-                              ],
-                              "properties": {
-                                "firstName": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
+                            "email": {
+                              "type": "string"
+                            },
+                            "displayName": {
+                              "anyOf": [
+                                {
+                                  "type": "string"
                                 },
-                                "lastName": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "ACTIVE",
+                                "SUSPENDED",
+                                "BLOCKED"
+                              ]
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "profile": {
+                              "anyOf": [
+                                {
+                                  "type": "object",
+                                  "additionalProperties": false,
+                                  "required": [
+                                    "firstName",
+                                    "lastName",
+                                    "phone"
+                                  ],
+                                  "properties": {
+                                    "firstName": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
                                     },
-                                    {
-                                      "type": "null"
+                                    "lastName": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
+                                    },
+                                    "phone": {
+                                      "anyOf": [
+                                        {
+                                          "type": "string"
+                                        },
+                                        {
+                                          "type": "null"
+                                        }
+                                      ]
                                     }
-                                  ]
+                                  }
                                 },
-                                "phone": {
-                                  "anyOf": [
-                                    {
-                                      "type": "string"
-                                    },
-                                    {
-                                      "type": "null"
-                                    }
-                                  ]
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "roles": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "required": [
+                                  "slug",
+                                  "name"
+                                ],
+                                "properties": {
+                                  "slug": {
+                                    "type": "string",
+                                    "enum": [
+                                      "client",
+                                      "contractor",
+                                      "admin",
+                                      "support"
+                                    ]
+                                  },
+                                  "name": {
+                                    "type": "string"
+                                  }
                                 }
                               }
-                            },
-                            {
-                              "type": "null"
                             }
-                          ]
+                          }
                         },
-                        "roles": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": false,
-                            "required": [
-                              "slug",
-                              "name"
-                            ],
-                            "properties": {
-                              "slug": {
-                                "type": "string",
-                                "enum": [
-                                  "client",
-                                  "contractor",
-                                  "admin",
-                                  "support"
-                                ]
-                              },
-                              "name": {
-                                "type": "string"
+                        {
+                          "type": "object",
+                          "additionalProperties": true,
+                          "required": [
+                            "contractorProfile",
+                            "bookingsAsClient",
+                            "bookingsAsContractor",
+                            "auditLogs"
+                          ],
+                          "properties": {
+                            "contractorProfile": {
+                              "anyOf": [
+                                {
+                                  "type": "object"
+                                },
+                                {
+                                  "type": "null"
+                                }
+                              ]
+                            },
+                            "bookingsAsClient": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "bookingsAsContractor": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
+                              }
+                            },
+                            "auditLogs": {
+                              "type": "array",
+                              "items": {
+                                "type": "object"
                               }
                             }
                           }
                         }
-                      }
+                      ]
                     }
                   }
                 }
@@ -7614,7 +7727,7 @@
             }
           },
           "400": {
-            "description": "Invalid user status payload."
+            "description": "Invalid user payload."
           },
           "401": {
             "description": "Missing or invalid session token."

@@ -1,7 +1,13 @@
 import { type NextRequest } from 'next/server';
 import { ZodError } from 'zod';
 
-import { getUserForAdmin, updateAdminUserStatusSchema, updateUserStatusForAdmin } from '@/lib/admin-users';
+import {
+  getUserForAdmin,
+  updateAdminUserProfileSchema,
+  updateAdminUserStatusSchema,
+  updateUserProfileForAdmin,
+  updateUserStatusForAdmin
+} from '@/lib/admin-users';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
 import { resolveRequestAuth } from '@/lib/request-auth';
@@ -18,7 +24,7 @@ function mapAdminUserError(error: unknown): { status: number; body: { error: str
       status: 400,
       body: {
         error: 'invalid-request',
-        message: 'User status payload is invalid.'
+        message: 'User payload is invalid.'
       }
     };
   }
@@ -131,19 +137,38 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const prisma = getPrismaClient();
 
   try {
-    const parsedBody = updateAdminUserStatusSchema.safeParse(await request.json());
+    const rawBody = await request.json();
+    let user;
 
-    if (!parsedBody.success) {
-      return jsonResponse(
-        {
-          error: 'invalid-request',
-          issues: parsedBody.error.flatten()
-        },
-        { status: 400 }
-      );
+    if (rawBody && typeof rawBody === 'object' && 'status' in rawBody) {
+      const parsedBody = updateAdminUserStatusSchema.safeParse(rawBody);
+
+      if (!parsedBody.success) {
+        return jsonResponse(
+          {
+            error: 'invalid-request',
+            issues: parsedBody.error.flatten()
+          },
+          { status: 400 }
+        );
+      }
+
+      user = await updateUserStatusForAdmin(prisma, auth.permissionContext, userId, parsedBody.data);
+    } else {
+      const parsedBody = updateAdminUserProfileSchema.safeParse(rawBody);
+
+      if (!parsedBody.success) {
+        return jsonResponse(
+          {
+            error: 'invalid-request',
+            issues: parsedBody.error.flatten()
+          },
+          { status: 400 }
+        );
+      }
+
+      user = await updateUserProfileForAdmin(prisma, auth.permissionContext, userId, parsedBody.data);
     }
-
-    const user = await updateUserStatusForAdmin(prisma, auth.permissionContext, userId, parsedBody.data);
 
     return jsonResponse(
       {

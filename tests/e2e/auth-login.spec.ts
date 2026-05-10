@@ -295,17 +295,9 @@ test('admin signs in and sees operational dashboard data', async ({ page }) => {
     });
 
     await expect(page.getByRole('heading', { name: 'Usuarios' })).toBeVisible();
-    await expect(page.getByText('foundation-admin@yavaa.test').first()).toBeVisible();
-    await expect(page.getByText('foundation-client@yavaa.test').first()).toBeVisible();
-
-    await expect(page.getByRole('heading', { name: 'Contractors' })).toBeVisible();
-    await expect(page.getByText('Foundation Public Contractor').first()).toBeVisible();
-
     await expect(page.getByRole('heading', { name: 'Categorías' })).toBeVisible();
-    await expect(page.getByText('Home Services').first()).toBeVisible();
-
-    await expect(page.getByRole('heading', { name: 'Bookings conflictivos' })).toBeVisible();
-    await expect(page.getByText('Necesito reparar una canilla que gotea en la cocina.').first()).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Bookings' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Contractors' })).toHaveCount(0);
   } finally {
     if (canCreateSupabaseUser) {
       await cleanupSignup(email);

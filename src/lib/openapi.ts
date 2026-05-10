@@ -427,6 +427,18 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const adminUserProfileInputSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      displayName: { anyOf: [{ type: 'string', minLength: 1, maxLength: 120 }, { type: 'null' }] },
+      firstName: { anyOf: [{ type: 'string', minLength: 1, maxLength: 120 }, { type: 'null' }] },
+      lastName: { anyOf: [{ type: 'string', minLength: 1, maxLength: 120 }, { type: 'null' }] },
+      phone: { anyOf: [{ type: 'string', minLength: 5, maxLength: 40 }, { type: 'null' }] },
+      bio: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] }
+    }
+  } as const;
+
   const adminUserDetailSchema = {
     allOf: [
       adminUserSchema,
@@ -1866,8 +1878,8 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           }
         },
         patch: {
-          operationId: 'adminUpdateUserStatus',
-          summary: 'Update user operational status',
+          operationId: 'adminUpdateUser',
+          summary: 'Update user operational status or editable profile fields',
           tags: ['admin'],
           security: [{ bearerAuth: [] }],
           parameters: [
@@ -1882,7 +1894,9 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
             required: true,
             content: {
               'application/json': {
-                schema: adminUserStatusInputSchema
+                schema: {
+                  oneOf: [adminUserStatusInputSchema, adminUserProfileInputSchema]
+                }
               }
             }
           },
@@ -1896,13 +1910,13 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
                     additionalProperties: false,
                     required: ['user'],
                     properties: {
-                      user: adminUserSchema
+                      user: adminUserDetailSchema
                     }
                   }
                 }
               }
             },
-            '400': { description: 'Invalid user status payload.' },
+            '400': { description: 'Invalid user payload.' },
             '401': { description: 'Missing or invalid session token.' },
             '403': { description: 'Only active admins can manage users.' },
             '404': { description: 'User not found.' },

@@ -8,7 +8,6 @@ export type DashboardAdminSection = {
 
 export const dashboardAdminSections: DashboardAdminSection[] = [
   { id: 'usuarios', label: 'Usuarios', href: '/dashboard/admin/usuarios' as Route },
-  { id: 'contractors', label: 'Contractors', href: '/dashboard/admin/contractors' as Route },
   { id: 'categorias', label: 'Categorías', href: '/dashboard/admin/categorias' as Route },
   { id: 'bookings', label: 'Bookings', href: '/dashboard/admin/bookings' as Route }
 ];

@@ -11,6 +11,14 @@ export const updateAdminUserStatusSchema = z.object({
   reason: z.string().trim().min(8).max(1000).optional()
 });
 
+export const updateAdminUserProfileSchema = z.object({
+  displayName: z.string().trim().min(1).max(120).nullable().optional(),
+  firstName: z.string().trim().min(1).max(120).nullable().optional(),
+  lastName: z.string().trim().min(1).max(120).nullable().optional(),
+  phone: z.string().trim().min(5).max(40).nullable().optional(),
+  bio: z.string().trim().max(1000).nullable().optional()
+});
+
 export type AdminUserSummary = {
   id: string;
   email: string;
@@ -602,4 +610,132 @@ export async function updateUserStatusForAdmin(
   }
 
   return serializeAdminUser(updated);
+}
+
+function normalizeEditableValue(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function getChangedProfileFields(
+  currentUser: {
+    displayName: string | null;
+    profile: {
+      firstName: string | null;
+      lastName: string | null;
+      phone: string | null;
+      bio: string | null;
+    } | null;
+  },
+  nextValues: {
+    displayName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    phone: string | null;
+    bio: string | null;
+  }
+): string[] {
+  const comparisons: Array<[string, string | null, string | null]> = [
+    ['displayName', currentUser.displayName, nextValues.displayName],
+    ['firstName', currentUser.profile?.firstName ?? null, nextValues.firstName],
+    ['lastName', currentUser.profile?.lastName ?? null, nextValues.lastName],
+    ['phone', currentUser.profile?.phone ?? null, nextValues.phone],
+    ['bio', currentUser.profile?.bio ?? null, nextValues.bio]
+  ];
+
+  return comparisons.filter(([, previousValue, nextValue]) => previousValue !== nextValue).map(([field]) => field);
+}
+
+export async function updateUserProfileForAdmin(
+  prisma: PrismaClient,
+  actor: AdminUserActor,
+  userId: string,
+  input: z.infer<typeof updateAdminUserProfileSchema>
+): Promise<AdminUserDetail> {
+  assertCanManageUsers(actor);
+
+  const parsed = updateAdminUserProfileSchema.parse(input);
+  const currentUser = await prisma.user.findUnique({
+    where: {
+      id: userId
+    },
+    select: {
+      id: true,
+      email: true,
+      displayName: true,
+      profile: {
+        select: {
+          firstName: true,
+          lastName: true,
+          phone: true,
+          bio: true
+        }
+      }
+    }
+  });
+
+  if (!currentUser) {
+    throw new Error('user-not-found');
+  }
+
+  const nextValues = {
+    displayName: normalizeEditableValue(parsed.displayName),
+    firstName: normalizeEditableValue(parsed.firstName),
+    lastName: normalizeEditableValue(parsed.lastName),
+    phone: normalizeEditableValue(parsed.phone),
+    bio: normalizeEditableValue(parsed.bio)
+  };
+  const changedFields = getChangedProfileFields(currentUser, nextValues);
+
+  await prisma.user.update({
+    where: {
+      id: userId
+    },
+    data: {
+      displayName: nextValues.displayName
+    },
+    select: {
+      id: true
+    }
+  });
+
+  await prisma.profile.upsert({
+    where: {
+      userId
+    },
+    update: {
+      firstName: nextValues.firstName,
+      lastName: nextValues.lastName,
+      phone: nextValues.phone,
+      bio: nextValues.bio
+    },
+    create: {
+      userId,
+      firstName: nextValues.firstName,
+      lastName: nextValues.lastName,
+      phone: nextValues.phone,
+      bio: nextValues.bio
+    },
+    select: {
+      id: true
+    }
+  });
+
+  if (changedFields.length > 0) {
+    await recordAuditLog({
+      actorUserId: actor.userId,
+      action: 'user.profile_updated',
+      entityType: 'user',
+      entityId: userId,
+      metadata: {
+        changedFields
+      }
+    });
+  }
+
+  return getUserForAdmin(prisma, actor, userId);
 }

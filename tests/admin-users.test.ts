@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   getUserForAdmin,
   listUsersForAdmin,
+  updateUserProfileForAdmin,
   updateUserStatusForAdmin,
   type AdminUserActor
 } from '@/lib/admin-users';
@@ -340,5 +341,103 @@ describe('admin user operations', () => {
         'missing_user'
       )
     ).rejects.toThrow('user-not-found');
+  });
+
+  it('updates editable user identity fields and records an audit log', async () => {
+    const existingUser = {
+      id: 'user_001',
+      email: 'worker@yavaa.test',
+      displayName: 'Worker User',
+      profile: {
+        firstName: 'Worker',
+        lastName: 'User',
+        phone: '+54 9 2972 222222',
+        bio: 'Electricista'
+      }
+    };
+    const updatedUser = {
+      id: 'user_001',
+      email: 'worker@yavaa.test',
+      displayName: 'Worker Edited',
+      status: UserStatus.ACTIVE,
+      createdAt: new Date('2026-05-01T10:00:00.000Z'),
+      updatedAt: new Date('2026-05-01T17:00:00.000Z'),
+      profile: {
+        firstName: 'Worker',
+        lastName: 'Edited',
+        phone: '+54 9 2972 333333',
+        avatarUrl: null,
+        bio: 'Electricista matriculado'
+      },
+      roles: [
+        {
+          role: {
+            slug: 'contractor',
+            name: 'Contractor'
+          }
+        }
+      ],
+      contractorProfile: null,
+      bookingsAsClient: [],
+      auditLogs: []
+    };
+    const findUnique = vi.fn().mockResolvedValueOnce(existingUser).mockResolvedValueOnce(updatedUser);
+    const update = vi.fn().mockResolvedValue({ id: 'user_001' });
+    const upsert = vi.fn().mockResolvedValue({ id: 'profile_001' });
+
+    const detail = await updateUserProfileForAdmin(
+      buildPrismaMock({
+        user: {
+          findUnique,
+          update
+        },
+        profile: {
+          upsert
+        }
+      } as unknown as PrismaClient),
+      activeAdmin,
+      'user_001',
+      {
+        displayName: 'Worker Edited',
+        firstName: 'Worker',
+        lastName: 'Edited',
+        phone: '+54 9 2972 333333',
+        bio: 'Electricista matriculado'
+      }
+    );
+
+    expect(update).toHaveBeenCalledWith({
+      where: { id: 'user_001' },
+      data: { displayName: 'Worker Edited' },
+      select: { id: true }
+    });
+    expect(upsert).toHaveBeenCalledWith({
+      where: { userId: 'user_001' },
+      update: {
+        firstName: 'Worker',
+        lastName: 'Edited',
+        phone: '+54 9 2972 333333',
+        bio: 'Electricista matriculado'
+      },
+      create: {
+        userId: 'user_001',
+        firstName: 'Worker',
+        lastName: 'Edited',
+        phone: '+54 9 2972 333333',
+        bio: 'Electricista matriculado'
+      },
+      select: { id: true }
+    });
+    expect(recordAuditLog).toHaveBeenCalledWith({
+      actorUserId: activeAdmin.userId,
+      action: 'user.profile_updated',
+      entityType: 'user',
+      entityId: 'user_001',
+      metadata: {
+        changedFields: ['displayName', 'lastName', 'phone', 'bio']
+      }
+    });
+    expect(detail.displayName).toBe('Worker Edited');
+    expect(detail.profile?.lastName).toBe('Edited');
   });
 });
