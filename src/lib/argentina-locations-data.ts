@@ -1,4 +1,6 @@
 // Generated from datos.gob.ar georef municipios on 2026-05-10.
+// Santa Cruz and Santiago del Estero are added as province-capital coverage rows
+// because the municipios endpoint snapshot did not include those jurisdictions.
 // Keep this file local so address selectors do not depend on a runtime external API call.
 export type ArgentinaLocationTuple = readonly [
   provinceId: string,
@@ -10,6 +12,7 @@ export type ArgentinaLocationTuple = readonly [
 ];
 
 export const argentinaLocationTuples = [
+  ["02","Ciudad Autónoma de Buenos Aires","02-caba","Ciudad Autónoma de Buenos Aires",-34.6037,-58.3816],
   ["06","Buenos Aires","060854","25 de Mayo",-35.527209,-60.2302838],
   ["06","Buenos Aires","060588","9 de Julio",-35.4812271,-60.9754254],
   ["06","Buenos Aires","060007","Adolfo Alsina",-37.1967621,-63.0560552],
@@ -2092,4 +2095,6 @@ export const argentinaLocationTuples = [
   ["90","Tucumán","908266","Yánima y El Corralito",-27.6422694,-65.7197301],
   ["90","Tucumán","900133","Yerba Buena",-26.8078338,-65.3052924],
   ["90","Tucumán","908560","Yerba Buena",-27.2330299,-65.4103123],
+  ["78","Santa Cruz","78-rio-gallegos","Río Gallegos",-51.623,-69.2168],
+  ["86","Santiago del Estero","86-santiago-del-estero","Santiago del Estero",-27.7844,-64.2673],
 ] as const satisfies readonly ArgentinaLocationTuple[];

@@ -1139,7 +1139,9 @@
                           "provinceId",
                           "provinceName",
                           "cityId",
-                          "cityName"
+                          "cityName",
+                          "latitude",
+                          "longitude"
                         ],
                         "properties": {
                           "provinceId": {
@@ -1153,6 +1155,26 @@
                           },
                           "cityName": {
                             "type": "string"
+                          },
+                          "latitude": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
+                          },
+                          "longitude": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "null"
+                              }
+                            ]
                           }
                         }
                       }
