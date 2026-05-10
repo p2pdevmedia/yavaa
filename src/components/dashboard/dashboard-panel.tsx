@@ -327,6 +327,7 @@ export function DashboardPanel({
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
   const [addressStatus, setAddressStatus] = useState<string | null>(null);
+  const [isAddressFormOpen, setIsAddressFormOpen] = useState(initialUser.addresses.length === 0);
   const [emergencyError, setEmergencyError] = useState<string | null>(null);
   const [emergencyStatus, setEmergencyStatus] = useState<string | null>(null);
   const [isSavingEmergency, setIsSavingEmergency] = useState(false);
@@ -441,6 +442,7 @@ export function DashboardPanel({
       const nextAppUser = payload?.appUser;
 
       if (nextAppUser) {
+        const hadNoAddresses = user.addresses.length === 0;
         setUser(nextAppUser);
         setProfileDraft(buildProfileDraft(nextAppUser));
         setAddressDraft(buildAddressDraft(nextAppUser));
@@ -448,8 +450,10 @@ export function DashboardPanel({
           ...current,
           addressId: nextAppUser.addresses[0]?.id ?? current.addressId
         }));
+        setIsAddressFormOpen(hadNoAddresses ? nextAppUser.addresses.length === 0 : false);
       } else {
         setAddressDraft(buildAddressDraft(user));
+        setIsAddressFormOpen(false);
       }
 
       setAddressStatus('Dirección agregada.');
@@ -1003,8 +1007,25 @@ export function DashboardPanel({
       {view === 'perfil' ? (
         <Card className="border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
-            <CardTitle className="font-display text-2xl">Direcciones guardadas</CardTitle>
-            <CardDescription>Vemos tus direcciones guardadas y podés agregar una nueva.</CardDescription>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="space-y-1.5">
+                <CardTitle className="font-display text-2xl">Direcciones guardadas</CardTitle>
+                <CardDescription>Vemos tus direcciones guardadas y podés agregar una nueva.</CardDescription>
+              </div>
+              {user.addresses.length > 0 ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  aria-expanded={isAddressFormOpen}
+                  onClick={() => {
+                    setAddressError(null);
+                    setIsAddressFormOpen((current) => !current);
+                  }}
+                >
+                  {isAddressFormOpen ? 'Ocultar formulario' : 'Agregar dirección'}
+                </Button>
+              ) : null}
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-3">
@@ -1047,145 +1068,150 @@ export function DashboardPanel({
               </>
             ) : null}
 
-            <Separator />
+            {isAddressFormOpen ? (
+              <>
+                <Separator />
+                <form className="space-y-4" onSubmit={handleAddressSubmit}>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="address-label">Etiqueta</Label>
+                      <Input
+                        id="address-label"
+                        value={addressDraft.label}
+                        onChange={(event) =>
+                          setAddressDraft((current) => ({ ...current, label: event.target.value }))
+                        }
+                        placeholder="Casa, trabajo, etc."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="address-type">Tipo</Label>
+                      <select
+                        id="address-type"
+                        className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        value={addressDraft.type}
+                        onChange={(event) =>
+                          setAddressDraft((current) => ({
+                            ...current,
+                            type: event.target.value as AddressDraft['type']
+                          }))
+                        }
+                      >
+                        <option value="HOME">HOME</option>
+                        <option value="WORK">WORK</option>
+                        <option value="OTHER">OTHER</option>
+                      </select>
+                    </div>
+                  </div>
 
-            <form className="space-y-4" onSubmit={handleAddressSubmit}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="address-label">Etiqueta</Label>
-                  <Input
-                    id="address-label"
-                    value={addressDraft.label}
-                    onChange={(event) => setAddressDraft((current) => ({ ...current, label: event.target.value }))}
-                    placeholder="Casa, trabajo, etc."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address-type">Tipo</Label>
-                  <select
-                    id="address-type"
-                    className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    value={addressDraft.type}
-                    onChange={(event) =>
-                      setAddressDraft((current) => ({
-                        ...current,
-                        type: event.target.value as AddressDraft['type']
-                      }))
-                    }
-                  >
-                    <option value="HOME">HOME</option>
-                    <option value="WORK">WORK</option>
-                    <option value="OTHER">OTHER</option>
-                  </select>
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="line1">Dirección</Label>
+                    <Input
+                      id="line1"
+                      value={addressDraft.line1}
+                      onChange={(event) => setAddressDraft((current) => ({ ...current, line1: event.target.value }))}
+                      placeholder="Calle y número"
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="line1">Dirección</Label>
-                <Input
-                  id="line1"
-                  value={addressDraft.line1}
-                  onChange={(event) => setAddressDraft((current) => ({ ...current, line1: event.target.value }))}
-                  placeholder="Calle y número"
-                />
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="province">Provincia</Label>
+                      <select
+                        id="province"
+                        className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        value={addressDraft.province}
+                        onChange={(event) => {
+                          const nextProvince = event.target.value;
+                          const nextCity = getCityOptions(addressLocations, nextProvince)[0]?.cityName ?? '';
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="province">Provincia</Label>
-                  <select
-                    id="province"
-                    className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-                    value={addressDraft.province}
-                    onChange={(event) => {
-                      const nextProvince = event.target.value;
-                      const nextCity = getCityOptions(addressLocations, nextProvince)[0]?.cityName ?? '';
+                          setAddressDraft((current) => ({
+                            ...current,
+                            province: nextProvince,
+                            city: nextCity
+                          }));
+                        }}
+                        required
+                      >
+                        <option value="">Seleccionar provincia</option>
+                        {provinceOptions.map((province) => (
+                          <option key={province} value={province}>
+                            {province}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">Ciudad</Label>
+                      <select
+                        id="city"
+                        className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+                        value={addressDraft.city}
+                        onChange={(event) => setAddressDraft((current) => ({ ...current, city: event.target.value }))}
+                        disabled={!addressDraft.province || cityOptions.length === 0}
+                        required
+                      >
+                        <option value="">Seleccionar ciudad</option>
+                        {cityOptions.map((location) => (
+                          <option key={`${location.provinceId}-${location.cityId}`} value={location.cityName}>
+                            {location.cityName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
 
-                      setAddressDraft((current) => ({
-                        ...current,
-                        province: nextProvince,
-                        city: nextCity
-                      }));
-                    }}
-                    required
-                  >
-                    <option value="">Seleccionar provincia</option>
-                    {provinceOptions.map((province) => (
-                      <option key={province} value={province}>
-                        {province}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="city">Ciudad</Label>
-                  <select
-                    id="city"
-                    className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
-                    value={addressDraft.city}
-                    onChange={(event) => setAddressDraft((current) => ({ ...current, city: event.target.value }))}
-                    disabled={!addressDraft.province || cityOptions.length === 0}
-                    required
-                  >
-                    <option value="">Seleccionar ciudad</option>
-                    {cityOptions.map((location) => (
-                      <option key={`${location.provinceId}-${location.cityId}`} value={location.cityName}>
-                        {location.cityName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="postal-code">Código postal</Label>
+                      <Input
+                        id="postal-code"
+                        value={addressDraft.postalCode}
+                        onChange={(event) =>
+                          setAddressDraft((current) => ({ ...current, postalCode: event.target.value }))
+                        }
+                        placeholder="8370"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="line2">Piso/depto</Label>
+                      <Input
+                        id="line2"
+                        value={addressDraft.line2}
+                        onChange={(event) => setAddressDraft((current) => ({ ...current, line2: event.target.value }))}
+                        placeholder="Opcional"
+                      />
+                    </div>
+                  </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="postal-code">Código postal</Label>
-                  <Input
-                    id="postal-code"
-                    value={addressDraft.postalCode}
-                    onChange={(event) =>
-                      setAddressDraft((current) => ({ ...current, postalCode: event.target.value }))
-                    }
-                    placeholder="8370"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="line2">Piso/depto</Label>
-                  <Input
-                    id="line2"
-                    value={addressDraft.line2}
-                    onChange={(event) => setAddressDraft((current) => ({ ...current, line2: event.target.value }))}
-                    placeholder="Opcional"
-                  />
-                </div>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="address-notes">Notas</Label>
+                    <Textarea
+                      id="address-notes"
+                      value={addressDraft.notes}
+                      onChange={(event) => setAddressDraft((current) => ({ ...current, notes: event.target.value }))}
+                      placeholder="Indicaciones adicionales"
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address-notes">Notas</Label>
-                <Textarea
-                  id="address-notes"
-                  value={addressDraft.notes}
-                  onChange={(event) => setAddressDraft((current) => ({ ...current, notes: event.target.value }))}
-                  placeholder="Indicaciones adicionales"
-                />
-              </div>
+                  {addressError ? (
+                    <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                      {addressError}
+                    </p>
+                  ) : null}
 
-              {addressError ? (
-                <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {addressError}
-                </p>
-              ) : null}
+                  <Button type="submit" disabled={isSavingAddress}>
+                    {isSavingAddress ? 'Guardando...' : 'Agregar dirección'}
+                  </Button>
+                </form>
+              </>
+            ) : null}
 
-              {addressStatus ? (
-                <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-                  {addressStatus}
-                </p>
-              ) : null}
-
-              <Button type="submit" disabled={isSavingAddress}>
-                {isSavingAddress ? 'Guardando...' : 'Agregar dirección'}
-              </Button>
-            </form>
+            {addressStatus ? (
+              <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                {addressStatus}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}
