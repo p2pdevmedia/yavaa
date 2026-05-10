@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { dashboardAdminSections } from '@/lib/dashboard-admin-sections';
 import type { DashboardAdminData } from '@/lib/dashboard-admin';
 
 type UserStatus = DashboardAdminData['users'][number]['status'];
@@ -334,8 +335,23 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
         </p>
       ) : null}
 
+      <nav
+        aria-label="Secciones de administración"
+        className="sticky top-0 z-10 -mx-1 flex gap-2 overflow-x-auto border-b border-border/70 bg-background/90 px-1 py-3 backdrop-blur"
+      >
+        {dashboardAdminSections.map((section) => (
+          <a
+            key={section.id}
+            href={section.href}
+            className="rounded-full border border-border/70 bg-card/90 px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
+          >
+            {section.label}
+          </a>
+        ))}
+      </nav>
+
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="border-border/70 bg-card/90 shadow-soft">
+        <Card id="usuarios" className="scroll-mt-24 border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
             <CardTitle className="font-display text-2xl">Usuarios</CardTitle>
             <CardDescription>Estados operativos y roles principales.</CardDescription>
@@ -394,7 +410,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card/90 shadow-soft">
+        <Card id="contractors" className="scroll-mt-24 border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
             <CardTitle className="font-display text-2xl">Contractors</CardTitle>
             <CardDescription>Revisión operativa de perfiles.</CardDescription>
@@ -448,7 +464,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <Card className="border-border/70 bg-card/90 shadow-soft">
+        <Card id="categorias" className="scroll-mt-24 border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
             <CardTitle className="font-display text-2xl">Categorías</CardTitle>
             <CardDescription>Catálogo moderado del marketplace.</CardDescription>
@@ -545,7 +561,7 @@ export function AdminPanel({ initialData }: AdminPanelProps) {
           </CardContent>
         </Card>
 
-        <Card className="border-border/70 bg-card/90 shadow-soft">
+        <Card id="bookings" className="scroll-mt-24 border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
             <CardTitle className="font-display text-2xl">Bookings conflictivos</CardTitle>
             <CardDescription>Correcciones operativas con trazabilidad.</CardDescription>
