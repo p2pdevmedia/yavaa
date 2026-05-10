@@ -20,6 +20,23 @@ public enum APIError: Error, Equatable, Sendable {
     case statusCode(Int)
 }
 
+public extension APIError {
+    var userFacingMessage: String {
+        switch self {
+        case .statusCode(401):
+            return "Tu sesion expiro. Volve a iniciar sesion."
+        case .statusCode(403):
+            return "Tu cuenta no tiene permiso para crear esta urgencia."
+        case .statusCode(422):
+            return "La direccion o categoria elegida no es valida para urgencias."
+        case .statusCode:
+            return "La API rechazo la solicitud."
+        case .invalidPath, .invalidResponse:
+            return "La app no pudo comunicarse correctamente con la API."
+        }
+    }
+}
+
 public enum HTTPMethod: String, Sendable {
     case get = "GET"
     case post = "POST"
@@ -154,6 +171,20 @@ public final class APIClient: @unchecked Sendable {
         return try decoder.decode(Response.self, from: data)
     }
 
+    public func sendExpectingSuccess(_ request: APIRequest) async throws {
+        let accessToken = try await tokenProvider.currentAccessToken()
+        let urlRequest = try request.urlRequest(environment: environment, accessToken: accessToken)
+        let (_, response) = try await session.data(for: urlRequest)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw APIError.invalidResponse
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw APIError.statusCode(httpResponse.statusCode)
+        }
+    }
+
     public func fetchCurrentSession() async throws -> WebsiteMeResponse {
         try await send(APIRequest(path: "/api/me", method: .get))
     }
@@ -226,6 +257,16 @@ public final class APIClient: @unchecked Sendable {
 
     public func createEmergency(_ input: EmergencyRequestInput) async throws -> EmergencyResponse {
         try await send(
+            APIRequest(
+                path: "/api/emergencies",
+                method: .post,
+                body: try JSONEncoder().encode(input)
+            )
+        )
+    }
+
+    public func createEmergencyRequest(_ input: EmergencyRequestInput) async throws {
+        try await sendExpectingSuccess(
             APIRequest(
                 path: "/api/emergencies",
                 method: .post,

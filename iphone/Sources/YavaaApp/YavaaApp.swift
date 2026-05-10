@@ -172,7 +172,7 @@ public final class AppContainer: ObservableObject {
     }
 
     public func createEmergency(_ input: EmergencyRequestInput) async throws {
-        _ = try await apiClient.createEmergency(input)
+        try await apiClient.createEmergencyRequest(input)
     }
 
     public func loadClientEmergencies() async throws -> [EmergencyRequestSummary] {

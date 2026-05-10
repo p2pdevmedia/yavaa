@@ -290,10 +290,18 @@ private struct EmergencyCreateView: View {
                 )
             )
             description = ""
-            statusMessage = "Urgencia creada. Yavaa esta buscando trabajadores disponibles."
             if let loadCreatedEmergencies {
-                createdEmergencies = try await loadCreatedEmergencies()
+                do {
+                    createdEmergencies = try await loadCreatedEmergencies()
+                } catch {
+                    statusMessage = "Urgencia creada, pero no se pudo actualizar Mis urgencias."
+                    isLoading = false
+                    return
+                }
             }
+            statusMessage = "Urgencia creada. Yavaa esta buscando trabajadores disponibles."
+        } catch let apiError as APIError {
+            statusMessage = apiError.userFacingMessage
         } catch {
             statusMessage = "No se pudo crear la urgencia en /api/emergencies."
         }
