@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import type { Route } from 'next';
-import { Activity, Pencil, Save, X } from 'lucide-react';
+import { Activity, CheckCircle2, Pencil, Save, X, XCircle } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +24,8 @@ type AdminUserEditDraft = {
   phone: string;
   bio: string;
 };
+
+type ContractorReviewAction = 'APPROVED' | 'REJECTED';
 
 function buildEditDraft(user: AdminUserDetailData): AdminUserEditDraft {
   return {
@@ -77,6 +79,8 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState<AdminUserEditDraft>(() => buildEditDraft(user));
   const [isSaving, setIsSaving] = useState(false);
+  const [contractorReviewNotes, setContractorReviewNotes] = useState(user.contractorProfile?.reviewNotes ?? '');
+  const [isReviewingContractor, setIsReviewingContractor] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -118,6 +122,59 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
       setErrorMessage('No pudimos actualizar el usuario.');
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function submitContractorReview(approvalStatus: ContractorReviewAction) {
+    if (!currentUser.contractorProfile) {
+      return;
+    }
+
+    setErrorMessage(null);
+    setStatusMessage(null);
+    setIsReviewingContractor(true);
+
+    try {
+      const response = await fetch(`/api/admin/contractors/${currentUser.contractorProfile.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          approvalStatus,
+          reviewNotes: contractorReviewNotes.trim() || null
+        })
+      });
+      const payload = await readPayload(response);
+
+      if (!response.ok) {
+        setErrorMessage(readError(payload, 'No pudimos verificar el contratista.'));
+        return;
+      }
+
+      const reviewedProfile = (payload as { contractorProfile?: Partial<NonNullable<AdminUserDetailData['contractorProfile']>> } | null)
+        ?.contractorProfile;
+
+      if (reviewedProfile) {
+        setCurrentUser((current) =>
+          current.contractorProfile
+            ? {
+                ...current,
+                contractorProfile: {
+                  ...current.contractorProfile,
+                  ...reviewedProfile
+                }
+              }
+            : current
+        );
+        setContractorReviewNotes(reviewedProfile.reviewNotes ?? '');
+      }
+
+      setStatusMessage(
+        approvalStatus === 'APPROVED' ? 'Contratista aprobado.' : 'Contratista rechazado.'
+      );
+    } catch {
+      setErrorMessage('No pudimos verificar el contratista.');
+    } finally {
+      setIsReviewingContractor(false);
     }
   }
 
@@ -313,6 +370,125 @@ export function AdminUserDetail({ user }: AdminUserDetailProps) {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="border-border/70 bg-card/90 shadow-soft">
+        <CardHeader>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CardTitle className="font-display text-2xl">Verificación de contratista</CardTitle>
+              <CardDescription>Revisión operativa del perfil laboral y documentación cargada.</CardDescription>
+            </div>
+            {currentUser.contractorProfile ? (
+              <Badge
+                variant={currentUser.contractorProfile.approvalStatus === 'APPROVED' ? 'secondary' : 'outline'}
+              >
+                {currentUser.contractorProfile.approvalStatus}
+              </Badge>
+            ) : null}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {currentUser.contractorProfile ? (
+            <>
+              <div className="grid gap-3 text-sm sm:grid-cols-3">
+                <div className="rounded-lg border border-border/70 bg-background/60 p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">DNI</p>
+                  <p className="mt-1 font-medium text-foreground">
+                    {currentUser.contractorProfile.dniNumber ?? 'sin DNI'}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-background/60 p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Enviado</p>
+                  <p className="mt-1 font-medium text-foreground">
+                    {formatDate(currentUser.contractorProfile.submittedAt)}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-border/70 bg-background/60 p-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-muted-foreground">Revisado</p>
+                  <p className="mt-1 font-medium text-foreground">
+                    {formatDate(currentUser.contractorProfile.reviewedAt)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 text-sm">
+                {currentUser.contractorProfile.profilePhotoUrl ? (
+                  <Button asChild size="sm" variant="outline">
+                    <a href={currentUser.contractorProfile.profilePhotoUrl} target="_blank" rel="noreferrer">
+                      Ver foto
+                    </a>
+                  </Button>
+                ) : null}
+                {currentUser.contractorProfile.dniFrontUrl ? (
+                  <Button asChild size="sm" variant="outline">
+                    <a href={currentUser.contractorProfile.dniFrontUrl} target="_blank" rel="noreferrer">
+                      Ver DNI frente
+                    </a>
+                  </Button>
+                ) : null}
+                {currentUser.contractorProfile.dniBackUrl ? (
+                  <Button asChild size="sm" variant="outline">
+                    <a href={currentUser.contractorProfile.dniBackUrl} target="_blank" rel="noreferrer">
+                      Ver DNI dorso
+                    </a>
+                  </Button>
+                ) : null}
+              </div>
+
+              {['DRAFT', 'PENDING_REVIEW'].includes(currentUser.contractorProfile.approvalStatus) ? (
+                <div className="space-y-3">
+                  {currentUser.contractorProfile.approvalStatus === 'DRAFT' ? (
+                    <p className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                      Este perfil está en borrador. Revisá que tenga datos suficientes antes de aprobarlo.
+                    </p>
+                  ) : null}
+                  <div className="space-y-2">
+                    <Label htmlFor="admin-contractor-review-notes">Notas de revisión</Label>
+                    <Textarea
+                      id="admin-contractor-review-notes"
+                      value={contractorReviewNotes}
+                      onChange={(event) => setContractorReviewNotes(event.target.value)}
+                      placeholder="Documentación verificada, observaciones o motivo de rechazo"
+                      rows={4}
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => void submitContractorReview('APPROVED')}
+                      disabled={isReviewingContractor}
+                    >
+                      <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                      Aprobar contratista
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => void submitContractorReview('REJECTED')}
+                      disabled={isReviewingContractor}
+                    >
+                      <XCircle className="h-4 w-4" aria-hidden="true" />
+                      Rechazar contratista
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p className="rounded-lg border border-border/70 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  {currentUser.contractorProfile.approvalStatus === 'APPROVED'
+                      ? 'Este contratista ya está verificado.'
+                      : 'Este contratista ya fue rechazado.'}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="rounded-lg border border-dashed border-border/70 bg-muted/20 px-4 py-6 text-sm text-muted-foreground">
+              Este usuario todavía no tiene perfil laboral para verificar.
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <ActivityCard title="Bookings como cliente" items={currentUser.bookingsAsClient} />

@@ -199,10 +199,51 @@ describe('admin contractor operations', () => {
     expect(reviewed.approvalStatus).toBe(ContractorApprovalStatus.APPROVED);
   });
 
-  it('rejects review attempts for contractor profiles that are not pending review', async () => {
+  it('approves a draft contractor profile from admin verification', async () => {
     const findUnique = vi.fn().mockResolvedValue({
       id: 'cp_001',
       approvalStatus: ContractorApprovalStatus.DRAFT
+    });
+    const update = vi.fn().mockResolvedValue({
+      id: 'cp_001',
+      approvalStatus: ContractorApprovalStatus.APPROVED,
+      reviewNotes: 'Verified manually by admin.',
+      reviewedAt: new Date('2026-05-01T12:00:00.000Z'),
+      reviewedByUserId: activeAdmin.userId
+    });
+
+    const reviewed = await reviewContractorProfileForAdmin(
+      buildPrismaMock({
+        contractorProfile: {
+          findUnique,
+          update
+        }
+      } as unknown as PrismaClient),
+      activeAdmin,
+      'cp_001',
+      {
+        approvalStatus: ContractorApprovalStatus.APPROVED,
+        reviewNotes: 'Verified manually by admin.'
+      }
+    );
+
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(recordAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'contractor_profile.approved',
+        metadata: expect.objectContaining({
+          previousApprovalStatus: ContractorApprovalStatus.DRAFT,
+          nextApprovalStatus: ContractorApprovalStatus.APPROVED
+        })
+      })
+    );
+    expect(reviewed.approvalStatus).toBe(ContractorApprovalStatus.APPROVED);
+  });
+
+  it('rejects review attempts for contractor profiles that were already reviewed', async () => {
+    const findUnique = vi.fn().mockResolvedValue({
+      id: 'cp_001',
+      approvalStatus: ContractorApprovalStatus.APPROVED
     });
 
     await expect(

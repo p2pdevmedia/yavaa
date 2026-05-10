@@ -332,7 +332,10 @@ export async function reviewContractorProfileForAdmin(
     throw new Error('contractor-profile-not-found');
   }
 
-  if (currentProfile.approvalStatus !== ContractorApprovalStatus.PENDING_REVIEW) {
+  if (
+    currentProfile.approvalStatus !== ContractorApprovalStatus.DRAFT &&
+    currentProfile.approvalStatus !== ContractorApprovalStatus.PENDING_REVIEW
+  ) {
     throw new Error('invalid-state');
   }
 
