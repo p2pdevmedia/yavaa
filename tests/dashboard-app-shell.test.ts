@@ -140,6 +140,15 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('Republicar urgencia');
   });
 
+  test('shows expired emergencies as a contractor-only tab inside the urgencies view', () => {
+    expect(dashboardPanelSource).toContain('contractorEmergencyTab');
+    expect(dashboardPanelSource).toContain('isExpiredContractorEmergency');
+    expect(dashboardPanelSource).toContain('role="tablist"');
+    expect(dashboardPanelSource).toContain('Disponibles');
+    expect(dashboardPanelSource).toContain('Expiradas');
+    expect(dashboardPanelSource).toContain('No hay urgencias expiradas.');
+  });
+
   test('formats emergency timestamps with the browser local timezone helper', () => {
     expect(dashboardPanelSource).toContain("import { formatLocalDateTime } from '@/lib/date-format'");
     expect(dashboardPanelSource).not.toContain('function formatUtcDateTime');

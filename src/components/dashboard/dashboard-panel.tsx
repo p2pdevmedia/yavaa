@@ -174,6 +174,7 @@ type EmergencyApiRequest = Omit<DashboardEmergency, 'assignedContractorName' | '
 };
 
 type DashboardMode = 'client' | 'contractor';
+type ContractorEmergencyTab = 'available' | 'expired';
 
 function toStringOrEmpty(value: string | null | undefined): string {
   return value ?? '';
@@ -299,6 +300,10 @@ function isAvailableContractorEmergency(emergency: DashboardEmergency): boolean 
   return ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'].includes(emergency.status);
 }
 
+function isExpiredContractorEmergency(emergency: DashboardEmergency): boolean {
+  return emergency.status === 'EXPIRED';
+}
+
 function canEditClientEmergency(emergency: DashboardEmergency): boolean {
   return ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'].includes(emergency.status);
 }
@@ -388,6 +393,7 @@ export function DashboardPanel({
   const [acceptsEmergencies, setAcceptsEmergencies] = useState(
     initialUser.contractorProfile?.acceptsEmergencies ?? false
   );
+  const [contractorEmergencyTab, setContractorEmergencyTab] = useState<ContractorEmergencyTab>('available');
   const activeMode = initialMode ?? getInitialDashboardMode(initialUser);
   const [contractorProfileError, setContractorProfileError] = useState<string | null>(null);
   const [contractorProfileStatus, setContractorProfileStatus] = useState<string | null>(null);
@@ -930,15 +936,32 @@ export function DashboardPanel({
   );
   const selectedAddressMarketId =
     selectedAddressMarket && isUuid(selectedAddressMarket.id) ? selectedAddressMarket.id : null;
+  const availableContractorEmergencies = emergencies.filter(isAvailableContractorEmergency);
+  const expiredContractorEmergencies = emergencies.filter(isExpiredContractorEmergency);
   const visibleEmergencies =
-    activeMode === 'contractor' ? emergencies.filter(isAvailableContractorEmergency) : emergencies;
-  const emergencyListTitle = activeMode === 'contractor' ? 'Urgencias disponibles' : 'Mis urgencias creadas';
+    activeMode === 'contractor'
+      ? contractorEmergencyTab === 'expired'
+        ? expiredContractorEmergencies
+        : availableContractorEmergencies
+      : emergencies;
+  const emergencyListTitle =
+    activeMode === 'contractor'
+      ? contractorEmergencyTab === 'expired'
+        ? 'Urgencias expiradas'
+        : 'Urgencias disponibles'
+      : 'Mis urgencias creadas';
   const emergencyListDescription =
     activeMode === 'contractor'
-      ? 'Solicitudes urgentes existentes y disponibles para trabajadores.'
+      ? contractorEmergencyTab === 'expired'
+        ? 'Solicitudes urgentes que ya vencieron para tu perfil de trabajador.'
+        : 'Solicitudes urgentes existentes y disponibles para trabajadores.'
       : 'Seguimiento de los pedidos urgentes que podés ver con tu cuenta.';
   const emergencyEmptyMessage =
-    activeMode === 'contractor' ? 'No hay urgencias disponibles ahora.' : 'Todavía no creaste urgencias.';
+    activeMode === 'contractor'
+      ? contractorEmergencyTab === 'expired'
+        ? 'No hay urgencias expiradas.'
+        : 'No hay urgencias disponibles ahora.'
+      : 'Todavía no creaste urgencias.';
 
   return (
     <div className="space-y-6">
@@ -1551,6 +1574,35 @@ export function DashboardPanel({
               <CardDescription>{emergencyListDescription}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
+              {activeMode === 'contractor' ? (
+                <div
+                  role="tablist"
+                  aria-label="Filtrar urgencias de trabajador"
+                  className="flex flex-wrap gap-2 rounded-lg border border-border/70 bg-muted/20 p-1"
+                >
+                  <Button
+                    type="button"
+                    role="tab"
+                    aria-selected={contractorEmergencyTab === 'available'}
+                    variant={contractorEmergencyTab === 'available' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setContractorEmergencyTab('available')}
+                  >
+                    Disponibles ({availableContractorEmergencies.length})
+                  </Button>
+                  <Button
+                    type="button"
+                    role="tab"
+                    aria-selected={contractorEmergencyTab === 'expired'}
+                    variant={contractorEmergencyTab === 'expired' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setContractorEmergencyTab('expired')}
+                  >
+                    Expiradas ({expiredContractorEmergencies.length})
+                  </Button>
+                </div>
+              ) : null}
+
               {visibleEmergencies.length > 0 ? (
                 visibleEmergencies.map((emergency) => {
                   const isEditing = editingEmergencyId === emergency.id;
