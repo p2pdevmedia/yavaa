@@ -78,10 +78,11 @@ public struct MobileModeShellView: View {
             }
         case .urgencies:
             if effectiveMode == .contractor {
-                ContractorEmergencyBrowseView(load: container.loadEmergencies)
+                ContractorEmergencyBrowseView(load: container.loadContractorEmergencies)
             } else {
                 EmergencyCreateView(
                     load: container.loadEmergencyComposerData,
+                    loadCreatedEmergencies: container.loadClientEmergencies,
                     create: container.createEmergency
                 )
             }
@@ -146,10 +147,12 @@ private struct TrabajadorHomeView: View {
 
 private struct EmergencyCreateView: View {
     let load: () async throws -> EmergencyComposerData
+    let loadCreatedEmergencies: (() async throws -> [EmergencyRequestSummary])?
     let create: (EmergencyRequestInput) async throws -> Void
 
     @State private var categories: [CatalogCategory] = []
     @State private var addresses: [WebsiteAddress] = []
+    @State private var createdEmergencies: [EmergencyRequestSummary] = []
     @State private var selectedCategoryId = ""
     @State private var selectedAddressId = ""
     @State private var description = ""
@@ -158,6 +161,23 @@ private struct EmergencyCreateView: View {
 
     var body: some View {
         Form {
+            if loadCreatedEmergencies != nil {
+                Section("Mis urgencias") {
+                    if isLoading {
+                        ProgressView()
+                    }
+
+                    if createdEmergencies.isEmpty && !isLoading {
+                        Text("Todavia no creaste urgencias.")
+                            .foregroundStyle(.secondary)
+                    }
+
+                    ForEach(createdEmergencies) { emergency in
+                        EmergencyRequestRow(emergency: emergency)
+                    }
+                }
+            }
+
             Section("Urgencia") {
                 Text("Para trabajos que necesitan resolverse en la brevedad.")
                     .foregroundStyle(.secondary)
@@ -234,6 +254,7 @@ private struct EmergencyCreateView: View {
     private func reload() async {
         isLoading = true
         statusMessage = nil
+
         do {
             let data = try await load()
             categories = data.categories
@@ -245,6 +266,15 @@ private struct EmergencyCreateView: View {
         } catch {
             statusMessage = "No se pudo cargar categorias y direcciones desde la API."
         }
+
+        if let loadCreatedEmergencies {
+            do {
+                createdEmergencies = try await loadCreatedEmergencies()
+            } catch {
+                statusMessage = "No se pudieron cargar tus urgencias desde /api/emergencies."
+            }
+        }
+
         isLoading = false
     }
 
@@ -261,6 +291,9 @@ private struct EmergencyCreateView: View {
             )
             description = ""
             statusMessage = "Urgencia creada. Yavaa esta buscando trabajadores disponibles."
+            if let loadCreatedEmergencies {
+                createdEmergencies = try await loadCreatedEmergencies()
+            }
         } catch {
             statusMessage = "No se pudo crear la urgencia en /api/emergencies."
         }

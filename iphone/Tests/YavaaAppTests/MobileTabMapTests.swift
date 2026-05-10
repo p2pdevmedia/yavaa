@@ -40,7 +40,7 @@ final class MobileTabMapTests: XCTestCase {
 
     func testUrgenciasKeepsModeSpecificIntent() {
         XCTAssertEqual(MobileTabMap.urgenciesIntent(for: nil), .draftBeforeAuth)
-        XCTAssertEqual(MobileTabMap.urgenciesIntent(for: .client), .publishEmergency)
+        XCTAssertEqual(MobileTabMap.urgenciesIntent(for: .client), .manageCreatedEmergencies)
         XCTAssertEqual(MobileTabMap.urgenciesIntent(for: .contractor), .browseEmergencies)
     }
 }

@@ -137,6 +137,16 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain("fetch('/api/me/contractor-profile'");
   });
 
+  test('uses file uploads for contractor labor and DNI photos', () => {
+    expect(dashboardPanelSource).toContain('contractor-profile-photo-file');
+    expect(dashboardPanelSource).toContain('profilePhotoFile');
+    expect(dashboardPanelSource).toContain('dniFrontFile');
+    expect(dashboardPanelSource).toContain('dniBackFile');
+    expect(dashboardPanelSource).not.toContain('contractor-profile-photo-url');
+    expect(dashboardPanelSource).not.toContain('contractor-dni-front-url');
+    expect(dashboardPanelSource).not.toContain('contractor-dni-back-url');
+  });
+
   test('keeps admin pages inside a bottom navigation shell', () => {
     const adminLayoutSource = readFileSync(join(process.cwd(), 'src/app/dashboard/admin/layout.tsx'), 'utf8');
 

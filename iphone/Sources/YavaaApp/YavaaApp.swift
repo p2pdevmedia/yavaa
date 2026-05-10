@@ -175,8 +175,16 @@ public final class AppContainer: ObservableObject {
         _ = try await apiClient.createEmergency(input)
     }
 
-    public func loadEmergencies() async throws -> [EmergencyRequestSummary] {
+    public func loadClientEmergencies() async throws -> [EmergencyRequestSummary] {
+        try await apiClient.fetchEmergencies(mode: .client).requests
+    }
+
+    public func loadContractorEmergencies() async throws -> [EmergencyRequestSummary] {
         try await apiClient.fetchEmergencies(mode: .contractor).requests
+    }
+
+    public func loadEmergencies() async throws -> [EmergencyRequestSummary] {
+        try await loadContractorEmergencies()
     }
 
     public func loadBookings() async throws -> [BookingSummary] {

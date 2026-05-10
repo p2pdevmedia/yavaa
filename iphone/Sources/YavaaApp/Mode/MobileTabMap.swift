@@ -45,7 +45,7 @@ public enum MobileTab: String, CaseIterable, Equatable, Sendable {
 
 public enum MobileUrgenciesIntent: Equatable, Sendable {
     case draftBeforeAuth
-    case publishEmergency
+    case manageCreatedEmergencies
     case browseEmergencies
 }
 
@@ -64,7 +64,7 @@ public enum MobileTabMap {
     public static func urgenciesIntent(for mode: AppMode?) -> MobileUrgenciesIntent {
         switch mode {
         case .client:
-            return .publishEmergency
+            return .manageCreatedEmergencies
         case .contractor:
             return .browseEmergencies
         case nil:

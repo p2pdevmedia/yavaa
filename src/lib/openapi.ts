@@ -294,6 +294,48 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
     }
   } as const;
 
+  const contractorProfileUpdateJsonSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      acceptsEmergencies: { type: 'boolean' },
+      addressId: { anyOf: [{ type: 'string', format: 'uuid' }, { type: 'null' }] },
+      dniNumber: { anyOf: [{ type: 'string', minLength: 6, maxLength: 32 }, { type: 'null' }] },
+      dniFrontUrl: { anyOf: [{ type: 'string', format: 'uri' }, { type: 'null' }] },
+      dniBackUrl: { anyOf: [{ type: 'string', format: 'uri' }, { type: 'null' }] },
+      profilePhotoUrl: { anyOf: [{ type: 'string', format: 'uri' }, { type: 'null' }] },
+      reviewNotes: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] },
+      submitForReview: { type: 'boolean' }
+    }
+  } as const;
+
+  const contractorProfileUpdateMultipartSchema = {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      acceptsEmergencies: { type: 'boolean' },
+      addressId: { type: 'string', format: 'uuid' },
+      dniNumber: { type: 'string', minLength: 6, maxLength: 32 },
+      reviewNotes: { type: 'string', maxLength: 1000 },
+      submitForReview: { type: 'boolean' },
+      profilePhotoFile: {
+        type: 'string',
+        format: 'binary',
+        description: 'Public labor profile photo upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB.'
+      },
+      dniFrontFile: {
+        type: 'string',
+        format: 'binary',
+        description: 'Private DNI front upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB.'
+      },
+      dniBackFile: {
+        type: 'string',
+        format: 'binary',
+        description: 'Private DNI back upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB.'
+      }
+    }
+  } as const;
+
   const bookingMessageSchema = {
     type: 'object',
     additionalProperties: false,
@@ -1178,6 +1220,17 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
           summary: 'Update contractor profile',
           tags: ['me'],
           security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'multipart/form-data': {
+                schema: contractorProfileUpdateMultipartSchema
+              },
+              'application/json': {
+                schema: contractorProfileUpdateJsonSchema
+              }
+            }
+          },
           responses: {
             '200': { description: 'Updated contractor profile, ensured contractor role, and refreshed user state.' },
             '400': { description: 'Invalid contractor profile payload.' },

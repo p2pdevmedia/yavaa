@@ -4,6 +4,10 @@ import { z } from 'zod';
 
 import { recordAuditLog } from '@/lib/audit';
 import { ensureContractorRoleForUser } from '@/lib/contractor-profile';
+import {
+  uploadContractorProfileFileToBlob,
+  validateContractorProfileFile
+} from '@/lib/contractor-profile-file-storage';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
 import { canManageContractorProfile } from '@/lib/permissions';
@@ -20,6 +24,135 @@ const contractorProfileUpdateSchema = z.object({
   reviewNotes: z.string().trim().max(1000).nullable().optional(),
   submitForReview: z.boolean().optional().default(false)
 });
+
+type ContractorProfileFileInputs = {
+  profilePhotoFile?: File;
+  dniFrontFile?: File;
+  dniBackFile?: File;
+};
+
+function formValueToNullableString(value: FormDataEntryValue | null): string | null | undefined {
+  if (value === null || value instanceof File) {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function formValueToBoolean(value: FormDataEntryValue | null): boolean | undefined {
+  if (value === null || value instanceof File) {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === '') {
+    return undefined;
+  }
+
+  if (normalized === 'true') {
+    return true;
+  }
+
+  if (normalized === 'false') {
+    return false;
+  }
+
+  return undefined;
+}
+
+function getOptionalFile(formData: FormData, fieldName: string): File | undefined {
+  const value = formData.get(fieldName);
+  return value instanceof File && value.size > 0 ? value : undefined;
+}
+
+async function parseContractorProfileUpdateRequest(request: NextRequest): Promise<
+  | {
+      success: true;
+      data: z.infer<typeof contractorProfileUpdateSchema>;
+      files: ContractorProfileFileInputs;
+    }
+  | {
+      success: false;
+      issues: unknown;
+    }
+> {
+  const contentType = (request as { headers?: Headers }).headers?.get('content-type') ?? '';
+
+  if (!contentType.toLowerCase().includes('multipart/form-data')) {
+    const parsedBody = contractorProfileUpdateSchema.safeParse(await request.json());
+
+    if (!parsedBody.success) {
+      return {
+        success: false,
+        issues: parsedBody.error.flatten()
+      };
+    }
+
+    return {
+      success: true,
+      data: parsedBody.data,
+      files: {}
+    };
+  }
+
+  const formData = await request.formData();
+  const files: ContractorProfileFileInputs = {
+    profilePhotoFile: getOptionalFile(formData, 'profilePhotoFile'),
+    dniFrontFile: getOptionalFile(formData, 'dniFrontFile'),
+    dniBackFile: getOptionalFile(formData, 'dniBackFile')
+  };
+  const parsedBody = contractorProfileUpdateSchema.safeParse({
+    acceptsEmergencies: formValueToBoolean(formData.get('acceptsEmergencies')),
+    addressId: formValueToNullableString(formData.get('addressId')),
+    dniNumber: formValueToNullableString(formData.get('dniNumber')),
+    reviewNotes: formValueToNullableString(formData.get('reviewNotes')),
+    submitForReview: formValueToBoolean(formData.get('submitForReview'))
+  });
+
+  if (!parsedBody.success) {
+    return {
+      success: false,
+      issues: parsedBody.error.flatten()
+    };
+  }
+
+  const fileIssues: Record<string, string[]> = {};
+  const profilePhotoIssue = files.profilePhotoFile
+    ? validateContractorProfileFile('profile-photo', files.profilePhotoFile)
+    : null;
+  const dniFrontIssue = files.dniFrontFile ? validateContractorProfileFile('dni-front', files.dniFrontFile) : null;
+  const dniBackIssue = files.dniBackFile ? validateContractorProfileFile('dni-back', files.dniBackFile) : null;
+
+  if (profilePhotoIssue) {
+    fileIssues.profilePhotoFile = [profilePhotoIssue];
+  }
+
+  if (dniFrontIssue) {
+    fileIssues.dniFrontFile = [dniFrontIssue];
+  }
+
+  if (dniBackIssue) {
+    fileIssues.dniBackFile = [dniBackIssue];
+  }
+
+  if (Object.keys(fileIssues).length > 0) {
+    return {
+      success: false,
+      issues: {
+        fieldErrors: fileIssues,
+        formErrors: []
+      }
+    };
+  }
+
+  return {
+    success: true,
+    data: parsedBody.data,
+    files
+  };
+}
 
 export async function GET(request: NextRequest) {
   const auth = await resolveRequestAuth(request);
@@ -64,13 +197,13 @@ export async function PATCH(request: NextRequest) {
   }
 
   const appUser = auth.appUser;
-  const parsedBody = contractorProfileUpdateSchema.safeParse(await request.json());
+  const parsedBody = await parseContractorProfileUpdateRequest(request);
 
   if (!parsedBody.success) {
     return jsonResponse(
       {
         error: 'invalid-request',
-        issues: parsedBody.error.flatten()
+        issues: parsedBody.issues
       },
       { status: 400 }
     );
@@ -81,10 +214,10 @@ export async function PATCH(request: NextRequest) {
 
   if (data.addressId) {
     const ownershipCheck = await prisma.address.findFirst({
-        where: {
-          id: data.addressId,
-          userId: appUser.id
-        },
+      where: {
+        id: data.addressId,
+        userId: appUser.id
+      },
       select: {
         id: true
       }
@@ -101,33 +234,51 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
+  const uploadedProfilePhoto = parsedBody.files.profilePhotoFile
+    ? await uploadContractorProfileFileToBlob(appUser.id, 'profile-photo', parsedBody.files.profilePhotoFile)
+    : null;
+  const uploadedDniFront = parsedBody.files.dniFrontFile
+    ? await uploadContractorProfileFileToBlob(appUser.id, 'dni-front', parsedBody.files.dniFrontFile)
+    : null;
+  const uploadedDniBack = parsedBody.files.dniBackFile
+    ? await uploadContractorProfileFileToBlob(appUser.id, 'dni-back', parsedBody.files.dniBackFile)
+    : null;
+  const contractorProfileData = {
+    ...data,
+    profilePhotoUrl: uploadedProfilePhoto?.storageUrl ?? data.profilePhotoUrl,
+    dniFrontUrl: uploadedDniFront?.storageUrl ?? data.dniFrontUrl,
+    dniBackUrl: uploadedDniBack?.storageUrl ?? data.dniBackUrl
+  };
+
   await prisma.$transaction(async (tx) => {
     await tx.contractorProfile.upsert({
       where: {
         userId: appUser.id
       },
       update: {
-        acceptsEmergencies: data.acceptsEmergencies,
-        addressId: data.addressId ?? undefined,
-        dniNumber: data.dniNumber ?? undefined,
-        dniFrontUrl: data.dniFrontUrl ?? undefined,
-        dniBackUrl: data.dniBackUrl ?? undefined,
-        profilePhotoUrl: data.profilePhotoUrl ?? undefined,
-        reviewNotes: data.reviewNotes ?? undefined,
-        approvalStatus: data.submitForReview ? ContractorApprovalStatus.PENDING_REVIEW : undefined,
-        submittedAt: data.submitForReview ? new Date() : undefined
+        acceptsEmergencies: contractorProfileData.acceptsEmergencies,
+        addressId: contractorProfileData.addressId ?? undefined,
+        dniNumber: contractorProfileData.dniNumber ?? undefined,
+        dniFrontUrl: contractorProfileData.dniFrontUrl ?? undefined,
+        dniBackUrl: contractorProfileData.dniBackUrl ?? undefined,
+        profilePhotoUrl: contractorProfileData.profilePhotoUrl ?? undefined,
+        reviewNotes: contractorProfileData.reviewNotes ?? undefined,
+        approvalStatus: contractorProfileData.submitForReview ? ContractorApprovalStatus.PENDING_REVIEW : undefined,
+        submittedAt: contractorProfileData.submitForReview ? new Date() : undefined
       },
       create: {
         userId: appUser.id,
-        acceptsEmergencies: data.acceptsEmergencies,
-        addressId: data.addressId ?? null,
-        dniNumber: data.dniNumber ?? null,
-        dniFrontUrl: data.dniFrontUrl ?? null,
-        dniBackUrl: data.dniBackUrl ?? null,
-        profilePhotoUrl: data.profilePhotoUrl ?? null,
-        reviewNotes: data.reviewNotes ?? null,
-        approvalStatus: data.submitForReview ? ContractorApprovalStatus.PENDING_REVIEW : ContractorApprovalStatus.DRAFT,
-        submittedAt: data.submitForReview ? new Date() : null
+        acceptsEmergencies: contractorProfileData.acceptsEmergencies,
+        addressId: contractorProfileData.addressId ?? null,
+        dniNumber: contractorProfileData.dniNumber ?? null,
+        dniFrontUrl: contractorProfileData.dniFrontUrl ?? null,
+        dniBackUrl: contractorProfileData.dniBackUrl ?? null,
+        profilePhotoUrl: contractorProfileData.profilePhotoUrl ?? null,
+        reviewNotes: contractorProfileData.reviewNotes ?? null,
+        approvalStatus: contractorProfileData.submitForReview
+          ? ContractorApprovalStatus.PENDING_REVIEW
+          : ContractorApprovalStatus.DRAFT,
+        submittedAt: contractorProfileData.submitForReview ? new Date() : null
       }
     });
 
@@ -136,13 +287,13 @@ export async function PATCH(request: NextRequest) {
 
   await recordAuditLog({
     actorUserId: appUser.id,
-    action: data.submitForReview ? 'contractor_profile.submitted' : 'contractor_profile.updated',
+    action: contractorProfileData.submitForReview ? 'contractor_profile.submitted' : 'contractor_profile.updated',
     entityType: 'contractor_profile',
     entityId: appUser.id,
     metadata: {
-      addressChanged: data.addressId !== undefined,
+      addressChanged: contractorProfileData.addressId !== undefined,
       contractorRoleEnsured: true,
-      submittedForReview: data.submitForReview
+      submittedForReview: contractorProfileData.submitForReview
     }
   });
 

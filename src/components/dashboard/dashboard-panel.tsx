@@ -148,9 +148,6 @@ type EmergencyDraft = {
 type ContractorProfileDraft = {
   dniNumber: string;
   addressId: string;
-  profilePhotoUrl: string;
-  dniFrontUrl: string;
-  dniBackUrl: string;
   acceptsEmergencies: boolean;
 };
 
@@ -237,17 +234,8 @@ function buildContractorProfileDraft(user: DashboardUser): ContractorProfileDraf
   return {
     dniNumber: toStringOrEmpty(contractorProfile?.dniNumber),
     addressId: toStringOrEmpty(contractorProfile?.addressId ?? user.addresses[0]?.id),
-    profilePhotoUrl: toStringOrEmpty(contractorProfile?.profilePhotoUrl),
-    dniFrontUrl: toStringOrEmpty(contractorProfile?.dniFrontUrl),
-    dniBackUrl: toStringOrEmpty(contractorProfile?.dniBackUrl),
     acceptsEmergencies: contractorProfile?.acceptsEmergencies ?? false
   };
-}
-
-function toNullableTrimmedString(value: string): string | null {
-  const trimmed = value.trim();
-
-  return trimmed.length > 0 ? trimmed : null;
 }
 
 function formatUtcDateTime(value: string): string {
@@ -327,6 +315,10 @@ export function DashboardPanel({
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
   const [profilePhotoInputKey, setProfilePhotoInputKey] = useState(0);
+  const [contractorProfilePhotoFile, setContractorProfilePhotoFile] = useState<File | null>(null);
+  const [contractorDniFrontFile, setContractorDniFrontFile] = useState<File | null>(null);
+  const [contractorDniBackFile, setContractorDniBackFile] = useState<File | null>(null);
+  const [contractorFileInputKey, setContractorFileInputKey] = useState(0);
   const [contractorProfileDraft, setContractorProfileDraft] = useState<ContractorProfileDraft>(() =>
     buildContractorProfileDraft(initialUser)
   );
@@ -425,20 +417,27 @@ export function DashboardPanel({
     setIsSavingContractorProfile(true);
 
     try {
+      const formData = new FormData();
+      formData.set('dniNumber', contractorProfileDraft.dniNumber);
+      formData.set('addressId', contractorProfileDraft.addressId);
+      formData.set('acceptsEmergencies', String(contractorProfileDraft.acceptsEmergencies));
+      formData.set('submitForReview', String(submitForReview));
+
+      if (contractorProfilePhotoFile) {
+        formData.set('profilePhotoFile', contractorProfilePhotoFile);
+      }
+
+      if (contractorDniFrontFile) {
+        formData.set('dniFrontFile', contractorDniFrontFile);
+      }
+
+      if (contractorDniBackFile) {
+        formData.set('dniBackFile', contractorDniBackFile);
+      }
+
       const response = await fetch('/api/me/contractor-profile', {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          dniNumber: toNullableTrimmedString(contractorProfileDraft.dniNumber),
-          addressId: contractorProfileDraft.addressId || null,
-          profilePhotoUrl: toNullableTrimmedString(contractorProfileDraft.profilePhotoUrl),
-          dniFrontUrl: toNullableTrimmedString(contractorProfileDraft.dniFrontUrl),
-          dniBackUrl: toNullableTrimmedString(contractorProfileDraft.dniBackUrl),
-          acceptsEmergencies: contractorProfileDraft.acceptsEmergencies,
-          submitForReview
-        })
+        body: formData
       });
 
       const payload = await parseEnvelope(response);
@@ -460,6 +459,10 @@ export function DashboardPanel({
         setAcceptsEmergencies(payload.appUser.contractorProfile?.acceptsEmergencies ?? false);
       }
 
+      setContractorProfilePhotoFile(null);
+      setContractorDniFrontFile(null);
+      setContractorDniBackFile(null);
+      setContractorFileInputKey((current) => current + 1);
       setContractorProfileStatus(
         submitForReview ? 'Perfil laboral enviado a revisión.' : 'Datos de trabajador guardados.'
       );
@@ -1097,43 +1100,49 @@ export function DashboardPanel({
 
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="contractor-profile-photo-url">Foto laboral</Label>
+                  <Label htmlFor="contractor-profile-photo-file">Foto laboral</Label>
                   <Input
-                    id="contractor-profile-photo-url"
-                    type="url"
-                    value={contractorProfileDraft.profilePhotoUrl}
-                    onChange={(event) =>
-                      setContractorProfileDraft((current) => ({
-                        ...current,
-                        profilePhotoUrl: event.target.value
-                      }))
-                    }
-                    placeholder="https://..."
+                    key={`profile-photo-${contractorFileInputKey}`}
+                    id="contractor-profile-photo-file"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => setContractorProfilePhotoFile(event.target.files?.[0] ?? null)}
                   />
+                  {contractorProfilePhotoFile ? (
+                    <p className="text-xs text-muted-foreground">{contractorProfilePhotoFile.name}</p>
+                  ) : user.contractorProfile?.profilePhotoUrl ? (
+                    <p className="text-xs text-muted-foreground">Foto laboral guardada.</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contractor-dni-front-url">DNI frente</Label>
+                  <Label htmlFor="contractor-dni-front-file">DNI frente</Label>
                   <Input
-                    id="contractor-dni-front-url"
-                    type="url"
-                    value={contractorProfileDraft.dniFrontUrl}
-                    onChange={(event) =>
-                      setContractorProfileDraft((current) => ({ ...current, dniFrontUrl: event.target.value }))
-                    }
-                    placeholder="https://..."
+                    key={`dni-front-${contractorFileInputKey}`}
+                    id="contractor-dni-front-file"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => setContractorDniFrontFile(event.target.files?.[0] ?? null)}
                   />
+                  {contractorDniFrontFile ? (
+                    <p className="text-xs text-muted-foreground">{contractorDniFrontFile.name}</p>
+                  ) : user.contractorProfile?.dniFrontUrl ? (
+                    <p className="text-xs text-muted-foreground">DNI frente guardado.</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="contractor-dni-back-url">DNI dorso</Label>
+                  <Label htmlFor="contractor-dni-back-file">DNI dorso</Label>
                   <Input
-                    id="contractor-dni-back-url"
-                    type="url"
-                    value={contractorProfileDraft.dniBackUrl}
-                    onChange={(event) =>
-                      setContractorProfileDraft((current) => ({ ...current, dniBackUrl: event.target.value }))
-                    }
-                    placeholder="https://..."
+                    key={`dni-back-${contractorFileInputKey}`}
+                    id="contractor-dni-back-file"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={(event) => setContractorDniBackFile(event.target.files?.[0] ?? null)}
                   />
+                  {contractorDniBackFile ? (
+                    <p className="text-xs text-muted-foreground">{contractorDniBackFile.name}</p>
+                  ) : user.contractorProfile?.dniBackUrl ? (
+                    <p className="text-xs text-muted-foreground">DNI dorso guardado.</p>
+                  ) : null}
                 </div>
               </div>
 

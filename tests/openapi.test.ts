@@ -21,6 +21,11 @@ describe('openapi foundation', () => {
     expect(document.paths['/api/me/addresses/{addressId}']?.patch).toBeDefined();
     expect(document.paths['/api/me/addresses/{addressId}']?.delete).toBeDefined();
     expect(document.paths['/api/me/contractor-profile']).toBeDefined();
+    expect(
+      (document.paths['/api/me/contractor-profile']?.patch?.requestBody as
+        | { content?: Record<string, unknown> }
+        | undefined)?.content?.['multipart/form-data']
+    ).toBeDefined();
     expect(document.paths['/api/catalog/categories']).toBeDefined();
     expect(document.paths['/api/catalog/markets']).toBeDefined();
     expect(document.paths['/api/providers']).toBeDefined();
