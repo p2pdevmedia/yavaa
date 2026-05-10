@@ -64,3 +64,21 @@ export function buildRootAuthCodeRedirectPath(params: RootAuthCodeParams): strin
 
   return `${redirectPath.pathname}${redirectPath.search}`;
 }
+
+export function buildRootAuthHashRedirectPath(hash: string): string | null {
+  if (!hash.startsWith('#')) {
+    return null;
+  }
+
+  const hashParams = new URLSearchParams(hash.slice(1));
+
+  if (hashParams.get('type') !== 'recovery') {
+    return null;
+  }
+
+  if (!hashParams.has('access_token') || !hashParams.has('refresh_token')) {
+    return null;
+  }
+
+  return `/reset-password${hash}`;
+}

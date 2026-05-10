@@ -64,6 +64,13 @@ test('Supabase recovery codes that land on root continue to the reset callback',
   expect(response.headers().location).toBe('/auth/callback?code=pkce_test_code&next=%2Freset-password');
 });
 
+test('Supabase implicit recovery links that land on root continue to reset password', async ({ page }) => {
+  await page.goto('/#access_token=recovery_access&refresh_token=recovery_refresh&type=recovery');
+
+  await expect(page).toHaveURL(/\/reset-password#access_token=recovery_access&refresh_token=recovery_refresh&type=recovery$/);
+  await expect(page.getByRole('heading', { name: /Nueva contraseña/i })).toBeVisible();
+});
+
 test('landing page exposes the public discovery entry point', async ({ page }) => {
   await page.goto('/');
 

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
+import { RootAuthRedirect } from '@/components/auth/root-auth-redirect';
 import { GuestShell } from '@/components/app-shell/guest-shell';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -107,6 +108,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   return (
     <GuestShell>
+      <RootAuthRedirect />
       <main className="min-h-screen bg-[#f6efe3] text-[#1f1a14]">
       <section className="mx-auto grid min-h-screen w-full max-w-7xl gap-8 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_440px] lg:px-8 lg:py-8">
         <div className="flex min-h-[calc(100vh-2.5rem)] flex-col">

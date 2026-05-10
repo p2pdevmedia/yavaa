@@ -4,6 +4,7 @@ import {
   buildAuthCallbackRedirectTo,
   buildAuthEmailRedirectTo,
   buildPasswordResetRedirectTo,
+  buildRootAuthHashRedirectPath,
   buildRootAuthCodeRedirectPath,
   getAuthRedirectBaseUrl
 } from '@/lib/auth-redirect';
@@ -58,5 +59,13 @@ describe('auth redirect helpers', () => {
     expect(buildRootAuthCodeRedirectPath({ code: 'pkce-test-code' })).toBe(
       '/auth/callback?code=pkce-test-code&next=%2Freset-password'
     );
+  });
+
+  it('recovers Supabase implicit recovery links that land on the site root hash', () => {
+    expect(
+      buildRootAuthHashRedirectPath(
+        '#access_token=recovery-access&refresh_token=recovery-refresh&type=recovery'
+      )
+    ).toBe('/reset-password#access_token=recovery-access&refresh_token=recovery-refresh&type=recovery');
   });
 });
