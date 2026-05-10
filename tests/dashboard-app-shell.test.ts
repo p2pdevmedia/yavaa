@@ -40,6 +40,25 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).not.toContain("view === 'direcciones'");
   });
 
+  test('uses Argentina catalog selectors for web address province and city', () => {
+    const dashboardViewPageSource = readFileSync(
+      join(process.cwd(), 'src/app/dashboard/dashboard-view-page.tsx'),
+      'utf8'
+    );
+
+    expect(dashboardViewPageSource).toContain('listPublicCatalogLocations');
+    expect(dashboardViewPageSource).toContain('addressLocations');
+    expect(dashboardPanelSource).toContain('addressLocations: PublicCatalogLocation[]');
+    expect(dashboardPanelSource).toContain('provinceOptions');
+    expect(dashboardPanelSource).toContain('cityOptions');
+    expect(dashboardPanelSource).toContain('selectedAddressMarket');
+    expect(dashboardPanelSource).toContain('<select');
+    expect(dashboardPanelSource).toContain('id="province"');
+    expect(dashboardPanelSource).toContain('id="city"');
+    expect(dashboardPanelSource).not.toContain('<Input\n                    id="city"');
+    expect(dashboardPanelSource).not.toContain('<Input\n                    id="province"');
+  });
+
   test('uses the editable dashboard profile inside each mode profile route', () => {
     const jefeProfilePage = readFileSync(join(process.cwd(), 'src/app/dashboard/jefe/perfil/page.tsx'), 'utf8');
     const trabajadorProfilePage = readFileSync(

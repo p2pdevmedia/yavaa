@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 import { Bell, Glasses, HardHat } from 'lucide-react';
@@ -20,6 +20,7 @@ import { dashboardProfilePath, type DashboardView } from '@/lib/dashboard-routes
 import type { DashboardNotification } from '@/lib/dashboard-notifications';
 import type { DashboardAdminData } from '@/lib/dashboard-admin';
 import type { DashboardBooking, DashboardEmergency } from '@/lib/dashboard-workspace';
+import type { PublicCatalogLocation, PublicCatalogMarket } from '@/lib/public-catalog';
 
 type DashboardUserStatus = 'ACTIVE' | 'SUSPENDED' | 'BLOCKED';
 type DashboardRoleSlug = 'client' | 'contractor' | 'admin' | 'support';
@@ -119,6 +120,8 @@ export type DashboardPanelProps = {
   emergencies: DashboardEmergency[];
   notifications: DashboardNotification[];
   adminData: DashboardAdminData | null;
+  addressMarkets: PublicCatalogMarket[];
+  addressLocations: PublicCatalogLocation[];
 };
 
 type ProfileDraft = {
@@ -167,6 +170,28 @@ type DashboardMode = 'client' | 'contractor';
 
 function toStringOrEmpty(value: string | null | undefined): string {
   return value ?? '';
+}
+
+function normalizeLocationName(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+}
+
+function getProvinceOptions(locations: PublicCatalogLocation[]): string[] {
+  return Array.from(new Set(locations.map((location) => location.provinceName))).sort((left, right) =>
+    left.localeCompare(right, 'es')
+  );
+}
+
+function getCityOptions(locations: PublicCatalogLocation[], provinceName: string): PublicCatalogLocation[] {
+  const normalizedProvince = normalizeLocationName(provinceName);
+
+  return locations
+    .filter((location) => normalizeLocationName(location.provinceName) === normalizedProvince)
+    .sort((left, right) => left.cityName.localeCompare(right.cityName, 'es'));
 }
 
 function buildProfileDraft(user: DashboardUser): ProfileDraft {
@@ -282,7 +307,9 @@ export function DashboardPanel({
   bookings,
   emergencies: initialEmergencies,
   notifications,
-  adminData
+  adminData,
+  addressMarkets,
+  addressLocations
 }: DashboardPanelProps) {
   const router = useRouter();
   const [user, setUser] = useState(initialUser);
@@ -388,7 +415,8 @@ export function DashboardPanel({
           postalCode: addressDraft.postalCode || null,
           notes: addressDraft.notes || null,
           type: addressDraft.type,
-          isDefault: true
+          isDefault: true,
+          ...(selectedAddressMarket ? { marketId: selectedAddressMarket.id } : {})
         })
       });
 
@@ -592,6 +620,16 @@ export function DashboardPanel({
   const userInitials = getUserInitials(user);
   const activeModeLabel = activeMode === 'contractor' ? 'contratista' : 'cliente';
   const ActiveModeIcon = activeMode === 'contractor' ? HardHat : Glasses;
+  const provinceOptions = useMemo(() => getProvinceOptions(addressLocations), [addressLocations]);
+  const cityOptions = useMemo(
+    () => getCityOptions(addressLocations, addressDraft.province),
+    [addressDraft.province, addressLocations]
+  );
+  const selectedAddressMarket = addressMarkets.find(
+    (market) =>
+      normalizeLocationName(market.city) === normalizeLocationName(addressDraft.city) &&
+      normalizeLocationName(market.province) === normalizeLocationName(addressDraft.province)
+  );
 
   return (
     <div className="space-y-6">
@@ -1031,22 +1069,48 @@ export function DashboardPanel({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="city">Ciudad</Label>
-                  <Input
-                    id="city"
-                    value={addressDraft.city}
-                    onChange={(event) => setAddressDraft((current) => ({ ...current, city: event.target.value }))}
-                    placeholder="San Martin de los Andes"
-                  />
+                  <Label htmlFor="province">Provincia</Label>
+                  <select
+                    id="province"
+                    className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                    value={addressDraft.province}
+                    onChange={(event) => {
+                      const nextProvince = event.target.value;
+                      const nextCity = getCityOptions(addressLocations, nextProvince)[0]?.cityName ?? '';
+
+                      setAddressDraft((current) => ({
+                        ...current,
+                        province: nextProvince,
+                        city: nextCity
+                      }));
+                    }}
+                    required
+                  >
+                    <option value="">Seleccionar provincia</option>
+                    {provinceOptions.map((province) => (
+                      <option key={province} value={province}>
+                        {province}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="province">Provincia</Label>
-                  <Input
-                    id="province"
-                    value={addressDraft.province}
-                    onChange={(event) => setAddressDraft((current) => ({ ...current, province: event.target.value }))}
-                    placeholder="Neuquen"
-                  />
+                  <Label htmlFor="city">Ciudad</Label>
+                  <select
+                    id="city"
+                    className="flex h-11 w-full rounded-lg border border-input bg-card px-4 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60"
+                    value={addressDraft.city}
+                    onChange={(event) => setAddressDraft((current) => ({ ...current, city: event.target.value }))}
+                    disabled={!addressDraft.province || cityOptions.length === 0}
+                    required
+                  >
+                    <option value="">Seleccionar ciudad</option>
+                    {cityOptions.map((location) => (
+                      <option key={`${location.provinceId}-${location.cityId}`} value={location.cityName}>
+                        {location.cityName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

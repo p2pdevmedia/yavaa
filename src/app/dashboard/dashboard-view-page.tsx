@@ -14,7 +14,11 @@ import { serializeBookingsForDashboard, serializeEmergenciesForDashboard } from 
 import { listEmergencyRequestsForActor } from '@/lib/emergencies';
 import { listNotificationsForUser } from '@/lib/notifications';
 import { getPrismaClient } from '@/lib/prisma';
-import { listPublicCatalogCategories } from '@/lib/public-catalog';
+import {
+  listPublicCatalogCategories,
+  listPublicCatalogLocations,
+  listPublicCatalogMarkets
+} from '@/lib/public-catalog';
 import { isDatabaseUnavailableError } from '@/lib/public-db-fallback';
 
 type DashboardViewPageStateArgs = {
@@ -58,9 +62,16 @@ export async function getDashboardViewPageState({
   let emergencies: Awaited<ReturnType<typeof listEmergencyRequestsForActor>> = [];
   let notifications: Awaited<ReturnType<typeof listNotificationsForUser>> = [];
   let adminData: Awaited<ReturnType<typeof getDashboardAdminData>> = null;
+  let addressMarkets: Awaited<ReturnType<typeof listPublicCatalogMarkets>> = [];
+  let addressLocations: Awaited<ReturnType<typeof listPublicCatalogLocations>> = [];
 
   try {
     const prisma = getPrismaClient();
+
+    if (view === 'perfil') {
+      addressMarkets = await listPublicCatalogMarkets();
+      addressLocations = await listPublicCatalogLocations(addressMarkets);
+    }
 
     if (view === 'urgencias') {
       categories = await listPublicCatalogCategories();
@@ -94,7 +105,9 @@ export async function getDashboardViewPageState({
       bookings: serializeBookingsForDashboard(bookings),
       emergencies: serializeEmergenciesForDashboard(emergencies),
       notifications: serializeNotificationsForDashboard(notifications),
-      adminData
+      adminData,
+      addressMarkets,
+      addressLocations
     }
   };
 }
