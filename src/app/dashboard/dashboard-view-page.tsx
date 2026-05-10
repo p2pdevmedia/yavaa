@@ -1,4 +1,6 @@
-import { DashboardPanel } from '@/components/dashboard/dashboard-panel';
+import type { ReactNode } from 'react';
+
+import type { DashboardPanelProps } from '@/components/dashboard/dashboard-panel';
 import {
   DashboardDatabaseUnavailableState,
   DashboardUnlinkedUserState
@@ -14,20 +16,40 @@ import { getPrismaClient } from '@/lib/prisma';
 import { listPublicCatalogCategories } from '@/lib/public-catalog';
 import { isDatabaseUnavailableError } from '@/lib/public-db-fallback';
 
-type DashboardViewPageProps = {
+type DashboardViewPageStateArgs = {
   view: DashboardView;
   nextPath: string;
 };
 
-export async function DashboardViewPage({ view, nextPath }: DashboardViewPageProps) {
+type DashboardViewPageReadyState = {
+  kind: 'ready';
+  panelProps: DashboardPanelProps;
+};
+
+type DashboardViewPageFallbackState =
+  | {
+      kind: 'database-unavailable';
+      email: string | null;
+    }
+  | {
+      kind: 'unlinked-user';
+      email: string | null;
+    };
+
+export type DashboardViewPageState = DashboardViewPageReadyState | DashboardViewPageFallbackState;
+
+export async function getDashboardViewPageState({
+  view,
+  nextPath
+}: DashboardViewPageStateArgs): Promise<DashboardViewPageState> {
   const context = await getDashboardPageContext(nextPath);
 
   if (context.kind === 'database-unavailable') {
-    return <DashboardDatabaseUnavailableState email={context.email} />;
+    return { kind: 'database-unavailable', email: context.email };
   }
 
   if (context.kind === 'unlinked-user') {
-    return <DashboardUnlinkedUserState email={context.authState.user?.email ?? null} />;
+    return { kind: 'unlinked-user', email: context.authState.user?.email ?? null };
   }
 
   let categories: Awaited<ReturnType<typeof listPublicCatalogCategories>> = [];
@@ -55,23 +77,38 @@ export async function DashboardViewPage({ view, nextPath }: DashboardViewPagePro
     }
   } catch (error) {
     if (isDatabaseUnavailableError(error)) {
-      return <DashboardDatabaseUnavailableState email={context.authState.user?.email ?? null} />;
+      return { kind: 'database-unavailable', email: context.authState.user?.email ?? null };
     }
 
     throw error;
   }
 
+  return {
+    kind: 'ready',
+    panelProps: {
+      view,
+      initialUser: context.appUser.user,
+      email: context.authState.user?.email ?? null,
+      categories,
+      bookings: serializeBookingsForDashboard(bookings),
+      notifications: serializeNotificationsForDashboard(notifications),
+      adminData
+    }
+  };
+}
+
+export function DashboardViewPageShell({ children }: { children: ReactNode }) {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-6xl items-start px-4 py-8 sm:px-6 lg:px-8">
-      <DashboardPanel
-        view={view}
-        initialUser={context.appUser.user}
-        email={context.authState.user?.email ?? null}
-        categories={categories}
-        bookings={serializeBookingsForDashboard(bookings)}
-        notifications={serializeNotificationsForDashboard(notifications)}
-        adminData={adminData}
-      />
+      {children}
     </main>
   );
+}
+
+export function DashboardViewPageFallback({ state }: { state: DashboardViewPageFallbackState }) {
+  if (state.kind === 'database-unavailable') {
+    return <DashboardDatabaseUnavailableState email={state.email} />;
+  }
+
+  return <DashboardUnlinkedUserState email={state.email} />;
 }

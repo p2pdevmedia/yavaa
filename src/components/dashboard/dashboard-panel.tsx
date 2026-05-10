@@ -104,7 +104,7 @@ type UserEnvelope = {
   appUser: DashboardUser | null;
 };
 
-type DashboardPanelProps = {
+export type DashboardPanelProps = {
   view: DashboardView;
   initialUser: DashboardUser;
   email: string | null;
