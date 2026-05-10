@@ -179,6 +179,7 @@ export type EmergencyRequestRecord = EmergencyRequestRow;
 
 const dispatchBatchSize = 3;
 const emergencyDispatchWindowMinutes = 24 * 60;
+const republishedEmergencyDispatchWindowMinutes = 2 * 60;
 const contractorBrowsableEmergencyStatuses: EmergencyRequestStatus[] = ['OPEN', 'DISPATCHING', 'REASSIGNMENT_NEEDED'];
 
 function isClientActor(actor: EmergencyRequestActor): boolean {
@@ -443,7 +444,8 @@ function ensureAdminActor(actor: EmergencyRequestActor): void {
 export async function createEmergencyRequest(
   prisma: PrismaClient,
   actor: EmergencyRequestActor,
-  input: z.infer<typeof createEmergencyRequestSchema>
+  input: z.infer<typeof createEmergencyRequestSchema>,
+  options: { dispatchWindowMinutes?: number } = {}
 ): Promise<EmergencyRequestRecord> {
   ensureClientActor(actor);
 
@@ -486,7 +488,8 @@ export async function createEmergencyRequest(
   const eligibleContractors = await findEligibleContractors(prisma, parsed.categoryId, address.marketId);
   const selectedContractors = eligibleContractors.slice(0, dispatchBatchSize);
   const now = new Date();
-  const expiresAt = new Date(now.getTime() + emergencyDispatchWindowMinutes * 60 * 1000);
+  const dispatchWindowMinutes = options.dispatchWindowMinutes ?? emergencyDispatchWindowMinutes;
+  const expiresAt = new Date(now.getTime() + dispatchWindowMinutes * 60 * 1000);
 
   const created = await prisma.$transaction(async (tx) => {
     const request = await tx.emergencyRequest.create({
@@ -809,6 +812,8 @@ export async function republishEmergencyRequest(
     categoryId: row.category.id,
     addressId: row.address.id,
     description: row.description
+  }, {
+    dispatchWindowMinutes: republishedEmergencyDispatchWindowMinutes
   });
 
   await recordAuditLog({

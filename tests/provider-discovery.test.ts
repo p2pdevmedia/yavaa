@@ -29,6 +29,7 @@ describe('public discovery', () => {
           profile: {
             firstName: 'Carlos',
             lastName: 'Perez',
+            avatarUrl: 'https://blob.vercel-storage.com/profiles/user_001/avatar.jpg',
             bio: 'Plomero',
             phone: '+5493875551234'
           }
@@ -78,6 +79,7 @@ describe('public discovery', () => {
       displayName: 'Carlos Perez',
       bio: 'Plomero',
       acceptsEmergencies: true,
+      profilePhotoUrl: 'https://blob.vercel-storage.com/profiles/user_001/avatar.jpg',
       marketSlug: 'san-martin-de-los-andes',
       marketCity: 'San Martin de los Andes',
       marketProvince: 'Neuquen'

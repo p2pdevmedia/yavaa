@@ -3,16 +3,14 @@ import { put } from '@vercel/blob';
 const CONTRACTOR_PROFILE_FILE_MAX_BYTES = 5 * 1024 * 1024;
 const CONTRACTOR_PROFILE_IMAGE_CONTENT_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-type ContractorProfileFileKind = 'profile-photo' | 'dni-front' | 'dni-back';
+type ContractorProfileFileKind = 'dni-front' | 'dni-back';
 
 const contractorProfileFileAccess = {
-  'profile-photo': 'private',
   'dni-front': 'private',
   'dni-back': 'private'
 } as const satisfies Record<ContractorProfileFileKind, 'public' | 'private'>;
 
 const contractorProfileFileLabels = {
-  'profile-photo': 'La foto laboral',
   'dni-front': 'El DNI frente',
   'dni-back': 'El DNI dorso'
 } as const satisfies Record<ContractorProfileFileKind, string>;

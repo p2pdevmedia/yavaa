@@ -499,7 +499,7 @@ describe('emergency helpers', () => {
           categoryId: '88888888-8888-4888-8888-888888888888',
           addressId: '66666666-6666-4666-8666-666666666666',
           description: 'Pipe burst and water is flooding the kitchen',
-          expiresAt: new Date('2026-05-10T13:00:00.000Z')
+          expiresAt: new Date('2026-05-09T15:00:00.000Z')
         })
       })
     );

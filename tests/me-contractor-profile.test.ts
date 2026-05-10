@@ -47,7 +47,7 @@ afterEach(() => {
 });
 
 describe('me contractor profile API', () => {
-  it('uploads labor and DNI photos to Vercel Blob before saving the contractor profile', async () => {
+  it('uses the account profile photo as the contractor profile photo and uploads only DNI photos', async () => {
     const appUser = {
       id: 'user_001',
       email: 'worker@yavaa.test',
@@ -55,7 +55,13 @@ describe('me contractor profile API', () => {
       displayName: 'Worker User',
       status: UserStatus.ACTIVE,
       roles: ['client', 'contractor'],
-      profile: null,
+      profile: {
+        firstName: 'Worker',
+        lastName: 'User',
+        avatarUrl: 'https://blob.vercel-storage.com/profiles/user_001/avatar.jpg',
+        phone: null,
+        bio: null
+      },
       addresses: [],
       contractorProfile: null
     };
@@ -123,7 +129,6 @@ describe('me contractor profile API', () => {
     const formData = new FormData();
     formData.set('dniNumber', '12345678');
     formData.set('acceptsEmergencies', 'true');
-    formData.set('profilePhotoFile', new File(['laboral'], 'Foto laboral.JPG', { type: 'image/jpeg' }));
     formData.set('dniFrontFile', new File(['frente'], 'DNI frente.PNG', { type: 'image/png' }));
     formData.set('dniBackFile', new File(['dorso'], 'DNI dorso.webp', { type: 'image/webp' }));
 
@@ -133,11 +138,7 @@ describe('me contractor profile API', () => {
     } as never);
 
     expect(response.status).toBe(200);
-    expect(mockedPut).toHaveBeenCalledWith(
-      expect.stringMatching(/^contractor-profiles\/user_001\/profile-photo\/[0-9a-f-]{36}-foto-laboral\.jpg$/),
-      expect.any(File),
-      { access: 'private' }
-    );
+    expect(mockedPut).toHaveBeenCalledTimes(2);
     expect(mockedPut).toHaveBeenCalledWith(
       expect.stringMatching(/^contractor-profiles\/user_001\/dni-front\/[0-9a-f-]{36}-dni-frente\.png$/),
       expect.any(File),
@@ -158,9 +159,7 @@ describe('me contractor profile API', () => {
         dniNumber: '12345678',
         dniFrontUrl: expect.stringMatching(/^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/dni-front\//),
         dniBackUrl: expect.stringMatching(/^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/dni-back\//),
-        profilePhotoUrl: expect.stringMatching(
-          /^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/profile-photo\//
-        ),
+        profilePhotoUrl: 'https://blob.vercel-storage.com/profiles/user_001/avatar.jpg',
         reviewNotes: undefined,
         approvalStatus: undefined,
         submittedAt: undefined
@@ -172,9 +171,7 @@ describe('me contractor profile API', () => {
         dniNumber: '12345678',
         dniFrontUrl: expect.stringMatching(/^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/dni-front\//),
         dniBackUrl: expect.stringMatching(/^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/dni-back\//),
-        profilePhotoUrl: expect.stringMatching(
-          /^https:\/\/blob\.vercel-storage\.com\/contractor-profiles\/user_001\/profile-photo\//
-        ),
+        profilePhotoUrl: 'https://blob.vercel-storage.com/profiles/user_001/avatar.jpg',
         reviewNotes: null,
         approvalStatus: ContractorApprovalStatus.DRAFT,
         submittedAt: null

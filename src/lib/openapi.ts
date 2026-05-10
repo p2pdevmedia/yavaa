@@ -303,7 +303,6 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       dniNumber: { anyOf: [{ type: 'string', minLength: 6, maxLength: 32 }, { type: 'null' }] },
       dniFrontUrl: { anyOf: [{ type: 'string', format: 'uri' }, { type: 'null' }] },
       dniBackUrl: { anyOf: [{ type: 'string', format: 'uri' }, { type: 'null' }] },
-      profilePhotoUrl: { anyOf: [{ type: 'string', format: 'uri' }, { type: 'null' }] },
       reviewNotes: { anyOf: [{ type: 'string', maxLength: 1000 }, { type: 'null' }] },
       submitForReview: { type: 'boolean' }
     }
@@ -318,11 +317,6 @@ export function getOpenApiDocument(): OpenAPIV3.Document {
       dniNumber: { type: 'string', minLength: 6, maxLength: 32 },
       reviewNotes: { type: 'string', maxLength: 1000 },
       submitForReview: { type: 'boolean' },
-      profilePhotoFile: {
-        type: 'string',
-        format: 'binary',
-        description: 'Private labor profile photo upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB.'
-      },
       dniFrontFile: {
         type: 'string',
         format: 'binary',

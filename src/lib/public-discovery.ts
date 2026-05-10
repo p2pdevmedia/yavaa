@@ -44,6 +44,7 @@ type PublicProviderRecord = {
     profile: {
       firstName: string | null;
       lastName: string | null;
+      avatarUrl: string | null;
       bio: string | null;
       phone: string | null;
     } | null;
@@ -170,7 +171,7 @@ function mapProviderRecord(record: PublicProviderRecord): PublicProviderCard {
     contractorProfileId: record.id,
     displayName: buildDisplayName(record),
     bio: record.user.profile?.bio ?? null,
-    profilePhotoUrl: record.profilePhotoUrl,
+    profilePhotoUrl: record.user.profile?.avatarUrl ?? record.profilePhotoUrl,
     acceptsEmergencies: record.acceptsEmergencies,
     marketSlug: primarySourceWorkZone ? primarySourceWorkZone.market.slug : null,
     marketCity: primarySourceWorkZone ? primarySourceWorkZone.market.city : null,
@@ -250,6 +251,7 @@ export async function listPublicProviders(
               select: {
                 firstName: true,
                 lastName: true,
+                avatarUrl: true,
                 bio: true,
                 phone: true
               }
@@ -348,6 +350,7 @@ export async function getPublicProviderProfile(
               select: {
                 firstName: true,
                 lastName: true,
+                avatarUrl: true,
                 bio: true,
                 phone: true
               }

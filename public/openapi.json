@@ -1188,11 +1188,6 @@
                   "submitForReview": {
                     "type": "boolean"
                   },
-                  "profilePhotoFile": {
-                    "type": "string",
-                    "format": "binary",
-                    "description": "Private labor profile photo upload. Accepted types: JPG, PNG, WebP. Maximum size: 5 MB."
-                  },
                   "dniFrontFile": {
                     "type": "string",
                     "format": "binary",
@@ -1249,17 +1244,6 @@
                     ]
                   },
                   "dniBackUrl": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "format": "uri"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "profilePhotoUrl": {
                     "anyOf": [
                       {
                         "type": "string",

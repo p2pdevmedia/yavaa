@@ -229,6 +229,15 @@ function mapAppUserRecord(record: AppUserRecordQuery | null): AppUserSummary | n
         }
       : null
   }));
+  const profile = record.profile
+    ? {
+        firstName: record.profile.firstName,
+        lastName: record.profile.lastName,
+        avatarUrl: record.profile.avatarUrl,
+        phone: record.profile.phone,
+        bio: record.profile.bio
+      }
+    : null;
 
   const contractorProfile = record.contractorProfile
     ? {
@@ -238,7 +247,7 @@ function mapAppUserRecord(record: AppUserRecordQuery | null): AppUserSummary | n
         dniNumber: record.contractorProfile.dniNumber,
         dniFrontUrl: record.contractorProfile.dniFrontUrl,
         dniBackUrl: record.contractorProfile.dniBackUrl,
-        profilePhotoUrl: record.contractorProfile.profilePhotoUrl,
+        profilePhotoUrl: profile?.avatarUrl ?? record.contractorProfile.profilePhotoUrl,
         reviewNotes: record.contractorProfile.reviewNotes,
         submittedAt: toIsoOrNull(record.contractorProfile.submittedAt),
         reviewedAt: toIsoOrNull(record.contractorProfile.reviewedAt),
@@ -278,15 +287,7 @@ function mapAppUserRecord(record: AppUserRecordQuery | null): AppUserSummary | n
     displayName: record.displayName,
     status: record.status,
     roles,
-    profile: record.profile
-      ? {
-          firstName: record.profile.firstName,
-          lastName: record.profile.lastName,
-          avatarUrl: record.profile.avatarUrl,
-          phone: record.profile.phone,
-          bio: record.profile.bio
-        }
-      : null,
+    profile,
     addresses,
     contractorProfile
   };

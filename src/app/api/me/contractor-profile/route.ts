@@ -20,13 +20,11 @@ const contractorProfileUpdateSchema = z.object({
   dniNumber: z.string().trim().min(6).max(32).nullable().optional(),
   dniFrontUrl: z.string().url().nullable().optional(),
   dniBackUrl: z.string().url().nullable().optional(),
-  profilePhotoUrl: z.string().url().nullable().optional(),
   reviewNotes: z.string().trim().max(1000).nullable().optional(),
   submitForReview: z.boolean().optional().default(false)
 });
 
 type ContractorProfileFileInputs = {
-  profilePhotoFile?: File;
   dniFrontFile?: File;
   dniBackFile?: File;
 };
@@ -99,7 +97,6 @@ async function parseContractorProfileUpdateRequest(request: NextRequest): Promis
 
   const formData = await request.formData();
   const files: ContractorProfileFileInputs = {
-    profilePhotoFile: getOptionalFile(formData, 'profilePhotoFile'),
     dniFrontFile: getOptionalFile(formData, 'dniFrontFile'),
     dniBackFile: getOptionalFile(formData, 'dniBackFile')
   };
@@ -119,15 +116,8 @@ async function parseContractorProfileUpdateRequest(request: NextRequest): Promis
   }
 
   const fileIssues: Record<string, string[]> = {};
-  const profilePhotoIssue = files.profilePhotoFile
-    ? validateContractorProfileFile('profile-photo', files.profilePhotoFile)
-    : null;
   const dniFrontIssue = files.dniFrontFile ? validateContractorProfileFile('dni-front', files.dniFrontFile) : null;
   const dniBackIssue = files.dniBackFile ? validateContractorProfileFile('dni-back', files.dniBackFile) : null;
-
-  if (profilePhotoIssue) {
-    fileIssues.profilePhotoFile = [profilePhotoIssue];
-  }
 
   if (dniFrontIssue) {
     fileIssues.dniFrontFile = [dniFrontIssue];
@@ -234,18 +224,16 @@ export async function PATCH(request: NextRequest) {
     }
   }
 
-  const uploadedProfilePhoto = parsedBody.files.profilePhotoFile
-    ? await uploadContractorProfileFileToBlob(appUser.id, 'profile-photo', parsedBody.files.profilePhotoFile)
-    : null;
   const uploadedDniFront = parsedBody.files.dniFrontFile
     ? await uploadContractorProfileFileToBlob(appUser.id, 'dni-front', parsedBody.files.dniFrontFile)
     : null;
   const uploadedDniBack = parsedBody.files.dniBackFile
     ? await uploadContractorProfileFileToBlob(appUser.id, 'dni-back', parsedBody.files.dniBackFile)
     : null;
+  const profilePhotoUrl = appUser.profile?.avatarUrl ?? null;
   const contractorProfileData = {
     ...data,
-    profilePhotoUrl: uploadedProfilePhoto?.storageUrl ?? data.profilePhotoUrl,
+    profilePhotoUrl,
     dniFrontUrl: uploadedDniFront?.storageUrl ?? data.dniFrontUrl,
     dniBackUrl: uploadedDniBack?.storageUrl ?? data.dniBackUrl
   };
@@ -261,7 +249,7 @@ export async function PATCH(request: NextRequest) {
         dniNumber: contractorProfileData.dniNumber ?? undefined,
         dniFrontUrl: contractorProfileData.dniFrontUrl ?? undefined,
         dniBackUrl: contractorProfileData.dniBackUrl ?? undefined,
-        profilePhotoUrl: contractorProfileData.profilePhotoUrl ?? undefined,
+        profilePhotoUrl: contractorProfileData.profilePhotoUrl,
         reviewNotes: contractorProfileData.reviewNotes ?? undefined,
         approvalStatus: contractorProfileData.submitForReview ? ContractorApprovalStatus.PENDING_REVIEW : undefined,
         submittedAt: contractorProfileData.submitForReview ? new Date() : undefined

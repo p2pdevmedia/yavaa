@@ -317,7 +317,6 @@ export function DashboardPanel({
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
   const [profilePhotoFile, setProfilePhotoFile] = useState<File | null>(null);
   const [profilePhotoInputKey, setProfilePhotoInputKey] = useState(0);
-  const [contractorProfilePhotoFile, setContractorProfilePhotoFile] = useState<File | null>(null);
   const [contractorDniFrontFile, setContractorDniFrontFile] = useState<File | null>(null);
   const [contractorDniBackFile, setContractorDniBackFile] = useState<File | null>(null);
   const [contractorFileInputKey, setContractorFileInputKey] = useState(0);
@@ -422,10 +421,6 @@ export function DashboardPanel({
       formData.set('acceptsEmergencies', String(contractorProfileDraft.acceptsEmergencies));
       formData.set('submitForReview', String(submitForReview));
 
-      if (contractorProfilePhotoFile) {
-        formData.set('profilePhotoFile', contractorProfilePhotoFile);
-      }
-
       if (contractorDniFrontFile) {
         formData.set('dniFrontFile', contractorDniFrontFile);
       }
@@ -458,7 +453,6 @@ export function DashboardPanel({
         setAcceptsEmergencies(payload.appUser.contractorProfile?.acceptsEmergencies ?? false);
       }
 
-      setContractorProfilePhotoFile(null);
       setContractorDniFrontFile(null);
       setContractorDniBackFile(null);
       setContractorFileInputKey((current) => current + 1);
@@ -1010,22 +1004,7 @@ export function DashboardPanel({
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="contractor-profile-photo-file">Foto laboral</Label>
-                  <Input
-                    key={`profile-photo-${contractorFileInputKey}`}
-                    id="contractor-profile-photo-file"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    onChange={(event) => setContractorProfilePhotoFile(event.target.files?.[0] ?? null)}
-                  />
-                  {contractorProfilePhotoFile ? (
-                    <p className="text-xs text-muted-foreground">{contractorProfilePhotoFile.name}</p>
-                  ) : user.contractorProfile?.profilePhotoUrl ? (
-                    <p className="text-xs text-muted-foreground">Foto laboral guardada.</p>
-                  ) : null}
-                </div>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="contractor-dni-front-file">DNI frente</Label>
                   <Input

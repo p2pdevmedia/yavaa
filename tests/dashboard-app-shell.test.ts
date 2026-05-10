@@ -141,9 +141,10 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain("fetch('/api/me/contractor-profile'");
   });
 
-  test('uses file uploads for contractor labor and DNI photos', () => {
-    expect(dashboardPanelSource).toContain('contractor-profile-photo-file');
-    expect(dashboardPanelSource).toContain('profilePhotoFile');
+  test('uses the account profile photo for contractors and uploads only DNI photos', () => {
+    expect(dashboardPanelSource).not.toContain('contractor-profile-photo-file');
+    expect(dashboardPanelSource).not.toContain('contractorProfilePhotoFile');
+    expect(dashboardPanelSource).not.toContain("formData.set('profilePhotoFile'");
     expect(dashboardPanelSource).toContain('dniFrontFile');
     expect(dashboardPanelSource).toContain('dniBackFile');
     expect(dashboardPanelSource).not.toContain('contractor-profile-photo-url');
