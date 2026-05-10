@@ -14,7 +14,7 @@ final class AppModeTests: XCTestCase {
             roles: [.client]
         )
 
-        XCTAssertEqual(account.availableModes, [.client])
+        XCTAssertEqual(account.availableModes, [.client, .contractor])
         XCTAssertEqual(SessionState.authenticated(account: account).mode, .client)
     }
 
@@ -26,8 +26,9 @@ final class AppModeTests: XCTestCase {
             roles: [.contractor]
         )
 
-        XCTAssertEqual(account.availableModes, [.contractor])
-        XCTAssertEqual(SessionState.authenticated(account: account).mode, .contractor)
+        XCTAssertEqual(account.availableModes, [.client, .contractor])
+        XCTAssertEqual(SessionState.authenticated(account: account).mode, .client)
+        XCTAssertEqual(SessionState.authenticated(account: account, preferredMode: .contractor).mode, .contractor)
     }
 
     func testDerivesBothMobileModesForDualRoleAccount() {
@@ -41,7 +42,7 @@ final class AppModeTests: XCTestCase {
         XCTAssertEqual(account.availableModes, [.client, .contractor])
     }
 
-    func testRejectsUnavailableModeSelection() {
+    func testAllowsSelectingModeBeforeRoleExistsForOnboarding() {
         let account = AccountSummary(
             id: "user_004",
             email: "client-only@yavaa.test",
@@ -50,9 +51,7 @@ final class AppModeTests: XCTestCase {
         )
         let session = SessionState.authenticated(account: account)
 
-        XCTAssertThrowsError(try session.selectingMode(.contractor)) { error in
-            XCTAssertEqual(error as? SessionState.ModeSelectionError, .modeUnavailable)
-        }
+        XCTAssertEqual(try session.selectingMode(.contractor).mode, .contractor)
     }
 
     func testBlockedAccountCannotUseWorkModes() {
@@ -65,5 +64,18 @@ final class AppModeTests: XCTestCase {
 
         XCTAssertEqual(account.availableModes, [])
         XCTAssertEqual(SessionState.authenticated(account: account).mode, nil)
+    }
+
+    func testAccountWithoutRolesCanChooseBothModesForOnboarding() {
+        let account = AccountSummary(
+            id: "user_006",
+            email: "new@yavaa.test",
+            status: .active,
+            roles: []
+        )
+
+        XCTAssertEqual(account.availableModes, [.client, .contractor])
+        XCTAssertEqual(SessionState.authenticated(account: account).mode, .client)
+        XCTAssertEqual(SessionState.authenticated(account: account, preferredMode: .contractor).mode, .contractor)
     }
 }

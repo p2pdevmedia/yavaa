@@ -29,17 +29,21 @@ public struct MobileModeShellView: View {
         .toolbarBackground(.visible, for: .tabBar)
         .toolbarBackground(YavaaColor.surface, for: .tabBar)
         #endif
-        .navigationTitle(container.sessionState.mode?.title ?? "Yavaa")
+        .navigationTitle(effectiveMode?.title ?? "Yavaa")
         .onAppear {
             keepSelectedTabInActiveTabs()
         }
-        .onChange(of: container.sessionState.mode) { _, _ in
+        .onChange(of: effectiveMode) { _, _ in
             keepSelectedTabInActiveTabs()
         }
     }
 
+    private var effectiveMode: AppMode? {
+        container.sessionState.mode ?? container.sessionState.account?.availableModes.first
+    }
+
     private var activeTabs: [MobileTab] {
-        guard let mode = container.sessionState.mode else {
+        guard let mode = effectiveMode else {
             return [.profile]
         }
 
@@ -67,33 +71,33 @@ public struct MobileModeShellView: View {
     private func tabView(_ tab: MobileTab) -> some View {
         switch tab {
         case .home:
-            ClientYavaaView(
+            if effectiveMode == .contractor {
+                TrabajadorHomeView()
+            } else {
+                JefeHomeView()
+            }
+        case .urgencies:
+            if effectiveMode == .contractor {
+                ContractorEmergencyBrowseView(load: container.loadBookings)
+            } else {
+                EmergencyCreateView(
+                    load: container.loadEmergencyComposerData,
+                    create: container.createEmergency
+                )
+            }
+        case .myHomes:
+            MyHomesView(loadProfile: container.loadProfile)
+        case .workers:
+            ClientWorkersView(
                 load: container.loadClientHome,
                 loadProfile: container.loadProviderProfile
             )
-        case .yavaa:
-            EmergencyCreateView(
-                load: container.loadEmergencyComposerData,
-                create: container.createEmergency
-            )
-        case .offers:
-            ContractorBookingsView(
-                kind: .offers,
-                load: container.loadBookings,
-                accept: container.acceptBooking,
-                reject: container.rejectBooking
-            )
-        case .working:
-            ContractorBookingsView(
-                kind: .working,
-                load: container.loadBookings,
-                accept: container.acceptBooking,
-                reject: container.rejectBooking
-            )
+        case .myClients:
+            ContractorClientsView(load: container.loadBookings)
         case .profile:
             ProfileWorkspaceView(
                 account: container.sessionState.account,
-                currentMode: container.sessionState.mode,
+                currentMode: effectiveMode,
                 availableModes: container.sessionState.account?.availableModes ?? [],
                 loadProfile: container.loadProfile,
                 updateProfile: container.updateProfile,
@@ -107,6 +111,34 @@ public struct MobileModeShellView: View {
                     await container.signOut()
                 }
             )
+        }
+    }
+}
+
+private struct JefeHomeView: View {
+    var body: some View {
+        List {
+            Section("Inicio Jefe") {
+                Text("Accesos rapidos para publicar urgencias, revisar casas y encontrar trabajadores.")
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+private struct TrabajadorHomeView: View {
+    var body: some View {
+        List {
+            Section("Inicio Trabajador") {
+                Text("Estado laboral, urgencias disponibles y clientes con trabajos reales.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Perfil laboral") {
+                Text("Si tu perfil de trabajador esta incompleto, podes navegar el menu, pero las acciones sensibles quedan bloqueadas hasta completar y aprobar el perfil.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }
@@ -137,10 +169,20 @@ private struct EmergencyCreateView: View {
                 }
 
                 Picker("Direccion", selection: $selectedAddressId) {
-                    ForEach(addresses, id: \.id) { address in
+                    ForEach(emergencyEligibleAddresses, id: \.id) { address in
                         Text(address.label)
                             .tag(address.id)
                     }
+                }
+
+                if addresses.isEmpty {
+                    Text("Primero crea una direccion en Perfil.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if emergencyEligibleAddresses.isEmpty {
+                    Text("Tus direcciones necesitan una zona de cobertura para crear urgencias.")
+                        .font(.caption)
+                        .foregroundStyle(YavaaColor.warning)
                 }
 
                 TextField("Que hay que resolver?", text: $description, axis: .vertical)
@@ -180,7 +222,12 @@ private struct EmergencyCreateView: View {
     private var canSubmit: Bool {
         !selectedCategoryId.isEmpty
             && !selectedAddressId.isEmpty
+            && emergencyEligibleAddresses.contains { $0.id == selectedAddressId }
             && description.trimmingCharacters(in: .whitespacesAndNewlines).count >= 8
+    }
+
+    private var emergencyEligibleAddresses: [WebsiteAddress] {
+        addresses.filter(\.canCreateEmergency)
     }
 
     private func reload() async {
@@ -191,7 +238,9 @@ private struct EmergencyCreateView: View {
             categories = data.categories
             addresses = data.addresses
             selectedCategoryId = selectedCategoryId.isEmpty ? data.categories.first?.id ?? "" : selectedCategoryId
-            selectedAddressId = selectedAddressId.isEmpty ? data.addresses.first?.id ?? "" : selectedAddressId
+            if !emergencyEligibleAddresses.contains(where: { $0.id == selectedAddressId }) {
+                selectedAddressId = emergencyEligibleAddresses.first?.id ?? ""
+            }
         } catch {
             statusMessage = "No se pudo cargar categorias y direcciones desde la API."
         }
@@ -210,7 +259,7 @@ private struct EmergencyCreateView: View {
                 )
             )
             description = ""
-            statusMessage = "Urgencia creada. Yavaa esta buscando constructores disponibles."
+            statusMessage = "Urgencia creada. Yavaa esta buscando trabajadores disponibles."
         } catch {
             statusMessage = "No se pudo crear la urgencia en /api/emergencies."
         }
@@ -218,7 +267,70 @@ private struct EmergencyCreateView: View {
     }
 }
 
-private struct ClientYavaaView: View {
+private struct MyHomesView: View {
+    let loadProfile: () async throws -> WebsiteAppUser?
+
+    @State private var addresses: [WebsiteAddress] = []
+    @State private var isLoading = false
+    @State private var statusMessage: String?
+
+    var body: some View {
+        List {
+            Section("Mis Casas") {
+                Text("Direcciones y propiedades guardadas.")
+                    .foregroundStyle(.secondary)
+
+                if isLoading {
+                    ProgressView()
+                }
+
+                if addresses.isEmpty && !isLoading {
+                    Text("Todavia no tenes casas cargadas.")
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(addresses, id: \.id) { address in
+                    VStack(alignment: .leading, spacing: YavaaSpacing.xs) {
+                        Text(address.label)
+                            .font(.headline)
+                        Text("\(address.line1), \(address.city)")
+                            .foregroundStyle(.secondary)
+                        Text("Historial de arreglos")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, YavaaSpacing.xs)
+                }
+            }
+
+            if let statusMessage {
+                Section {
+                    Text(statusMessage)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+        .task {
+            await reload()
+        }
+        .refreshable {
+            await reload()
+        }
+    }
+
+    private func reload() async {
+        isLoading = true
+        statusMessage = nil
+        do {
+            addresses = try await loadProfile()?.addresses ?? []
+        } catch {
+            statusMessage = "No se pudieron cargar tus casas desde /api/me."
+        }
+        isLoading = false
+    }
+}
+
+private struct ClientWorkersView: View {
     let load: (String?) async throws -> ClientHomeData
     let loadProfile: (String) async throws -> PublicProviderProfile?
 
@@ -328,6 +440,70 @@ private struct ClientYavaaView: View {
             addresses = data.addresses
         } catch {
             errorMessage = "No se pudo cargar la API de Yavaa."
+        }
+        isLoading = false
+    }
+}
+
+private struct ContractorEmergencyBrowseView: View {
+    let load: () async throws -> [BookingSummary]
+
+    @State private var bookings: [BookingSummary] = []
+    @State private var isLoading = false
+    @State private var errorMessage: String?
+
+    var body: some View {
+        List {
+            Section("Navegar urgencias") {
+                Text("Urgencias existentes y disponibles para trabajadores.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                if isLoading {
+                    ProgressView()
+                }
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .foregroundStyle(YavaaColor.warning)
+                }
+
+                if emergencyBookings.isEmpty && !isLoading {
+                    Text("No hay urgencias disponibles ahora.")
+                        .foregroundStyle(.secondary)
+                }
+
+                ForEach(emergencyBookings) { booking in
+                    BookingRow(
+                        booking: booking,
+                        canAct: false,
+                        accept: {},
+                        reject: {}
+                    )
+                }
+            }
+        }
+        .task {
+            await reload()
+        }
+        .refreshable {
+            await reload()
+        }
+    }
+
+    private var emergencyBookings: [BookingSummary] {
+        bookings.filter { booking in
+            booking.status == "PENDING_ACCEPTANCE"
+        }
+    }
+
+    private func reload() async {
+        isLoading = true
+        errorMessage = nil
+        do {
+            bookings = try await load()
+        } catch {
+            errorMessage = "No se pudieron cargar urgencias desde /api/bookings."
         }
         isLoading = false
     }
@@ -496,34 +672,8 @@ private struct ProviderRow: View {
     }
 }
 
-private enum ContractorBookingKind {
-    case offers
-    case working
-
-    var title: String {
-        switch self {
-        case .offers:
-            return "Ofertas nuevas"
-        case .working:
-            return "Trabajos en proceso"
-        }
-    }
-
-    func includes(_ booking: BookingSummary) -> Bool {
-        switch self {
-        case .offers:
-            return booking.status == "PENDING_ACCEPTANCE"
-        case .working:
-            return booking.status == "ACCEPTED"
-        }
-    }
-}
-
-private struct ContractorBookingsView: View {
-    let kind: ContractorBookingKind
+private struct ContractorClientsView: View {
     let load: () async throws -> [BookingSummary]
-    let accept: (String) async throws -> Void
-    let reject: (String) async throws -> Void
 
     @State private var bookings: [BookingSummary] = []
     @State private var isLoading = false
@@ -531,8 +681,8 @@ private struct ContractorBookingsView: View {
 
     var body: some View {
         List {
-            Section(kind.title) {
-                Text("Conectado a /api/bookings")
+            Section("Mis Clientes") {
+                Text("Clientes con trabajos aceptados o completados.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
 
@@ -545,21 +695,17 @@ private struct ContractorBookingsView: View {
                         .foregroundStyle(YavaaColor.warning)
                 }
 
-                if visibleBookings.isEmpty && !isLoading {
-                    Text("No hay trabajos para mostrar.")
+                if clientBookings.isEmpty && !isLoading {
+                    Text("Todavia no tenes clientes con trabajos aceptados o completados.")
                         .foregroundStyle(.secondary)
                 }
 
-                ForEach(visibleBookings) { booking in
+                ForEach(clientBookings) { booking in
                     BookingRow(
                         booking: booking,
-                        canAct: kind == .offers,
-                        accept: {
-                            await actOnOffer(booking.id, action: accept)
-                        },
-                        reject: {
-                            await actOnOffer(booking.id, action: reject)
-                        }
+                        canAct: false,
+                        accept: {},
+                        reject: {}
                     )
                 }
             }
@@ -572,8 +718,10 @@ private struct ContractorBookingsView: View {
         }
     }
 
-    private var visibleBookings: [BookingSummary] {
-        bookings.filter(kind.includes)
+    private var clientBookings: [BookingSummary] {
+        bookings.filter { booking in
+            booking.status == "ACCEPTED" || booking.status == "COMPLETED"
+        }
     }
 
     private func reload() async {
@@ -582,19 +730,7 @@ private struct ContractorBookingsView: View {
         do {
             bookings = try await load()
         } catch {
-            errorMessage = "No se pudo cargar /api/bookings."
-        }
-        isLoading = false
-    }
-
-    private func actOnOffer(_ bookingId: String, action: (String) async throws -> Void) async {
-        isLoading = true
-        errorMessage = nil
-        do {
-            try await action(bookingId)
-            bookings = try await load()
-        } catch {
-            errorMessage = "No se pudo actualizar la oferta en /api/bookings/\(bookingId)."
+            errorMessage = "No se pudieron cargar tus clientes desde /api/bookings."
         }
         isLoading = false
     }
@@ -915,7 +1051,7 @@ private extension AppMode {
         case .client:
             return "Jefe"
         case .contractor:
-            return "Constructor"
+            return "Trabajador"
         }
     }
 
@@ -924,7 +1060,7 @@ private extension AppMode {
         case .client:
             return "jefe"
         case .contractor:
-            return "constructor"
+            return "trabajador"
         }
     }
 }

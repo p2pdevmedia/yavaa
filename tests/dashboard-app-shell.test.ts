@@ -39,4 +39,34 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).toContain('Agregar dirección');
     expect(dashboardPanelSource).not.toContain("view === 'direcciones'");
   });
+
+  test('uses the editable dashboard profile inside each mode profile route', () => {
+    const jefeProfilePage = readFileSync(join(process.cwd(), 'src/app/dashboard/jefe/perfil/page.tsx'), 'utf8');
+    const trabajadorProfilePage = readFileSync(
+      join(process.cwd(), 'src/app/dashboard/trabajador/perfil/page.tsx'),
+      'utf8'
+    );
+
+    expect(jefeProfilePage).toContain("view: 'perfil'");
+    expect(jefeProfilePage).toContain('<DashboardPanelClient');
+    expect(jefeProfilePage).toContain('initialMode="client"');
+    expect(trabajadorProfilePage).toContain("view: 'perfil'");
+    expect(trabajadorProfilePage).toContain('<DashboardPanelClient');
+    expect(trabajadorProfilePage).toContain('initialMode="contractor"');
+  });
+
+  test('shows mode switching as a visible profile action', () => {
+    expect(dashboardPanelSource).toContain('Cambiar modo');
+    expect(dashboardPanelSource).toContain('Usar modo Jefe');
+    expect(dashboardPanelSource).toContain('Usar modo Trabajador');
+    expect(dashboardPanelSource).toContain('/dashboard/jefe/perfil');
+    expect(dashboardPanelSource).toContain('/dashboard/trabajador/perfil');
+  });
+
+  test('shows sign out as a visible profile action', () => {
+    expect(dashboardPanelSource).toContain('Sesión');
+    expect(dashboardPanelSource).toContain('Salir de la cuenta');
+    expect(dashboardPanelSource).toContain('Cerrar sesión');
+    expect(dashboardPanelSource).toContain('variant="destructive"');
+  });
 });

@@ -1,17 +1,20 @@
-import { ModePlaceholderCard, ProtectedModePage } from '@/app/dashboard/protected-mode-page';
+import {
+  DashboardViewPageFallback,
+  DashboardViewPageShell,
+  getDashboardViewPageState
+} from '@/app/dashboard/dashboard-view-page';
+import { DashboardPanelClient } from '@/components/dashboard/dashboard-panel-client';
 
-export default function TrabajadorProfilePage() {
+export default async function TrabajadorProfilePage() {
+  const state = await getDashboardViewPageState({ view: 'perfil', nextPath: '/dashboard/trabajador/perfil' });
+
+  if (state.kind !== 'ready') {
+    return <DashboardViewPageFallback state={state} />;
+  }
+
   return (
-    <ProtectedModePage
-      nextPath="/dashboard/trabajador/perfil"
-      eyebrow="Perfil"
-      title="Perfil Trabajador"
-      description="Perfil laboral, aprobacion y cambio de modo."
-    >
-      <ModePlaceholderCard
-        title="Perfil laboral"
-        description="El Trabajador puede entrar al menu aunque falte completar el perfil, pero las acciones sensibles quedan bloqueadas."
-      />
-    </ProtectedModePage>
+    <DashboardViewPageShell>
+      <DashboardPanelClient {...state.panelProps} initialMode="contractor" />
+    </DashboardViewPageShell>
   );
 }

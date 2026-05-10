@@ -57,14 +57,7 @@ public struct AccountSummary: Codable, Equatable, Sendable {
             return []
         }
 
-        var modes: [AppMode] = []
-        if roles.contains(.client) {
-            modes.append(.client)
-        }
-        if roles.contains(.contractor) {
-            modes.append(.contractor)
-        }
-        return modes
+        return [.client, .contractor]
     }
 }
 

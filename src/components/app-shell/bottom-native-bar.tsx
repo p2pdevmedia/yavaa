@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-import { getShellNavigationItems, type AppShellMode } from '@/lib/app-shell-navigation';
+import {
+  getActiveShellNavigationHref,
+  getShellNavigationItems,
+  type AppShellMode
+} from '@/lib/app-shell-navigation';
 import { cn } from '@/lib/utils';
 
 type BottomNativeBarProps = {
@@ -13,6 +17,7 @@ type BottomNativeBarProps = {
 export function BottomNativeBar({ mode }: BottomNativeBarProps) {
   const pathname = usePathname();
   const items = getShellNavigationItems(mode);
+  const activeHref = getActiveShellNavigationHref(pathname, items);
 
   return (
     <nav
@@ -22,7 +27,7 @@ export function BottomNativeBar({ mode }: BottomNativeBarProps) {
       <div className="mx-auto grid max-w-md grid-flow-col auto-cols-fr gap-1">
         {items.map((item) => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || (item.href !== '/' && pathname.startsWith(item.href));
+          const isActive = activeHref === item.href;
 
           return (
             <Link

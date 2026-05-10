@@ -289,6 +289,7 @@ public struct WebsiteAddress: Decodable, Equatable, Sendable {
     public let notes: String?
     public let type: String
     public let isDefault: Bool
+    public let market: WebsiteAddressMarket?
 
     public init(
         id: String,
@@ -300,7 +301,8 @@ public struct WebsiteAddress: Decodable, Equatable, Sendable {
         postalCode: String?,
         notes: String?,
         type: String,
-        isDefault: Bool
+        isDefault: Bool,
+        market: WebsiteAddressMarket? = nil
     ) {
         self.id = id
         self.label = label
@@ -312,7 +314,20 @@ public struct WebsiteAddress: Decodable, Equatable, Sendable {
         self.notes = notes
         self.type = type
         self.isDefault = isDefault
+        self.market = market
     }
+
+    public var canCreateEmergency: Bool {
+        market != nil
+    }
+}
+
+public struct WebsiteAddressMarket: Decodable, Equatable, Sendable {
+    public let id: String
+    public let slug: String
+    public let city: String
+    public let province: String
+    public let country: String
 }
 
 public struct WebsiteContractorProfile: Decodable, Equatable, Sendable {

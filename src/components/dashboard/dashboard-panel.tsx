@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import type { Route } from 'next';
+import { useRouter } from 'next/navigation';
 import { Bell, Glasses, HardHat } from 'lucide-react';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
@@ -111,6 +112,7 @@ type UserEnvelope = {
 export type DashboardPanelProps = {
   view: DashboardView;
   initialUser: DashboardUser;
+  initialMode?: DashboardMode;
   email: string | null;
   categories: DashboardCategory[];
   bookings: DashboardBooking[];
@@ -222,12 +224,14 @@ function getUserInitials(user: DashboardUser): string {
 export function DashboardPanel({
   view,
   initialUser,
+  initialMode,
   email,
   categories,
   bookings,
   notifications,
   adminData
 }: DashboardPanelProps) {
+  const router = useRouter();
   const [user, setUser] = useState(initialUser);
   const [profileDraft, setProfileDraft] = useState<ProfileDraft>(() => buildProfileDraft(initialUser));
   const [addressDraft, setAddressDraft] = useState<AddressDraft>(() => buildAddressDraft(initialUser));
@@ -248,7 +252,7 @@ export function DashboardPanel({
   const [acceptsEmergencies, setAcceptsEmergencies] = useState(
     initialUser.contractorProfile?.acceptsEmergencies ?? false
   );
-  const [activeMode, setActiveMode] = useState<DashboardMode>(() => getInitialDashboardMode(initialUser));
+  const [activeMode, setActiveMode] = useState<DashboardMode>(() => initialMode ?? getInitialDashboardMode(initialUser));
   const [modeError, setModeError] = useState<string | null>(null);
   const [modeStatus, setModeStatus] = useState<string | null>(null);
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
@@ -451,13 +455,16 @@ export function DashboardPanel({
     }
   }
 
-  async function handleContractorModeSelect() {
+  async function handleContractorModeSelect(nextPath?: Route) {
     setModeError(null);
     setModeStatus(null);
 
     if (hasContractorMode(user)) {
       setActiveMode('contractor');
       setModeStatus('Modo contratista activo.');
+      if (nextPath) {
+        router.push(nextPath);
+      }
       return;
     }
 
@@ -494,6 +501,9 @@ export function DashboardPanel({
 
       setActiveMode('contractor');
       setModeStatus('Modo contratista activado. Tu perfil quedó en borrador.');
+      if (nextPath) {
+        router.push(nextPath);
+      }
     } catch {
       setModeError('No pudimos activar el modo contratista.');
     } finally {
@@ -501,11 +511,19 @@ export function DashboardPanel({
     }
   }
 
+  function handleClientModeSelect(nextPath?: Route) {
+    setModeError(null);
+    setActiveMode('client');
+    setModeStatus('Modo cliente activo.');
+
+    if (nextPath) {
+      router.push(nextPath);
+    }
+  }
+
   async function handleModeToggle() {
     if (activeMode === 'contractor') {
-      setModeError(null);
-      setActiveMode('client');
-      setModeStatus('Modo cliente activo.');
+      handleClientModeSelect();
       return;
     }
 
@@ -808,6 +826,65 @@ export function DashboardPanel({
       {view === 'perfil' ? (
         <Card className="border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
+            <CardTitle className="font-display text-2xl">Cambiar modo</CardTitle>
+            <CardDescription>Elegí si querés usar Yavaa como Jefe o como Trabajador.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button
+                type="button"
+                variant={activeMode === 'client' ? 'default' : 'outline'}
+                onClick={() => handleClientModeSelect('/dashboard/jefe/perfil' as Route)}
+              >
+                <Glasses className="mr-2 h-4 w-4" aria-hidden="true" />
+                Usar modo Jefe
+              </Button>
+
+              {hasContractorMode(user) ? (
+                <Button asChild variant={activeMode === 'contractor' ? 'default' : 'outline'}>
+                  <Link
+                    href={'/dashboard/trabajador/perfil' as Route}
+                    onClick={() => {
+                      setModeError(null);
+                      setActiveMode('contractor');
+                      setModeStatus('Modo contratista activo.');
+                    }}
+                  >
+                    <HardHat className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Usar modo Trabajador
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void handleContractorModeSelect('/dashboard/trabajador/perfil' as Route)}
+                  disabled={isSwitchingContractorMode}
+                >
+                  <HardHat className="mr-2 h-4 w-4" aria-hidden="true" />
+                  {isSwitchingContractorMode ? 'Activando...' : 'Usar modo Trabajador'}
+                </Button>
+              )}
+            </div>
+
+            {modeError ? (
+              <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {modeError}
+              </p>
+            ) : null}
+
+            {modeStatus ? (
+              <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                {modeStatus}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {view === 'perfil' ? (
+        <Card className="border-border/70 bg-card/90 shadow-soft">
+          <CardHeader>
             <CardTitle className="font-display text-2xl">Direcciones guardadas</CardTitle>
             <CardDescription>Vemos tus direcciones guardadas y podés agregar una nueva.</CardDescription>
           </CardHeader>
@@ -1099,6 +1176,19 @@ export function DashboardPanel({
           </div>
         </CardContent>
       </Card>
+      ) : null}
+
+      {view === 'perfil' ? (
+        <Card className="border-border/70 bg-card/90 shadow-soft">
+          <CardHeader>
+            <CardTitle className="font-display text-2xl">Sesión</CardTitle>
+            <CardDescription>Cerrar sesión en este dispositivo y volver al inicio público.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">Salir de la cuenta actual.</p>
+            <SignOutButton variant="destructive" className="w-full sm:w-auto" />
+          </CardContent>
+        </Card>
       ) : null}
 
       {view === 'bookings' ? <BookingWorkspace bookings={bookings} /> : null}

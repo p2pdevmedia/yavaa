@@ -56,6 +56,7 @@ public final class AppContainer: ObservableObject {
 
     public func signIn(email: String, password: String) async throws {
         modeSelectionRevision += 1
+        latestPickerRequestedMode = nil
         sessionState = try await sessionController.signIn(email: email, password: password)
         completedRoleSelectionAccountID = nil
         presentRoleSelectionIfNeeded(for: sessionState)
@@ -63,13 +64,36 @@ public final class AppContainer: ObservableObject {
 
     public func signInWithGoogle() async throws {
         modeSelectionRevision += 1
+        latestPickerRequestedMode = nil
         sessionState = try await sessionController.signInWithGoogle()
         completedRoleSelectionAccountID = nil
         presentRoleSelectionIfNeeded(for: sessionState)
     }
 
+    public func signInFromEmergency(email: String, password: String) async throws {
+        modeSelectionRevision += 1
+        latestPickerRequestedMode = nil
+        sessionState = try await sessionController.signIn(email: email, password: password)
+        await enterJefeFromEmergency()
+    }
+
+    public func signUpFromEmergency(email: String, password: String) async throws {
+        modeSelectionRevision += 1
+        latestPickerRequestedMode = nil
+        sessionState = try await sessionController.signUp(email: email, password: password)
+        await enterJefeFromEmergency()
+    }
+
+    public func signInWithGoogleFromEmergency() async throws {
+        modeSelectionRevision += 1
+        latestPickerRequestedMode = nil
+        sessionState = try await sessionController.signInWithGoogle()
+        await enterJefeFromEmergency()
+    }
+
     public func signUp(email: String, password: String) async throws {
         modeSelectionRevision += 1
+        latestPickerRequestedMode = nil
         sessionState = try await sessionController.signUp(email: email, password: password)
         completedRoleSelectionAccountID = nil
         presentRoleSelectionIfNeeded(for: sessionState)
@@ -229,6 +253,12 @@ public final class AppContainer: ObservableObject {
         roleSelectionPresentation = presentation
     }
 
+    private func enterJefeFromEmergency() async {
+        completedRoleSelectionAccountID = sessionState.account?.id
+        roleSelectionPresentation = .none
+        await selectMode(.client)
+    }
+
     private func applySessionResponse(_ response: WebsiteMeResponse) {
         sessionState = response.toSessionState(preferredMode: sessionState.mode)
     }
@@ -266,9 +296,7 @@ public struct YavaaRootView: View {
             } else if container.sessionState.isAuthenticated {
                 signedInShell
             } else {
-                NavigationStack {
-                    authTabs
-                }
+                guestShell
             }
         }
         .tint(YavaaColor.accent)
@@ -286,32 +314,27 @@ public struct YavaaRootView: View {
         .navigationTitle("Inicio")
     }
 
-    private var authTabs: some View {
-        TabView {
-            LoginView(
-                onSubmit: { email, password in
-                    try await container.signIn(email: email, password: password)
-                },
-                onGoogleSignIn: {
-                    try await container.signInWithGoogle()
-                }
-            )
-            .tabItem {
-                Text("Ingresar")
+    private var guestShell: some View {
+        GuestMobileShellView(
+            signIn: { email, password in
+                try await container.signIn(email: email, password: password)
+            },
+            signUp: { email, password in
+                try await container.signUp(email: email, password: password)
+            },
+            googleSignIn: {
+                try await container.signInWithGoogle()
+            },
+            emergencySignIn: { email, password in
+                try await container.signInFromEmergency(email: email, password: password)
+            },
+            emergencySignUp: { email, password in
+                try await container.signUpFromEmergency(email: email, password: password)
+            },
+            emergencyGoogleSignIn: {
+                try await container.signInWithGoogleFromEmergency()
             }
-
-            SignUpView(
-                onSubmit: { email, password in
-                    try await container.signUp(email: email, password: password)
-                },
-                onGoogleSignIn: {
-                    try await container.signInWithGoogle()
-                }
-            )
-            .tabItem {
-                Text("Crear cuenta")
-            }
-        }
+        )
     }
 
     private var signedInShell: some View {

@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import {
+  getActiveShellNavigationHref,
   getDefaultShellPath,
   getShellNavigationItems,
   getUrgenciesIntent,
@@ -29,5 +30,17 @@ describe('app shell navigation', () => {
     expect(getUrgenciesIntent('guest')).toBe('draft-before-auth');
     expect(getUrgenciesIntent('jefe')).toBe('publish-emergency');
     expect(getUrgenciesIntent('trabajador')).toBe('browse-emergencies');
+  });
+
+  test('selects the most specific active tab for nested mode routes', () => {
+    const jefeItems = getShellNavigationItems('jefe');
+    const trabajadorItems = getShellNavigationItems('trabajador');
+
+    expect(getActiveShellNavigationHref('/dashboard/jefe', jefeItems)).toBe('/dashboard/jefe');
+    expect(getActiveShellNavigationHref('/dashboard/jefe/perfil', jefeItems)).toBe('/dashboard/jefe/perfil');
+    expect(getActiveShellNavigationHref('/dashboard/jefe/urgencias', jefeItems)).toBe('/dashboard/jefe/urgencias');
+    expect(getActiveShellNavigationHref('/dashboard/trabajador/perfil', trabajadorItems)).toBe(
+      '/dashboard/trabajador/perfil'
+    );
   });
 });

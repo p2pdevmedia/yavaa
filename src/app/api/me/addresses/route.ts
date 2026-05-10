@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 
+import { resolveAddressMarketId } from '@/lib/address-markets';
 import { recordAuditLog } from '@/lib/audit';
 import { jsonResponse } from '@/lib/http';
 import { getPrismaClient } from '@/lib/prisma';
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
 
   const prisma = getPrismaClient();
   const data = parsedBody.data;
+  const marketId = await resolveAddressMarketId(prisma, data);
 
   const createdAddress = await prisma.$transaction(async (tx) => {
     if (data.isDefault) {
@@ -94,7 +96,7 @@ export async function POST(request: NextRequest) {
     return tx.address.create({
       data: {
         userId: appUser.id,
-        marketId: data.marketId ?? null,
+        marketId: marketId ?? null,
         label: data.label,
         line1: data.line1,
         line2: data.line2 ?? null,

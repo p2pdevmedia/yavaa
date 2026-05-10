@@ -42,7 +42,7 @@ private extension AppMode {
         case .client:
             "Jefe"
         case .contractor:
-            "Constructor"
+            "Trabajador"
         }
     }
 }

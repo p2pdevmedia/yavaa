@@ -152,6 +152,119 @@ final class APIClientTests: XCTestCase {
         XCTAssertEqual(object?["description"] as? String, "Necesito resolver una perdida de agua hoy.")
     }
 
+    func testDecodesEmergencyEligibleAddressMarketFromMeResponse() throws {
+        let json = """
+        {
+          "authenticated": true,
+          "configured": true,
+          "reason": null,
+          "identity": {
+            "id": "supabase_001",
+            "email": "client@yavaa.test"
+          },
+          "matchedBy": "supabase_auth_id",
+          "permissionContext": {
+            "userId": "user_001",
+            "status": "ACTIVE",
+            "roles": ["client"]
+          },
+          "appUser": {
+            "id": "user_001",
+            "email": "client@yavaa.test",
+            "displayName": "Client User",
+            "status": "ACTIVE",
+            "roles": ["client"],
+            "profile": null,
+            "addresses": [
+              {
+                "id": "address_001",
+                "label": "Casa",
+                "line1": "Av. Siempre Viva 123",
+                "line2": null,
+                "city": "Salta",
+                "province": "Salta",
+                "postalCode": "4400",
+                "notes": null,
+                "type": "HOME",
+                "isDefault": true,
+                "market": {
+                  "id": "99999999-9999-4999-8999-999999999999",
+                  "slug": "salta",
+                  "city": "Salta",
+                  "province": "Salta",
+                  "country": "Argentina"
+                }
+              }
+            ],
+            "contractorProfile": null
+          }
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(WebsiteMeResponse.self, from: json)
+
+        XCTAssertEqual(response.appUser?.addresses.first?.market?.slug, "salta")
+        XCTAssertEqual(response.appUser?.addresses.first?.canCreateEmergency, true)
+    }
+
+    func testDecodesEmergencyCreateResponseFromNextAPI() throws {
+        let json = """
+        {
+          "request": {
+            "id": "44444444-4444-4444-8444-444444444444",
+            "status": "DISPATCHING",
+            "dispatchRound": 1,
+            "expiresAt": "2026-05-09T12:30:00.000Z",
+            "description": "Necesito resolver una perdida de agua hoy.",
+            "acceptedAt": null,
+            "cancelledAt": null,
+            "createdAt": "2026-05-09T12:00:00.000Z",
+            "updatedAt": "2026-05-09T12:00:00.000Z",
+            "client": {
+              "id": "11111111-1111-4111-8111-111111111111",
+              "email": "client@yavaa.test",
+              "displayName": "Client One",
+              "profile": {
+                "firstName": "Client",
+                "lastName": "One"
+              }
+            },
+            "category": {
+              "id": "88888888-8888-4888-8888-888888888888",
+              "slug": "home-services",
+              "name": "Home Services"
+            },
+            "address": {
+              "id": "66666666-6666-4666-8666-666666666666",
+              "label": "Casa",
+              "line1": "Main 123",
+              "line2": null,
+              "city": "Salta",
+              "province": "Salta",
+              "postalCode": "4400"
+            },
+            "assignedContractorProfile": null,
+            "candidates": [
+              {
+                "id": "77777777-7777-4777-8777-777777777777",
+                "contractorProfileId": "55555555-5555-4555-8555-555555555555",
+                "dispatchRound": 1,
+                "status": "NOTIFIED",
+                "notifiedAt": "2026-05-09T12:00:00.000Z",
+                "respondedAt": null,
+                "responseNote": null
+              }
+            ]
+          }
+        }
+        """.data(using: .utf8)!
+
+        let response = try JSONDecoder().decode(EmergencyResponse.self, from: json)
+
+        XCTAssertEqual(response.request.id, "44444444-4444-4444-8444-444444444444")
+        XCTAssertEqual(response.request.candidates.first?.status, "NOTIFIED")
+    }
+
     func testProfileUpdateInputOmitsEmptyFieldsRejectedByNextValidation() throws {
         let input = ProfileUpdateInput(
             displayName: "  Maria  ",

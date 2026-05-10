@@ -3,7 +3,7 @@ import YavaaCore
 @testable import YavaaApp
 
 final class RoleSelectionPresentationTests: XCTestCase {
-    func testClientOnlyAccountShowsChiefIntroBeforeEnteringClientMode() {
+    func testClientOnlyAccountStillRequiresExplicitModeChoice() {
         let session = SessionState.authenticated(
             account: AccountSummary(
                 id: "user_client",
@@ -15,7 +15,7 @@ final class RoleSelectionPresentationTests: XCTestCase {
 
         XCTAssertEqual(
             RoleSelectionPresentation.presentation(for: session),
-            .automatic(mode: .client, duration: 1)
+            .choice(modes: [.client, .contractor], defaultMode: .client)
         )
     }
 
@@ -35,11 +35,11 @@ final class RoleSelectionPresentationTests: XCTestCase {
         )
     }
 
-    func testContractorOnlyAccountShowsConstructorIntroBeforeEnteringContractorMode() {
+    func testContractorOnlyAccountStillRequiresExplicitModeChoice() {
         let session = SessionState.authenticated(
             account: AccountSummary(
                 id: "user_contractor",
-                email: "constructor@yavaa.test",
+                email: "trabajador@yavaa.test",
                 status: .active,
                 roles: [.contractor]
             )
@@ -47,7 +47,7 @@ final class RoleSelectionPresentationTests: XCTestCase {
 
         XCTAssertEqual(
             RoleSelectionPresentation.presentation(for: session),
-            .automatic(mode: .contractor, duration: 1)
+            .choice(modes: [.client, .contractor], defaultMode: .client)
         )
     }
 

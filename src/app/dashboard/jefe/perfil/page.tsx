@@ -1,17 +1,20 @@
-import { ModePlaceholderCard, ProtectedModePage } from '@/app/dashboard/protected-mode-page';
+import {
+  DashboardViewPageFallback,
+  DashboardViewPageShell,
+  getDashboardViewPageState
+} from '@/app/dashboard/dashboard-view-page';
+import { DashboardPanelClient } from '@/components/dashboard/dashboard-panel-client';
 
-export default function JefeProfilePage() {
+export default async function JefeProfilePage() {
+  const state = await getDashboardViewPageState({ view: 'perfil', nextPath: '/dashboard/jefe/perfil' });
+
+  if (state.kind !== 'ready') {
+    return <DashboardViewPageFallback state={state} />;
+  }
+
   return (
-    <ProtectedModePage
-      nextPath="/dashboard/jefe/perfil"
-      eyebrow="Perfil"
-      title="Perfil Jefe"
-      description="Cuenta, datos personales y cambio de modo."
-    >
-      <ModePlaceholderCard
-        title="Datos de cuenta"
-        description="Este modulo conecta con el perfil existente y mantiene el cambio a Trabajador disponible desde Perfil."
-      />
-    </ProtectedModePage>
+    <DashboardViewPageShell>
+      <DashboardPanelClient {...state.panelProps} initialMode="client" />
+    </DashboardViewPageShell>
   );
 }

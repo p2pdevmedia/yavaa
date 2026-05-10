@@ -3,17 +3,44 @@ import YavaaCore
 @testable import YavaaApp
 
 final class MobileTabMapTests: XCTestCase {
-    func testClientModeUsesInicioYavaaAndProfileTabs() {
+    func testGuestModeUsesInicioUrgenciasAndPerfilTabs() {
         XCTAssertEqual(
-            MobileTabMap.tabs(for: .client),
-            [.home, .yavaa, .profile]
+            MobileTabMap.guestTabs,
+            [.home, .urgencies, .profile]
         )
+        XCTAssertEqual(MobileTabMap.guestTabs.map(\.title), ["Inicio", "Urgencias", "Perfil"])
     }
 
-    func testContractorModeUsesOffersWorkingAndProfileTabs() {
+    func testClientModeUsesJefeBottomTabs() {
+        XCTAssertEqual(
+            MobileTabMap.tabs(for: .client),
+            [.home, .urgencies, .myHomes, .workers, .profile]
+        )
+        XCTAssertEqual(MobileTabMap.tabs(for: .client).map(\.title), [
+            "Inicio",
+            "Urgencias",
+            "Mis Casas",
+            "Trabajadores",
+            "Perfil"
+        ])
+    }
+
+    func testContractorModeUsesTrabajadorBottomTabs() {
         XCTAssertEqual(
             MobileTabMap.tabs(for: .contractor),
-            [.offers, .working, .profile]
+            [.home, .urgencies, .myClients, .profile]
         )
+        XCTAssertEqual(MobileTabMap.tabs(for: .contractor).map(\.title), [
+            "Inicio",
+            "Urgencias",
+            "Mis Clientes",
+            "Perfil"
+        ])
+    }
+
+    func testUrgenciasKeepsModeSpecificIntent() {
+        XCTAssertEqual(MobileTabMap.urgenciesIntent(for: nil), .draftBeforeAuth)
+        XCTAssertEqual(MobileTabMap.urgenciesIntent(for: .client), .publishEmergency)
+        XCTAssertEqual(MobileTabMap.urgenciesIntent(for: .contractor), .browseEmergencies)
     }
 }

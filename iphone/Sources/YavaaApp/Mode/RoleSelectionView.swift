@@ -209,7 +209,7 @@ private extension AppMode {
         case .client:
             "Jefe"
         case .contractor:
-            "Constructor"
+            "Trabajador"
         }
     }
 
@@ -218,7 +218,7 @@ private extension AppMode {
         case .client:
             "jefe"
         case .contractor:
-            "constructor"
+            "trabajador"
         }
     }
 
@@ -245,7 +245,7 @@ private extension AppMode {
         case .client:
             "Escenario jefe"
         case .contractor:
-            "Escenario constructor"
+            "Escenario trabajador"
         }
     }
 

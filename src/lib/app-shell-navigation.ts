@@ -45,6 +45,29 @@ export function getShellNavigationItems(mode: AppShellMode): AppShellNavigationI
   return guestNavigationItems;
 }
 
+function isNavigationHrefMatch(pathname: string, href: Route): boolean {
+  if (pathname === href) {
+    return true;
+  }
+
+  return href !== '/' && pathname.startsWith(`${href}/`);
+}
+
+export function getActiveShellNavigationHref(
+  pathname: string | null,
+  items: AppShellNavigationItem[]
+): Route | null {
+  if (!pathname) {
+    return null;
+  }
+
+  const activeItem = items
+    .filter((item) => isNavigationHrefMatch(pathname, item.href))
+    .sort((first, second) => second.href.length - first.href.length)[0];
+
+  return activeItem?.href ?? null;
+}
+
 export function getDefaultShellPath(mode: AppShellMode): Route {
   if (mode === 'jefe') {
     return '/dashboard/jefe' as Route;

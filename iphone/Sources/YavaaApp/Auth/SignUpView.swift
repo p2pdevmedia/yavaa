@@ -88,7 +88,7 @@ public struct SignUpView: View {
                         }
                     }
 
-                    Text("La cuenta puede operar como jefe, constructor o ambos segun los roles aprobados por Yavaa.")
+                    Text("La cuenta puede operar como jefe, trabajador o ambos segun los roles aprobados por Yavaa.")
                         .font(.footnote)
                         .foregroundStyle(YavaaColor.mutedForeground)
                         .fixedSize(horizontal: false, vertical: true)

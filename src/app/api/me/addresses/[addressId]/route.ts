@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 
+import { resolveAddressMarketId } from '@/lib/address-markets';
 import { recordAuditLog } from '@/lib/audit';
 import { jsonResponse } from '@/lib/http';
 import { canManageAddress } from '@/lib/permissions';
@@ -71,7 +72,9 @@ export async function PATCH(
       userId: appUser.id
     },
     select: {
-      id: true
+      id: true,
+      city: true,
+      province: true
     }
   });
 
@@ -86,9 +89,20 @@ export async function PATCH(
   }
 
   const data = parsedBody.data;
+  const shouldResolveMarket = data.marketId === undefined && (data.city !== undefined || data.province !== undefined);
+  const resolvedMarketId = shouldResolveMarket
+    ? await resolveAddressMarketId(prisma, {
+        city: data.city ?? existingAddress.city,
+        province: data.province ?? existingAddress.province
+      })
+    : data.marketId;
+  const updateData = {
+    ...data,
+    ...(resolvedMarketId !== undefined ? { marketId: resolvedMarketId } : {})
+  };
 
   await prisma.$transaction(async (tx) => {
-    if (data.isDefault) {
+    if (updateData.isDefault) {
       await tx.address.updateMany({
         where: {
           userId: appUser.id,
@@ -106,7 +120,7 @@ export async function PATCH(
       where: {
         id: addressId
       },
-      data
+      data: updateData
     });
   });
 
@@ -116,7 +130,7 @@ export async function PATCH(
     entityType: 'address',
     entityId: addressId,
     metadata: {
-      updatedFields: Object.keys(data)
+      updatedFields: Object.keys(updateData)
     }
   });
 

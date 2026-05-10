@@ -26,13 +26,13 @@ describe('mode shell routes', () => {
     expect(readProjectFile('src/app/dashboard/jefe/urgencias/page.tsx')).toContain('Publicar urgencia');
     expect(readProjectFile('src/app/dashboard/jefe/mis-casas/page.tsx')).toContain('Historial de arreglos');
     expect(readProjectFile('src/app/dashboard/jefe/trabajadores/page.tsx')).toContain('Buscar, favoritos e historial');
-    expect(readProjectFile('src/app/dashboard/jefe/perfil/page.tsx')).toContain('Perfil Jefe');
+    expect(readProjectFile('src/app/dashboard/jefe/perfil/page.tsx')).toContain('initialMode="client"');
   });
 
   test('trabajador shell owns its mode pages', () => {
     expect(readProjectFile('src/app/dashboard/trabajador/page.tsx')).toContain('Inicio Trabajador');
     expect(readProjectFile('src/app/dashboard/trabajador/urgencias/page.tsx')).toContain('Navegar urgencias');
     expect(readProjectFile('src/app/dashboard/trabajador/mis-clientes/page.tsx')).toContain('trabajos aceptados o completados');
-    expect(readProjectFile('src/app/dashboard/trabajador/perfil/page.tsx')).toContain('Perfil Trabajador');
+    expect(readProjectFile('src/app/dashboard/trabajador/perfil/page.tsx')).toContain('initialMode="contractor"');
   });
 });
