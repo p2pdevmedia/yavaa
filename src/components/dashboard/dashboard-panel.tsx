@@ -1469,7 +1469,7 @@ export function DashboardPanel({
         </Card>
       ) : null}
 
-      {view === 'perfil' && activeMode === 'client' ? (
+      {view === 'perfil' ? (
         <Card className="border-border/70 bg-card/90 shadow-soft">
           <CardHeader>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

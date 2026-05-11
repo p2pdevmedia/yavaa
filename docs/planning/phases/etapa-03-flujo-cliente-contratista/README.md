@@ -62,5 +62,6 @@ La tercera ejecucion cierra la etapa con el flujo de urgencias:
 - dispatch inicial a contractors elegibles
 - aceptacion e ignorado por contractor
 - expiracion y reasignacion administrada
+- extension de urgencias vencidas por 24 horas desde la accion compatible `republish`
 - toggle de disponibilidad de urgencias en contractor profile
 - rutas API, contrato OpenAPI, tests unitarios, Playwright y migracion aplicada

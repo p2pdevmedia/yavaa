@@ -68,6 +68,7 @@ export async function getDashboardViewPageState({
     const prisma = getPrismaClient();
 
     if (view === 'perfil') {
+      categories = await listPublicCatalogCategories();
       addressMarkets = await listPublicCatalogMarkets();
       addressLocations = await listPublicCatalogLocations(addressMarkets);
     }

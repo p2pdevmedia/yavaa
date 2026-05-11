@@ -52,13 +52,13 @@ describe('dashboard app shell', () => {
     expect(dashboardPanelSource).not.toContain('Supabase auth ID');
   });
 
-  test('hides saved address management while the active mode is trabajador', () => {
+  test('shows saved address management in both jefe and trabajador profile modes', () => {
     const savedAddressesIndex = dashboardPanelSource.indexOf('Direcciones guardadas');
     const conditionStart = dashboardPanelSource.lastIndexOf("{view === 'perfil'", savedAddressesIndex);
     const condition = dashboardPanelSource.slice(conditionStart, savedAddressesIndex);
 
     expect(savedAddressesIndex).toBeGreaterThan(-1);
-    expect(condition).toContain("activeMode === 'client'");
+    expect(condition).not.toContain('activeMode');
   });
 
   test('uses Argentina catalog selectors for web address province and city', () => {

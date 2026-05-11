@@ -186,9 +186,9 @@ If no compatible contractors remain:
 
 ### 4. Client republish
 
-The client can republish their own expired request.
+The client can extend their own expired request.
 
-Republishing creates a new emergency request with the same category, address, and description. The expired request stays immutable for auditability. A republished request has a shorter activity window of 2 hours from the republication moment.
+The API keeps the compatible `republish` action name, but the current behavior extends the existing expired emergency request in place. It starts a new dispatch round, keeps the request audit trail attached to the same record, and sets a new activity window of 24 hours from the extension moment.
 
 ### 5. Client cancel
 
