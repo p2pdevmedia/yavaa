@@ -13,8 +13,12 @@ type PublishJobFormState = {
   category: string;
   description: string;
   addressText: string;
+  desiredDate: string;
+  desiredTimeSlot: string;
   desiredTime: string;
 };
+
+const timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'] as const;
 
 type PublishJobResponse =
   | {
@@ -32,6 +36,51 @@ type PublishJobResponse =
       fieldErrors?: Partial<Record<keyof PublishJobFormState, string[]>>;
     };
 
+type DateOption = {
+  value: string;
+  label: string;
+  detail: string;
+};
+
+function padDatePart(value: number): string {
+  return String(value).padStart(2, '0');
+}
+
+function formatDateValue(date: Date): string {
+  return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
+}
+
+function buildDateOptions(today: Date): DateOption[] {
+  const formatter = new Intl.DateTimeFormat('es-AR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short'
+  });
+
+  return [0, 1, 2, 3].map((offset) => {
+    const date = new Date(today);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + offset);
+
+    return {
+      value: formatDateValue(date),
+      label: offset === 0 ? 'Hoy' : offset === 1 ? 'Mañana' : formatter.format(date),
+      detail: formatter.format(date)
+    };
+  });
+}
+
+function buildDesiredTimeIso(dateValue: string, timeValue: string): string {
+  const [year, month, day] = dateValue.split('-').map(Number);
+  const [hour, minute] = timeValue.split(':').map(Number);
+
+  return new Date(year, month - 1, day, hour, minute, 0, 0).toISOString();
+}
+
+function isPastTimeSlot(dateValue: string, timeValue: string, now: Date): boolean {
+  return new Date(buildDesiredTimeIso(dateValue, timeValue)).getTime() <= now.getTime();
+}
+
 function FieldError({ messages }: { messages?: string[] }) {
   if (!messages?.length) {
     return null;
@@ -41,16 +90,22 @@ function FieldError({ messages }: { messages?: string[] }) {
 }
 
 export function PublishJobForm({ initialAddress = '' }: { initialAddress?: string | null }) {
+  const now = useMemo(() => new Date(), []);
+  const dateOptions = useMemo(() => buildDateOptions(now), [now]);
+  const defaultDate = dateOptions[1]?.value ?? dateOptions[0]?.value ?? '';
   const [formState, setFormState] = useState<PublishJobFormState>({
     title: '',
     category: 'cleaning',
     description: '',
     addressText: initialAddress ?? '',
+    desiredDate: '',
+    desiredTimeSlot: '',
     desiredTime: ''
   });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof PublishJobFormState | 'form', string[]>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [publishedTitle, setPublishedTitle] = useState<string | null>(null);
+  const selectedDate = formState.desiredDate || defaultDate;
 
   const payload = useMemo(
     () => ({
@@ -58,7 +113,7 @@ export function PublishJobForm({ initialAddress = '' }: { initialAddress?: strin
       category: formState.category,
       description: formState.description,
       addressText: formState.addressText,
-      ...(formState.desiredTime ? { desiredTime: new Date(formState.desiredTime).toISOString() } : {})
+      ...(formState.desiredTime ? { desiredTime: formState.desiredTime } : {})
     }),
     [formState.addressText, formState.category, formState.description, formState.desiredTime, formState.title]
   );
@@ -73,6 +128,41 @@ export function PublishJobForm({ initialAddress = '' }: { initialAddress?: strin
       [field]: undefined,
       form: undefined
     }));
+  }
+
+  function updateSchedule(nextDate: string, nextTimeSlot: string) {
+    setFormState((current) => ({
+      ...current,
+      desiredDate: nextDate,
+      desiredTimeSlot: nextTimeSlot,
+      desiredTime: nextDate && nextTimeSlot ? buildDesiredTimeIso(nextDate, nextTimeSlot) : ''
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      desiredTime: undefined,
+      form: undefined
+    }));
+  }
+
+  function handleDateSelection(dateValue: string) {
+    const nextTimeSlot =
+      formState.desiredTimeSlot && !isPastTimeSlot(dateValue, formState.desiredTimeSlot, now)
+        ? formState.desiredTimeSlot
+        : '';
+
+    updateSchedule(dateValue, nextTimeSlot);
+  }
+
+  function handleTimeSelection(timeSlot: string) {
+    if (!selectedDate || isPastTimeSlot(selectedDate, timeSlot, now)) {
+      return;
+    }
+
+    updateSchedule(selectedDate, timeSlot);
+  }
+
+  function clearSchedule() {
+    updateSchedule(selectedDate, '');
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -189,14 +279,47 @@ export function PublishJobForm({ initialAddress = '' }: { initialAddress?: strin
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="desiredTime">Horario deseado</Label>
-        <Input
-          id="desiredTime"
-          name="desiredTime"
-          type="datetime-local"
-          value={formState.desiredTime}
-          onChange={(event) => updateField('desiredTime', event.target.value)}
-        />
+        <Label>Horario deseado</Label>
+        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Elegir día">
+          {dateOptions.map((dateOption) => {
+            const isSelected = selectedDate === dateOption.value;
+
+            return (
+              <Button
+                key={dateOption.value}
+                type="button"
+                variant={isSelected ? 'default' : 'outline'}
+                className="h-auto min-w-24 flex-col items-start rounded-[18px] px-4 py-3"
+                onClick={() => handleDateSelection(dateOption.value)}
+              >
+                <span>{dateOption.label}</span>
+                <span className="text-xs font-semibold opacity-75">{dateOption.detail}</span>
+              </Button>
+            );
+          })}
+        </div>
+        <div className="grid grid-cols-3 gap-2" role="group" aria-label="Elegir hora">
+          {timeSlots.map((timeSlot) => {
+            const isDisabled = !selectedDate || isPastTimeSlot(selectedDate, timeSlot, now);
+            const isSelected = formState.desiredTimeSlot === timeSlot && Boolean(formState.desiredTime);
+
+            return (
+              <Button
+                key={timeSlot}
+                type="button"
+                variant={isSelected ? 'default' : 'outline'}
+                className="h-12 rounded-[16px] px-3"
+                disabled={isDisabled}
+                onClick={() => handleTimeSelection(timeSlot)}
+              >
+                {timeSlot}
+              </Button>
+            );
+          })}
+        </div>
+        <Button type="button" variant={!formState.desiredTime ? 'default' : 'outline'} onClick={clearSchedule}>
+          Sin horario
+        </Button>
         <FieldError messages={fieldErrors.desiredTime} />
       </div>
 

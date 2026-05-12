@@ -21,6 +21,17 @@ describe('stage 5 marketplace screens', () => {
     expect(form).toContain('Fotos opcionales');
   });
 
+  it('uses a touch-friendly schedule picker instead of the native datetime field', () => {
+    const form = readProjectFile('src/components/jobs/publish-job-form.tsx');
+
+    expect(form).not.toContain('datetime-local');
+    expect(form).toContain('dateOptions');
+    expect(form).toContain('timeSlots');
+    expect(form).toContain('Hoy');
+    expect(form).toContain('Mañana');
+    expect(form).toContain('Sin horario');
+  });
+
   it('connects the protected worker search page to the search API', () => {
     const page = readProjectFile('src/app/dashboard/jefe/buscar-trabajadores/page.tsx');
     const search = readProjectFile('src/components/workers/worker-search.tsx');

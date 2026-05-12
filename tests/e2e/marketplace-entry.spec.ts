@@ -285,6 +285,8 @@ test.describe('mobile marketplace entry flow', () => {
         .getByLabel('Descripción')
         .fill('Necesito pintar un living chico, revisar paredes y coordinar materiales.');
       await page.getByLabel('Ubicación').fill('Salta Capital');
+      await page.getByRole('button', { name: /Mañana/ }).click();
+      await page.getByRole('button', { name: '10:00' }).click();
       await page.getByRole('button', { name: 'Publicar y recibir ofertas' }).click();
 
       await expect(page.getByText('Trabajo publicado')).toBeVisible();
@@ -301,6 +303,7 @@ test.describe('mobile marketplace entry flow', () => {
 
       expect(jobPost.category).toBe('painting');
       expect(jobPost.status).toBe(JobPostStatus.PUBLISHED);
+      expect(jobPost.desiredTime).toBeTruthy();
 
       await page.getByRole('link', { name: 'Volver al home' }).click();
 
