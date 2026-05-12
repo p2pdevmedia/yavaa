@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canAccessOwnResource,
+  canCompleteOnboarding,
   canManageOwnProfile,
   canSelectProfileMode,
   canViewUserRecord,
@@ -54,5 +55,12 @@ describe('permission helpers', () => {
     expect(canSelectProfileMode(activeTrabajador, 'trabajador')).toBe(true);
     expect(canSelectProfileMode(activeJefe, 'trabajador')).toBe(false);
     expect(canSelectProfileMode(suspendedJefe, 'jefe')).toBe(false);
+  });
+
+  it('allows onboarding completion only for active users with the selected role', () => {
+    expect(canCompleteOnboarding(activeJefe, 'jefe')).toBe(true);
+    expect(canCompleteOnboarding(activeTrabajador, 'trabajador')).toBe(true);
+    expect(canCompleteOnboarding(activeJefe, 'trabajador')).toBe(false);
+    expect(canCompleteOnboarding(suspendedJefe, 'jefe')).toBe(false);
   });
 });

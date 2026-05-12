@@ -1,4 +1,9 @@
-import { type UserStatus } from '@prisma/client';
+import {
+  IdentityVerificationStatus,
+  type OnboardingRole,
+  type Prisma,
+  type UserStatus
+} from '@prisma/client';
 
 import { hasDatabaseEnv } from '@/lib/env';
 import { getPrismaClient } from '@/lib/prisma';
@@ -15,6 +20,16 @@ export type AppUserProfile = {
   avatarUrl: string | null;
   phone: string | null;
   bio: string | null;
+  onboardingRole: OnboardingRole | null;
+  workerOnboardingCompletedAt: Date | null;
+  jefeOnboardingCompletedAt: Date | null;
+  identityVerificationStatus: IdentityVerificationStatus;
+  dniNumber: string | null;
+  workerCategories: string[];
+  workerHourlyRateCents: number | null;
+  addressText: string | null;
+  locationLatitude: string | null;
+  locationLongitude: string | null;
 };
 
 export type AppUserSummary = {
@@ -41,13 +56,18 @@ type AppUserRecordQuery = {
   supabaseAuthId: string | null;
   displayName: string | null;
   status: UserStatus;
-  profile: AppUserProfile | null;
+  profile: AppUserRecordProfile | null;
   roles: Array<{
     role: {
       slug: string;
       name: string;
     };
   }>;
+};
+
+type AppUserRecordProfile = Omit<AppUserProfile, 'locationLatitude' | 'locationLongitude'> & {
+  locationLatitude?: Prisma.Decimal | string | null;
+  locationLongitude?: Prisma.Decimal | string | null;
 };
 
 const appUserSelect = {
@@ -60,9 +80,19 @@ const appUserSelect = {
     select: {
       firstName: true,
       lastName: true,
-      avatarUrl: true,
-      phone: true,
-      bio: true
+        avatarUrl: true,
+        phone: true,
+        bio: true,
+        onboardingRole: true,
+        workerOnboardingCompletedAt: true,
+        jefeOnboardingCompletedAt: true,
+        identityVerificationStatus: true,
+        dniNumber: true,
+        workerCategories: true,
+        workerHourlyRateCents: true,
+        addressText: true,
+        locationLatitude: true,
+        locationLongitude: true
     }
   },
   roles: {
@@ -89,6 +119,30 @@ function mapPermissionContext(user: AppUserSummary): PermissionContext {
   };
 }
 
+function mapAppUserProfile(profile: AppUserRecordProfile | null): AppUserProfile | null {
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    firstName: profile.firstName ?? null,
+    lastName: profile.lastName ?? null,
+    avatarUrl: profile.avatarUrl ?? null,
+    phone: profile.phone ?? null,
+    bio: profile.bio ?? null,
+    onboardingRole: profile.onboardingRole ?? null,
+    workerOnboardingCompletedAt: profile.workerOnboardingCompletedAt ?? null,
+    jefeOnboardingCompletedAt: profile.jefeOnboardingCompletedAt ?? null,
+    identityVerificationStatus: profile.identityVerificationStatus ?? IdentityVerificationStatus.NOT_STARTED,
+    dniNumber: profile.dniNumber ?? null,
+    workerCategories: profile.workerCategories ?? [],
+    workerHourlyRateCents: profile.workerHourlyRateCents ?? null,
+    addressText: profile.addressText ?? null,
+    locationLatitude: profile.locationLatitude?.toString() ?? null,
+    locationLongitude: profile.locationLongitude?.toString() ?? null
+  };
+}
+
 function mapAppUserRecord(record: AppUserRecordQuery | null): AppUserSummary | null {
   if (!record) {
     return null;
@@ -105,7 +159,7 @@ function mapAppUserRecord(record: AppUserRecordQuery | null): AppUserSummary | n
     displayName: record.displayName,
     status: record.status,
     roles,
-    profile: record.profile
+    profile: mapAppUserProfile(record.profile)
   };
 }
 

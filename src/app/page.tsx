@@ -1,13 +1,29 @@
 import Link from 'next/link';
 import type { Route } from 'next';
 import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { YavaaHero, YavaaPageShell, YavaaSurface } from '@/components/ui/yavaa-layout';
 import { APP_DESCRIPTION, APP_NAME } from '@/lib/app-metadata';
 import { getAuthSessionState } from '@/lib/auth';
+import { buildRootAuthCodeRedirectPath } from '@/lib/auth-redirect';
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: Promise<{
+    code?: string | string[];
+    type?: string | string[];
+  }>;
+};
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const resolvedSearchParams = (await Promise.resolve(searchParams)) ?? {};
+  const authRedirectPath = buildRootAuthCodeRedirectPath(resolvedSearchParams);
+
+  if (authRedirectPath) {
+    redirect(authRedirectPath as Route);
+  }
+
   const cookieStore = await cookies();
   const authState = await getAuthSessionState(cookieStore);
 

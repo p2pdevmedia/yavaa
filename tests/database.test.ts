@@ -11,7 +11,7 @@ suite('database foundation', () => {
     await prisma?.$disconnect();
   });
 
-  it('connects and exposes only the minimal auth tables', async () => {
+  it('connects and exposes only the minimal auth tables with onboarding profile fields', async () => {
     prisma = getPrismaClient();
     const rows = await prisma.$queryRaw<Array<{ table_name: string }>>`
       SELECT table_name::text AS table_name
@@ -31,6 +31,39 @@ suite('database foundation', () => {
       'roles',
       'user_roles',
       'users'
+    ]);
+
+    const profileColumns = await prisma.$queryRaw<Array<{ column_name: string }>>`
+      SELECT column_name::text AS column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'profiles'
+        AND column_name IN (
+          'onboarding_role',
+          'worker_onboarding_completed_at',
+          'jefe_onboarding_completed_at',
+          'identity_verification_status',
+          'dni_number',
+          'worker_categories',
+          'worker_hourly_rate_cents',
+          'address_text',
+          'location_latitude',
+          'location_longitude'
+        )
+      ORDER BY column_name ASC
+    `;
+
+    expect(profileColumns.map((row) => row.column_name)).toEqual([
+      'address_text',
+      'dni_number',
+      'identity_verification_status',
+      'jefe_onboarding_completed_at',
+      'location_latitude',
+      'location_longitude',
+      'onboarding_role',
+      'worker_categories',
+      'worker_hourly_rate_cents',
+      'worker_onboarding_completed_at'
     ]);
   });
 });

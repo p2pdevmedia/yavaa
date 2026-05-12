@@ -61,8 +61,14 @@ describe('auth redirect helpers', () => {
     );
   });
 
-  it('recovers Supabase PKCE auth codes that land on the site root', () => {
+  it('recovers Supabase OAuth auth codes that land on the site root', () => {
     expect(buildRootAuthCodeRedirectPath({ code: 'pkce-test-code' })).toBe(
+      '/auth/callback?code=pkce-test-code&next=%2Fdashboard%2Fseleccionar-modo'
+    );
+  });
+
+  it('recovers Supabase password reset auth codes that land on the site root', () => {
+    expect(buildRootAuthCodeRedirectPath({ code: 'pkce-test-code', type: 'recovery' })).toBe(
       '/auth/callback?code=pkce-test-code&next=%2Freset-password'
     );
   });

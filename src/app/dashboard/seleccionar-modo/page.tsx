@@ -1,15 +1,16 @@
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import type { Route } from 'next';
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import {
   DashboardDatabaseUnavailableState,
   DashboardUnlinkedUserState
 } from '@/components/dashboard/dashboard-states';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TypeSelection } from '@/components/onboarding/type-selection';
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 import { getDashboardPageContext } from '@/lib/dashboard-page-data';
-import { getModeSelectionPath, type DashboardMode } from '@/lib/dashboard-routes';
+import { getNextDashboardPathForMode, type DashboardMode } from '@/lib/dashboard-routes';
+import { isOnboardingMode } from '@/lib/onboarding';
 import { canSelectProfileMode } from '@/lib/permissions';
 
 type SelectModePageProps = {
@@ -22,16 +23,19 @@ const modes: Array<{
   slug: DashboardMode;
   title: string;
   description: string;
+  eyebrow: string;
 }> = [
   {
     slug: 'jefe',
-    title: 'Jefe',
-    description: 'Perfil para organizar y pedir trabajo.'
+    title: 'Quiero contratar',
+    description: 'Publicá trabajos y recibí ofertas de trabajadores cerca de tu zona.',
+    eyebrow: 'Cliente'
   },
   {
     slug: 'trabajador',
-    title: 'Trabajador',
-    description: 'Perfil para ofrecer trabajo y responder como prestador.'
+    title: 'Quiero trabajar',
+    description: 'Creá tu perfil, validá tu identidad y recibí oportunidades.',
+    eyebrow: 'Trabajador'
   }
 ];
 
@@ -51,51 +55,38 @@ export default async function SelectModePage({ searchParams }: SelectModePagePro
     ? resolvedSearchParams.perfil[0]
     : resolvedSearchParams.perfil;
 
+  if (selectedProfile && isOnboardingMode(selectedProfile)) {
+    if (canSelectProfileMode(context.appUser.permissionContext, selectedProfile)) {
+      redirect(getNextDashboardPathForMode(context.appUser.user, selectedProfile) as Route);
+    }
+  }
+
   return (
-    <YavaaPageShell width="md" className="flex min-h-screen items-center py-10">
+    <YavaaPageShell width="md" className="flex min-h-screen items-center py-6 sm:py-10">
       <section className="w-full space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">Yavaa</p>
-            <h1 className="font-display text-4xl font-semibold tracking-normal">Elegí tu perfil</h1>
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Yavaa</p>
+            <h1 className="font-display text-4xl font-bold tracking-normal">¿Cómo querés usar Yavaa?</h1>
             <p className="text-sm leading-6 text-muted-foreground">
-              Seleccioná cómo querés entrar en esta sesión.
+              Elegí tu modo inicial. Cada perfil tiene su propio wizard y controles del lado del servidor.
             </p>
           </div>
           <SignOutButton />
         </div>
 
-        {selectedProfile === 'jefe' || selectedProfile === 'trabajador' ? (
-          <p className="rounded-lg border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
-            Perfil seleccionado: <span className="font-semibold text-foreground">{selectedProfile}</span>
+        {selectedProfile && !isOnboardingMode(selectedProfile) ? (
+          <p className="rounded-[18px] border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+            Ese perfil no existe. Elegí una de las opciones disponibles.
           </p>
         ) : null}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          {modes.map((mode) => {
-            const allowed = canSelectProfileMode(context.appUser.permissionContext, mode.slug);
-
-            return (
-              <Card key={mode.slug} className="border-border/70 bg-card/95 shadow-soft">
-                <CardHeader>
-                  <CardTitle>{mode.title}</CardTitle>
-                  <CardDescription>{mode.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {allowed ? (
-                    <Button asChild className="w-full" variant={mode.slug === 'jefe' ? 'default' : 'outline'}>
-                      <Link href={getModeSelectionPath(mode.slug)}>Entrar como {mode.title}</Link>
-                    </Button>
-                  ) : (
-                    <Button className="w-full" disabled variant={mode.slug === 'jefe' ? 'default' : 'outline'}>
-                      Rol {mode.title} no asignado
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <TypeSelection
+          modes={modes.map((mode) => ({
+            ...mode,
+            allowed: canSelectProfileMode(context.appUser.permissionContext, mode.slug)
+          }))}
+        />
       </section>
     </YavaaPageShell>
   );

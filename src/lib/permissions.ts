@@ -37,3 +37,7 @@ export function canManageOwnProfile(context: PermissionContext, ownerUserId: str
 export function canSelectProfileMode(context: PermissionContext, mode: AppRoleSlug): boolean {
   return isActiveContext(context) && hasRole(context, mode);
 }
+
+export function canCompleteOnboarding(context: PermissionContext, mode: AppRoleSlug): boolean {
+  return canSelectProfileMode(context, mode);
+}

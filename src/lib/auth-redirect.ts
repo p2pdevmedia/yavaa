@@ -7,6 +7,7 @@ type AuthRedirectBaseInput = {
 
 type RootAuthCodeParams = {
   code?: string | string[];
+  type?: string | string[];
 };
 
 function firstParam(value: string | string[] | undefined): string | undefined {
@@ -59,6 +60,7 @@ export function buildPasswordResetRedirectTo(windowOrigin: string): string {
 
 export function buildRootAuthCodeRedirectPath(params: RootAuthCodeParams): string | null {
   const code = firstParam(params.code);
+  const type = firstParam(params.type);
 
   if (!code) {
     return null;
@@ -66,7 +68,7 @@ export function buildRootAuthCodeRedirectPath(params: RootAuthCodeParams): strin
 
   const redirectPath = new URL('/auth/callback', 'http://localhost');
   redirectPath.searchParams.set('code', code);
-  redirectPath.searchParams.set('next', '/reset-password');
+  redirectPath.searchParams.set('next', type === 'recovery' ? '/reset-password' : dashboardDefaultPath);
 
   return `${redirectPath.pathname}${redirectPath.search}`;
 }
