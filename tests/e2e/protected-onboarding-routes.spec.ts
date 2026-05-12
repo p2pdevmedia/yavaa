@@ -5,6 +5,8 @@ const protectedRoutes = [
   '/dashboard/onboarding/jefe',
   '/dashboard/onboarding/trabajador',
   '/dashboard/jefe',
+  '/dashboard/jefe/publicar-trabajo',
+  '/dashboard/jefe/buscar-trabajadores',
   '/dashboard/trabajador'
 ];
 

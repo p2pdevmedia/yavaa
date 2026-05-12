@@ -4,9 +4,10 @@ import type { Route } from 'next';
 import { Button } from '@/components/ui/button';
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 import type { AppUserProfile } from '@/lib/app-user';
+import type { JobPostSummary } from '@/lib/job-posts';
 import { getPrivateProfileAvatarSrc } from '@/lib/profile-avatar';
 
-export function ClientHome({ profile }: { profile: AppUserProfile | null }) {
+export function ClientHome({ profile, jobPosts = [] }: { profile: AppUserProfile | null; jobPosts?: JobPostSummary[] }) {
   const firstName = profile?.firstName ?? 'Tu perfil';
   const avatarSrc = profile?.avatarUrl ? getPrivateProfileAvatarSrc(profile.avatarUrl) : null;
 
@@ -53,11 +54,24 @@ export function ClientHome({ profile }: { profile: AppUserProfile | null }) {
           </article>
 
           <article className="rounded-[24px] border border-dashed border-border bg-card p-5">
-            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Ofertas sugeridas</p>
-            <h2 className="mt-3 text-xl font-bold text-foreground">Todavía no hay actividad</h2>
-            <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              Cuando publiques trabajos, este espacio va a mostrar respuestas y sugerencias.
-            </p>
+            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos activos</p>
+            {jobPosts.length > 0 ? (
+              <div className="mt-3 space-y-3">
+                {jobPosts.slice(0, 3).map((jobPost) => (
+                  <div key={jobPost.id} className="rounded-[18px] border border-border bg-background px-4 py-3">
+                    <h2 className="text-base font-bold text-foreground">{jobPost.title}</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">{jobPost.addressText}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <>
+                <h2 className="mt-3 text-xl font-bold text-foreground">Todavía no hay actividad</h2>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                  Cuando publiques trabajos, este espacio va a mostrar respuestas y sugerencias.
+                </p>
+              </>
+            )}
           </article>
         </div>
       </section>

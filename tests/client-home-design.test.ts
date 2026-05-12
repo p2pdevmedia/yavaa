@@ -17,7 +17,8 @@ describe('client post-wizard home design', () => {
     expect(clientHome).toContain('/dashboard/jefe/publicar-trabajo');
     expect(clientHome).toContain('Buscar trabajadores');
     expect(clientHome).toContain('/dashboard/jefe/buscar-trabajadores');
-    expect(clientHome).toContain('Ofertas sugeridas');
+    expect(clientHome).toContain('Trabajos activos');
+    expect(clientHome).toContain('jobPosts');
   });
 
   it('renders private profile photos through the authenticated avatar API', () => {
