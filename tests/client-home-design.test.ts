@@ -20,6 +20,13 @@ describe('client post-wizard home design', () => {
     expect(clientHome).toContain('Ofertas sugeridas');
   });
 
+  it('renders private profile photos through the authenticated avatar API', () => {
+    const clientHome = readProjectFile('src/components/dashboard/client-home.tsx');
+
+    expect(clientHome).toContain('getPrivateProfileAvatarSrc');
+    expect(clientHome).toContain('profile?.avatarUrl');
+  });
+
   it('uses the client home component from the protected jefe route', () => {
     const page = readProjectFile('src/app/dashboard/jefe/page.tsx');
 

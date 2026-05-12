@@ -71,12 +71,12 @@ describe('onboarding helpers', () => {
     expect(result.success).toBe(false);
   });
 
-  it('validates jefe onboarding payloads with optional avatar', () => {
+  it('validates jefe onboarding payloads with optional private avatar blob path', () => {
     const result = jefeOnboardingSchema.safeParse({
       firstName: 'Martin',
       lastName: 'Ruiz',
       addressText: 'Salta Capital',
-      avatarUrl: null
+      avatarBlobPath: 'profiles/user_001/avatars/avatar.jpg'
     });
 
     expect(result.success).toBe(true);

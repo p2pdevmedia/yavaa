@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 
@@ -14,6 +14,7 @@ import {
   type OnboardingFieldErrors,
   validateJefeOnboardingInput
 } from '@/lib/onboarding';
+import { getPrivateProfileAvatarSrc } from '@/lib/profile-avatar';
 
 type JefeWizardInitialProfile = {
   firstName?: string | null;
@@ -26,7 +27,7 @@ type JefeWizardState = {
   firstName: string;
   lastName: string;
   addressText: string;
-  avatarUrl: string;
+  avatarBlobPath: string;
 };
 
 type LocalField = JefeOnboardingField | 'form';
@@ -41,6 +42,17 @@ type JefeApiResponse =
       ok: false;
       message?: string;
       fieldErrors?: OnboardingFieldErrors<JefeOnboardingField>;
+    };
+
+type AvatarUploadResponse =
+  | {
+      ok: true;
+      pathname: string;
+      previewSrc: string;
+    }
+  | {
+      ok: false;
+      message?: string;
     };
 
 const steps = [
@@ -69,7 +81,7 @@ const steps = [
 const fieldByStep: Record<number, JefeOnboardingField[]> = {
   0: ['firstName', 'lastName'],
   1: ['addressText'],
-  2: ['avatarUrl']
+  2: ['avatarBlobPath']
 };
 
 function getInitialState(profile?: JefeWizardInitialProfile | null): JefeWizardState {
@@ -77,7 +89,7 @@ function getInitialState(profile?: JefeWizardInitialProfile | null): JefeWizardS
     firstName: profile?.firstName ?? '',
     lastName: profile?.lastName ?? '',
     addressText: profile?.addressText ?? '',
-    avatarUrl: profile?.avatarUrl ?? ''
+    avatarBlobPath: profile?.avatarUrl ?? ''
   };
 }
 
@@ -120,6 +132,10 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [formState, setFormState] = useState<JefeWizardState>(() => getInitialState(initialProfile));
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreviewSrc, setAvatarPreviewSrc] = useState<string | null>(() =>
+    initialProfile?.avatarUrl ? getPrivateProfileAvatarSrc(initialProfile.avatarUrl) : null
+  );
   const [fieldErrors, setFieldErrors] = useState<LocalFieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const step = steps[stepIndex];
@@ -130,10 +146,18 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
       firstName: formState.firstName,
       lastName: formState.lastName,
       addressText: formState.addressText,
-      avatarUrl: formState.avatarUrl.trim() ? formState.avatarUrl : null
+      avatarBlobPath: formState.avatarBlobPath.trim() ? formState.avatarBlobPath : null
     }),
-    [formState.addressText, formState.avatarUrl, formState.firstName, formState.lastName]
+    [formState.addressText, formState.avatarBlobPath, formState.firstName, formState.lastName]
   );
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreviewSrc?.startsWith('blob:')) {
+        URL.revokeObjectURL(avatarPreviewSrc);
+      }
+    };
+  }, [avatarPreviewSrc]);
 
   function updateField(field: keyof JefeWizardState, value: string) {
     setFormState((current) => ({
@@ -143,6 +167,41 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
     setFieldErrors((current) => ({
       ...current,
       [field]: undefined,
+      form: undefined
+    }));
+  }
+
+  function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.currentTarget.files?.[0] ?? null;
+    event.currentTarget.value = '';
+
+    if (!file) {
+      return;
+    }
+
+    setAvatarFile(file);
+    setAvatarPreviewSrc(URL.createObjectURL(file));
+    setFormState((current) => ({
+      ...current,
+      avatarBlobPath: ''
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      avatarBlobPath: undefined,
+      form: undefined
+    }));
+  }
+
+  function clearAvatar() {
+    setAvatarFile(null);
+    setAvatarPreviewSrc(null);
+    setFormState((current) => ({
+      ...current,
+      avatarBlobPath: ''
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      avatarBlobPath: undefined,
       form: undefined
     }));
   }
@@ -168,6 +227,47 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
     return Object.keys(nextErrors).length === 0;
   }
 
+  async function uploadSelectedAvatar(): Promise<{ ok: true; avatarBlobPath: string | null } | { ok: false }> {
+    if (!avatarFile) {
+      return {
+        ok: true,
+        avatarBlobPath: payload.avatarBlobPath ?? null
+      };
+    }
+
+    const formData = new FormData();
+    formData.set('file', avatarFile);
+
+    const response = await fetch('/api/profile/avatar', {
+      method: 'POST',
+      body: formData
+    });
+    const responseBody = (await response.json()) as AvatarUploadResponse;
+
+    if (!response.ok || !responseBody.ok) {
+      setFieldErrors({
+        avatarBlobPath: [!responseBody.ok && responseBody.message ? responseBody.message : 'No pudimos subir la foto.']
+      });
+      setStepIndex(2);
+
+      return {
+        ok: false
+      };
+    }
+
+    setAvatarFile(null);
+    setAvatarPreviewSrc(responseBody.previewSrc);
+    setFormState((current) => ({
+      ...current,
+      avatarBlobPath: responseBody.pathname
+    }));
+
+    return {
+      ok: true,
+      avatarBlobPath: responseBody.pathname
+    };
+  }
+
   async function submitProfile() {
     const validation = validateJefeOnboardingInput(payload);
 
@@ -181,12 +281,30 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
     setFieldErrors({});
 
     try {
+      const avatarUpload = await uploadSelectedAvatar();
+
+      if (!avatarUpload.ok) {
+        return;
+      }
+
+      const finalPayload = {
+        ...validation.data,
+        avatarBlobPath: avatarUpload.avatarBlobPath
+      };
+      const finalValidation = validateJefeOnboardingInput(finalPayload);
+
+      if (!finalValidation.ok) {
+        setFieldErrors(finalValidation.fieldErrors);
+        setStepIndex(getFirstErrorStep(finalValidation.fieldErrors));
+        return;
+      }
+
       const response = await fetch('/api/onboarding/jefe', {
         method: 'POST',
         headers: {
           'content-type': 'application/json'
         },
-        body: JSON.stringify(validation.data)
+        body: JSON.stringify(finalValidation.data)
       });
       const responseBody = (await response.json()) as JefeApiResponse;
 
@@ -284,24 +402,54 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
       return (
         <div className="space-y-4">
           <div className="rounded-[26px] border border-border bg-card p-5 shadow-soft">
-            <p className="text-sm font-bold text-foreground">Podés dejarlo vacío y completar la foto después.</p>
+            <div className="mx-auto flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border border-border bg-muted">
+              {avatarPreviewSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatarPreviewSrc}
+                  alt="Vista previa de la foto de perfil"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="px-4 text-center text-sm font-bold text-muted-foreground">Sin foto</span>
+              )}
+            </div>
+            <p className="mt-4 text-sm font-bold text-foreground">Podés subir una imagen o sacar una foto ahora.</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">
-              En esta etapa solo guardamos una URL opcional. La carga real de archivos queda para una integración de storage.
+              La foto se guarda como Vercel Blob privado y solo se muestra desde rutas autenticadas.
             </p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="avatarUrl">URL de foto opcional</Label>
-            <Input
-              id="avatarUrl"
-              name="avatarUrl"
-              type="text"
-              inputMode="url"
-              placeholder="https://..."
-              value={formState.avatarUrl}
-              onChange={(event) => updateField('avatarUrl', event.target.value)}
+          <div className="grid grid-cols-2 gap-3">
+            <input
+              id="avatarUpload"
+              name="avatarUpload"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              onChange={handleAvatarChange}
             />
-            <FieldError messages={fieldErrors.avatarUrl} />
+            <Button type="button" asChild variant="outline">
+              <label htmlFor="avatarUpload">Subir foto</label>
+            </Button>
+            <input
+              id="avatarCamera"
+              name="avatarCamera"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              capture="environment"
+              className="sr-only"
+              onChange={handleAvatarChange}
+            />
+            <Button type="button" asChild>
+              <label htmlFor="avatarCamera">Tomar foto</label>
+            </Button>
           </div>
+          {avatarPreviewSrc ? (
+            <Button type="button" variant="outline" className="w-full" onClick={clearAvatar}>
+              Quitar foto
+            </Button>
+          ) : null}
+          <FieldError messages={fieldErrors.avatarBlobPath} />
         </div>
       );
     }
@@ -319,7 +467,9 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Foto</dt>
-              <dd className="font-bold text-foreground">{formState.avatarUrl ? 'Agregada' : 'Pendiente'}</dd>
+              <dd className="font-bold text-foreground">
+                {avatarPreviewSrc || formState.avatarBlobPath ? 'Agregada' : 'Pendiente'}
+              </dd>
             </div>
           </dl>
         </div>

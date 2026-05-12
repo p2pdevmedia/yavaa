@@ -2,6 +2,7 @@ import type { Route } from 'next';
 import { z } from 'zod';
 
 import type { AppUserProfile } from '@/lib/app-user';
+import { isProfileAvatarBlobPath } from '@/lib/profile-avatar';
 
 export const onboardingModes = ['jefe', 'trabajador'] as const;
 export type OnboardingMode = (typeof onboardingModes)[number];
@@ -66,7 +67,7 @@ const messages = {
   hourlyRateInteger: 'El precio por hora debe ser un número entero.',
   hourlyRatePositive: 'El precio por hora tiene que ser mayor a 0.',
   hourlyRateMax: 'El precio por hora es demasiado alto.',
-  avatarUrlInvalid: 'Ingresá una URL de foto válida.'
+  avatarBlobPathInvalid: 'Subí una foto válida.'
 } as const;
 
 const firstNameSchema = z
@@ -144,7 +145,12 @@ export const jefeOnboardingSchema = z.object({
   firstName: firstNameSchema,
   lastName: lastNameSchema,
   addressText: addressSchema,
-  avatarUrl: z.string().url(messages.avatarUrlInvalid).nullable().optional()
+  avatarBlobPath: z
+    .string()
+    .trim()
+    .refine((value) => isProfileAvatarBlobPath(value), messages.avatarBlobPathInvalid)
+    .nullable()
+    .optional()
 });
 
 export type WorkerOnboardingInput = z.infer<typeof workerOnboardingSchema>;

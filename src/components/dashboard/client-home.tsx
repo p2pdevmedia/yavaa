@@ -4,19 +4,29 @@ import type { Route } from 'next';
 import { Button } from '@/components/ui/button';
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 import type { AppUserProfile } from '@/lib/app-user';
+import { getPrivateProfileAvatarSrc } from '@/lib/profile-avatar';
 
 export function ClientHome({ profile }: { profile: AppUserProfile | null }) {
   const firstName = profile?.firstName ?? 'Tu perfil';
+  const avatarSrc = profile?.avatarUrl ? getPrivateProfileAvatarSrc(profile.avatarUrl) : null;
 
   return (
     <YavaaPageShell width="md" className="py-5">
       <section className="space-y-5">
-        <div className="space-y-2 px-1">
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Cliente home</p>
-          <h1 className="font-display text-3xl font-bold tracking-normal text-foreground">Hola, {firstName}</h1>
-          <p className="text-sm leading-6 text-muted-foreground">
-            Elegí una acción clara para resolver tu próximo trabajo sin vueltas.
-          </p>
+        <div className="flex items-center gap-4 px-1">
+          {avatarSrc ? (
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatarSrc} alt={`Foto de perfil de ${firstName}`} className="h-full w-full object-cover" />
+            </div>
+          ) : null}
+          <div className="min-w-0 space-y-2">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Cliente home</p>
+            <h1 className="font-display text-3xl font-bold tracking-normal text-foreground">Hola, {firstName}</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Elegí una acción clara para resolver tu próximo trabajo sin vueltas.
+            </p>
+          </div>
         </div>
 
         <article className="rounded-[30px] bg-primary p-6 text-primary-foreground shadow-soft">

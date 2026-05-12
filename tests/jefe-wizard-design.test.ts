@@ -23,8 +23,19 @@ describe('jefe wizard mobile design', () => {
     const wizard = readProjectFile('src/components/onboarding/jefe-wizard.tsx');
 
     expect(wizard).toContain("fetch('/api/onboarding/jefe'");
+    expect(wizard).toContain("fetch('/api/profile/avatar'");
     expect(wizard).toContain("'/dashboard/jefe'");
     expect(wizard).toContain('router.push');
+  });
+
+  it('uses private blob photo controls instead of a manual avatar URL', () => {
+    const wizard = readProjectFile('src/components/onboarding/jefe-wizard.tsx');
+
+    expect(wizard).toContain('Subir foto');
+    expect(wizard).toContain('Tomar foto');
+    expect(wizard).toContain('capture="environment"');
+    expect(wizard).toContain('accept="image/jpeg,image/png,image/webp"');
+    expect(wizard).not.toContain('URL de foto opcional');
   });
 
   it('is connected from the protected onboarding route', () => {

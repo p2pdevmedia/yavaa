@@ -117,12 +117,12 @@ describe('onboarding field validation', () => {
     });
   });
 
-  it('accepts valid jefe onboarding input and normalizes optional avatar', () => {
+  it('accepts valid jefe onboarding input and normalizes optional private avatar blob path', () => {
     const result = validateJefeOnboardingInput({
       firstName: '  Martin ',
       lastName: ' Ruiz  ',
       addressText: '  Salta Capital ',
-      avatarUrl: null
+      avatarBlobPath: null
     });
 
     expect(result).toEqual({
@@ -131,7 +131,7 @@ describe('onboarding field validation', () => {
         firstName: 'Martin',
         lastName: 'Ruiz',
         addressText: 'Salta Capital',
-        avatarUrl: null
+        avatarBlobPath: null
       },
       fieldErrors: {}
     });
@@ -142,7 +142,7 @@ describe('onboarding field validation', () => {
       firstName: '',
       lastName: '',
       addressText: 'x',
-      avatarUrl: undefined
+      avatarBlobPath: undefined
     });
 
     expect(result.ok).toBe(false);
@@ -158,12 +158,12 @@ describe('onboarding field validation', () => {
     expect(result.fieldErrors).not.toHaveProperty('_form');
   });
 
-  it('returns jefe avatar URL errors on avatarUrl only', () => {
+  it('returns jefe avatar blob path errors on avatarBlobPath only', () => {
     const result = validateJefeOnboardingInput({
       firstName: 'Martin',
       lastName: 'Ruiz',
       addressText: 'Salta Capital',
-      avatarUrl: 'foto-local'
+      avatarBlobPath: 'https://example.com/avatar.png'
     });
 
     expect(result.ok).toBe(false);
@@ -172,7 +172,7 @@ describe('onboarding field validation', () => {
     }
 
     expect(result.fieldErrors).toEqual({
-      avatarUrl: ['Ingresá una URL de foto válida.']
+      avatarBlobPath: ['Subí una foto válida.']
     });
   });
 });

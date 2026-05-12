@@ -8,7 +8,8 @@ const envSchema = z
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional()
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+    BLOB_READ_WRITE_TOKEN: z.string().min(1).optional()
   })
   .passthrough();
 
@@ -116,4 +117,8 @@ export function getSupabasePublishableKey(): string {
 
 export function hasSupabaseServiceRoleEnv(): boolean {
   return Boolean(getEnv().SUPABASE_SERVICE_ROLE_KEY);
+}
+
+export function hasVercelBlobEnv(): boolean {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || getEnv().BLOB_READ_WRITE_TOKEN);
 }

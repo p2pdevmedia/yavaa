@@ -152,7 +152,7 @@ describe('POST /api/onboarding/jefe', () => {
         firstName: '',
         lastName: 'Ruiz',
         addressText: 'Salta Capital',
-        avatarUrl: 'foto-local'
+        avatarBlobPath: 'https://example.com/avatar.png'
       })
     );
 
@@ -162,7 +162,7 @@ describe('POST /api/onboarding/jefe', () => {
       message: 'Revisá los datos del formulario.',
       fieldErrors: {
         firstName: ['Ingresá tu nombre.'],
-        avatarUrl: ['Ingresá una URL de foto válida.']
+        avatarBlobPath: ['Subí una foto válida.']
       }
     });
     expect(getPrismaClientMock).not.toHaveBeenCalled();
@@ -183,7 +183,7 @@ describe('POST /api/onboarding/jefe', () => {
         firstName: 'Martin',
         lastName: 'Ruiz',
         addressText: 'Salta Capital',
-        avatarUrl: null
+        avatarBlobPath: null
       })
     );
 

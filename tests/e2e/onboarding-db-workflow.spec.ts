@@ -467,6 +467,31 @@ test.describe('DB-backed onboarding workflow', () => {
         email,
         roles: ['jefe']
       });
+      const avatarPath = `profiles/${user.id}/avatars/e2e-avatar.png`;
+
+      await page.route('**/api/profile/avatar**', async (route) => {
+        if (route.request().method() === 'POST') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              ok: true,
+              pathname: avatarPath,
+              previewSrc: `/api/profile/avatar?pathname=${encodeURIComponent(avatarPath)}`
+            })
+          });
+          return;
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'image/png',
+          body: Buffer.from(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADgQGAmYlWzQAAAABJRU5ErkJggg==',
+            'base64'
+          )
+        });
+      });
 
       await authenticateAs(page, email);
       await page.goto('/dashboard/onboarding/jefe');
@@ -487,10 +512,14 @@ test.describe('DB-backed onboarding workflow', () => {
       await page.getByRole('button', { name: 'Continuar' }).click();
 
       await expect(page.getByRole('heading', { name: 'Agregá una foto' })).toBeVisible();
-      await page.getByLabel('URL de foto opcional').fill('foto-local');
-      await page.getByRole('button', { name: 'Continuar' }).click();
-      await expect(page.getByText('Ingresá una URL de foto válida.')).toBeVisible();
-      await page.getByLabel('URL de foto opcional').fill('');
+      await expect(page.getByText('Subir foto')).toBeVisible();
+      await expect(page.getByText('Tomar foto')).toBeVisible();
+      await page.setInputFiles('input[name="avatarUpload"]', {
+        name: 'avatar.png',
+        mimeType: 'image/png',
+        buffer: Buffer.from('avatar')
+      });
+      await expect(page.getByAltText('Vista previa de la foto de perfil')).toBeVisible();
       await page.getByRole('button', { name: 'Continuar' }).click();
 
       await expect(page.getByRole('heading', { name: 'Ya podés contratar' })).toBeVisible();
@@ -498,6 +527,7 @@ test.describe('DB-backed onboarding workflow', () => {
 
       await expect(page).toHaveURL(/\/dashboard\/jefe$/);
       await expect(page.getByRole('heading', { name: /Hola, Martin/ })).toBeVisible();
+      await expect(page.getByAltText('Foto de perfil de Martin')).toBeVisible();
       await expect(page.getByRole('heading', { name: 'Publicá un trabajo' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'Publicar trabajo' })).toBeVisible();
       await expect(page.getByRole('link', { name: 'Buscar trabajadores' })).toBeVisible();
@@ -511,7 +541,7 @@ test.describe('DB-backed onboarding workflow', () => {
       expect(profile.firstName).toBe('Martin');
       expect(profile.lastName).toBe('Ruiz');
       expect(profile.addressText).toBe('Salta Capital');
-      expect(profile.avatarUrl).toBeNull();
+      expect(profile.avatarUrl).toBe(avatarPath);
       expect(profile.onboardingRole).toBe(OnboardingRole.JEFE);
       expect(profile.jefeOnboardingCompletedAt).toBeTruthy();
     } finally {

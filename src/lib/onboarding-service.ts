@@ -12,6 +12,7 @@ import {
   validateWorkerOnboardingInput
 } from '@/lib/onboarding';
 import { canCompleteOnboarding } from '@/lib/permissions';
+import { isProfileAvatarBlobPathForUser } from '@/lib/profile-avatar';
 import { getPrismaClient } from '@/lib/prisma';
 import type { RequestAuthState } from '@/lib/request-auth';
 
@@ -183,10 +184,22 @@ export async function completeJefeOnboarding(
   }
 
   const data: JefeOnboardingInput = validation.data;
+
+  if (data.avatarBlobPath && !isProfileAvatarBlobPathForUser(data.avatarBlobPath, auth.appUser.id)) {
+    return {
+      ok: false,
+      status: 422,
+      message: 'Revisá los datos del formulario.',
+      fieldErrors: {
+        avatarBlobPath: ['Subí una foto válida.']
+      }
+    };
+  }
+
   const profileData = {
     firstName: data.firstName,
     lastName: data.lastName,
-    avatarUrl: data.avatarUrl ?? null,
+    avatarUrl: data.avatarBlobPath ?? null,
     onboardingRole: OnboardingRole.JEFE,
     jefeOnboardingCompletedAt: completedAt,
     addressText: data.addressText

@@ -24,7 +24,7 @@ const validJefePayload = {
   firstName: '  Martin ',
   lastName: ' Ruiz ',
   addressText: 'Salta Capital',
-  avatarUrl: 'https://example.com/avatar.png'
+  avatarBlobPath: 'profiles/user_002/avatars/avatar.jpg'
 };
 
 const activeWorkerAuth = {
@@ -292,7 +292,7 @@ describe('jefe onboarding service', () => {
   it('returns field errors for invalid jefe payloads without writing', async () => {
     const result = await completeJefeOnboarding(activeJefeAuth, {
       ...validJefePayload,
-      avatarUrl: 'foto-local'
+      avatarBlobPath: 'profiles/user_999/avatars/avatar.jpg'
     });
 
     expect(result).toEqual({
@@ -300,7 +300,7 @@ describe('jefe onboarding service', () => {
       status: 422,
       message: 'Revisá los datos del formulario.',
       fieldErrors: {
-        avatarUrl: ['Ingresá una URL de foto válida.']
+        avatarBlobPath: ['Subí una foto válida.']
       }
     });
     expect(getPrismaClientMock).not.toHaveBeenCalled();
@@ -331,7 +331,7 @@ describe('jefe onboarding service', () => {
         userId: 'user_002',
         firstName: 'Martin',
         lastName: 'Ruiz',
-        avatarUrl: 'https://example.com/avatar.png',
+        avatarUrl: 'profiles/user_002/avatars/avatar.jpg',
         onboardingRole: OnboardingRole.JEFE,
         jefeOnboardingCompletedAt: now,
         addressText: 'Salta Capital'
@@ -339,7 +339,7 @@ describe('jefe onboarding service', () => {
       update: {
         firstName: 'Martin',
         lastName: 'Ruiz',
-        avatarUrl: 'https://example.com/avatar.png',
+        avatarUrl: 'profiles/user_002/avatars/avatar.jpg',
         onboardingRole: OnboardingRole.JEFE,
         jefeOnboardingCompletedAt: now,
         addressText: 'Salta Capital'
