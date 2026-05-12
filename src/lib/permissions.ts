@@ -1,6 +1,6 @@
 import { UserStatus } from '@prisma/client';
 
-export const appRoleSlugs = ['client', 'contractor', 'admin', 'support'] as const;
+export const appRoleSlugs = ['jefe', 'trabajador'] as const;
 
 export type AppRoleSlug = (typeof appRoleSlugs)[number];
 
@@ -27,113 +27,13 @@ export function canAccessOwnResource(context: PermissionContext, ownerUserId: st
 }
 
 export function canViewUserRecord(context: PermissionContext, targetUserId: string): boolean {
-  return (
-    isActiveContext(context) &&
-    (context.userId === targetUserId || hasAnyRole(context, ['admin', 'support']))
-  );
+  return canAccessOwnResource(context, targetUserId);
 }
 
 export function canManageOwnProfile(context: PermissionContext, ownerUserId: string): boolean {
   return canAccessOwnResource(context, ownerUserId);
 }
 
-export function canManageAddress(context: PermissionContext, ownerUserId: string): boolean {
-  return canAccessOwnResource(context, ownerUserId) || (isActiveContext(context) && hasRole(context, 'admin'));
-}
-
-export function canManageContractorProfile(context: PermissionContext, ownerUserId: string): boolean {
-  return (
-    isActiveContext(context) &&
-    (context.userId === ownerUserId || hasRole(context, 'admin'))
-  );
-}
-
-export function canReviewContractorApplication(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'admin');
-}
-
-export function canManageCategoryCatalog(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'admin');
-}
-
-export function canManageUsers(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'admin');
-}
-
-export function canManageDebt(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'admin');
-}
-
-export function canCorrectBookingsOperationally(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'admin');
-}
-
-export function canViewAuditLog(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'admin');
-}
-
-export function canAssignRoles(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'admin');
-}
-
-export function canCreateEmergencyRequest(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'client');
-}
-
-export function canViewEmergencyRequest(
-  context: PermissionContext,
-  request: {
-    clientUserId: string;
-    assignedContractorUserId: string | null;
-    notifiedContractorUserIds: ReadonlyArray<string>;
-  }
-): boolean {
-  return (
-    isActiveContext(context) &&
-    (hasRole(context, 'admin') ||
-      (hasRole(context, 'client') && context.userId === request.clientUserId) ||
-      (hasRole(context, 'contractor') &&
-        (request.assignedContractorUserId === context.userId ||
-          request.notifiedContractorUserIds.includes(context.userId))))
-  );
-}
-
-export function canRespondToEmergencyRequest(context: PermissionContext, contractorUserId: string): boolean {
-  return isActiveContext(context) && hasRole(context, 'contractor') && context.userId === contractorUserId;
-}
-
-export function canReassignEmergencyRequest(context: PermissionContext): boolean {
-  return isActiveContext(context) && hasRole(context, 'admin');
-}
-
-export function canViewBookingConversation(
-  context: PermissionContext,
-  booking: {
-    clientUserId: string;
-    contractorProfile: {
-      userId: string;
-    };
-  }
-): boolean {
-  return (
-    isActiveContext(context) &&
-    (hasAnyRole(context, ['admin', 'support']) ||
-      booking.clientUserId === context.userId ||
-      booking.contractorProfile.userId === context.userId)
-  );
-}
-
-export function canWriteBookingConversation(
-  context: PermissionContext,
-  booking: {
-    clientUserId: string;
-    contractorProfile: {
-      userId: string;
-    };
-  }
-): boolean {
-  return (
-    isActiveContext(context) &&
-    (booking.clientUserId === context.userId || booking.contractorProfile.userId === context.userId)
-  );
+export function canSelectProfileMode(context: PermissionContext, mode: AppRoleSlug): boolean {
+  return isActiveContext(context) && hasRole(context, mode);
 }

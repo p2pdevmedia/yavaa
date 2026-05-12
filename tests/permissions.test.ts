@@ -3,112 +3,56 @@ import { describe, expect, it } from 'vitest';
 
 import {
   canAccessOwnResource,
-  canAssignRoles,
-  canManageDebt,
-  canManageAddress,
-  canManageCategoryCatalog,
-  canManageUsers,
-  canManageContractorProfile,
-  canCreateEmergencyRequest,
-  canCorrectBookingsOperationally,
-  canRespondToEmergencyRequest,
-  canReassignEmergencyRequest,
   canManageOwnProfile,
-  canReviewContractorApplication,
-  canViewAuditLog,
+  canSelectProfileMode,
   canViewUserRecord,
   hasAnyRole,
   hasRole,
   type PermissionContext
 } from '@/lib/permissions';
 
-const activeClient: PermissionContext = {
-  userId: 'client_001',
+const activeJefe: PermissionContext = {
+  userId: 'user_001',
   status: UserStatus.ACTIVE,
-  roles: ['client']
+  roles: ['jefe']
 };
 
-const activeContractor: PermissionContext = {
-  userId: 'contractor_001',
+const activeTrabajador: PermissionContext = {
+  userId: 'user_002',
   status: UserStatus.ACTIVE,
-  roles: ['contractor']
+  roles: ['trabajador']
 };
 
-const activeAdmin: PermissionContext = {
-  userId: 'admin_001',
-  status: UserStatus.ACTIVE,
-  roles: ['admin', 'support']
-};
-
-const activeSupport: PermissionContext = {
-  userId: 'support_001',
-  status: UserStatus.ACTIVE,
-  roles: ['support']
-};
-
-const suspendedAdmin: PermissionContext = {
-  userId: 'admin_002',
+const suspendedJefe: PermissionContext = {
+  userId: 'user_003',
   status: UserStatus.SUSPENDED,
-  roles: ['admin']
+  roles: ['jefe']
 };
 
 describe('permission helpers', () => {
-  it('recognizes roles and ownership', () => {
-    expect(hasRole(activeAdmin, 'admin')).toBe(true);
-    expect(hasAnyRole(activeAdmin, ['client', 'admin'])).toBe(true);
-    expect(canAccessOwnResource(activeClient, 'client_001')).toBe(true);
-    expect(canManageOwnProfile(activeClient, 'client_001')).toBe(true);
-    expect(canManageOwnProfile(activeClient, 'client_999')).toBe(false);
+  it('recognizes jefe and trabajador roles', () => {
+    expect(hasRole(activeJefe, 'jefe')).toBe(true);
+    expect(hasRole(activeJefe, 'trabajador')).toBe(false);
+    expect(hasAnyRole(activeTrabajador, ['jefe', 'trabajador'])).toBe(true);
   });
 
-  it('allows admins and support to view user records', () => {
-    expect(canViewUserRecord(activeAdmin, 'client_001')).toBe(true);
-    expect(canViewUserRecord(activeAdmin, 'admin_001')).toBe(true);
-    expect(canViewUserRecord(activeClient, 'admin_001')).toBe(false);
+  it('keeps profile access limited to the active owner', () => {
+    expect(canAccessOwnResource(activeJefe, 'user_001')).toBe(true);
+    expect(canManageOwnProfile(activeJefe, 'user_001')).toBe(true);
+    expect(canManageOwnProfile(activeJefe, 'user_999')).toBe(false);
+    expect(canManageOwnProfile(suspendedJefe, 'user_003')).toBe(false);
   });
 
-  it('lets any active user manage their own contractor profile', () => {
-    expect(canManageContractorProfile(activeContractor, 'contractor_001')).toBe(true);
-    expect(canManageContractorProfile(activeClient, 'client_001')).toBe(true);
-    expect(canManageContractorProfile(activeClient, 'contractor_001')).toBe(false);
-    expect(canManageContractorProfile(activeAdmin, 'contractor_001')).toBe(true);
+  it('lets users view only their own user record', () => {
+    expect(canViewUserRecord(activeJefe, 'user_001')).toBe(true);
+    expect(canViewUserRecord(activeJefe, 'user_002')).toBe(false);
+    expect(canViewUserRecord(suspendedJefe, 'user_003')).toBe(false);
   });
 
-  it('limits approval and catalog actions to active admins', () => {
-    expect(canReviewContractorApplication(activeAdmin)).toBe(true);
-    expect(canManageCategoryCatalog(activeAdmin)).toBe(true);
-    expect(canManageUsers(activeAdmin)).toBe(true);
-    expect(canCorrectBookingsOperationally(activeAdmin)).toBe(true);
-    expect(canAssignRoles(activeAdmin)).toBe(true);
-    expect(canViewAuditLog(activeAdmin)).toBe(true);
-    expect(canReviewContractorApplication(suspendedAdmin)).toBe(false);
-    expect(canManageCategoryCatalog(suspendedAdmin)).toBe(false);
-    expect(canManageUsers(suspendedAdmin)).toBe(false);
-    expect(canCorrectBookingsOperationally(suspendedAdmin)).toBe(false);
-    expect(canAssignRoles(suspendedAdmin)).toBe(false);
-    expect(canViewAuditLog(suspendedAdmin)).toBe(false);
-  });
-
-  it('allows only active admins to manage debt', () => {
-    expect(canManageDebt(activeAdmin)).toBe(true);
-    expect(canManageDebt(activeSupport)).toBe(false);
-    expect(canManageDebt(activeClient)).toBe(false);
-    expect(canManageDebt(suspendedAdmin)).toBe(false);
-  });
-
-  it('lets admins manage addresses, but still blocks suspended users', () => {
-    expect(canManageAddress(activeClient, 'client_001')).toBe(true);
-    expect(canManageAddress(activeAdmin, 'client_001')).toBe(true);
-    expect(canManageAddress(activeAdmin, 'admin_001')).toBe(true);
-    expect(canManageAddress(suspendedAdmin, 'admin_002')).toBe(false);
-  });
-
-  it('allows active clients, contractors, and admins to work with emergency requests through server checks', () => {
-    expect(canCreateEmergencyRequest(activeClient)).toBe(true);
-    expect(canCreateEmergencyRequest(activeContractor)).toBe(false);
-    expect(canRespondToEmergencyRequest(activeContractor, 'contractor_001')).toBe(true);
-    expect(canRespondToEmergencyRequest(activeClient, 'contractor_001')).toBe(false);
-    expect(canReassignEmergencyRequest(activeAdmin)).toBe(true);
-    expect(canReassignEmergencyRequest(activeClient)).toBe(false);
+  it('allows active users to select a mode they own', () => {
+    expect(canSelectProfileMode(activeJefe, 'jefe')).toBe(true);
+    expect(canSelectProfileMode(activeTrabajador, 'trabajador')).toBe(true);
+    expect(canSelectProfileMode(activeJefe, 'trabajador')).toBe(false);
+    expect(canSelectProfileMode(suspendedJefe, 'jefe')).toBe(false);
   });
 });

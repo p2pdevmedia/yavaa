@@ -1,10 +1,5 @@
 import { PrismaPg } from '@prisma/adapter-pg';
-import {
-  AddressType,
-  ContractorApprovalStatus,
-  PrismaClient,
-  UserStatus
-} from '@prisma/client';
+import { PrismaClient, UserStatus } from '@prisma/client';
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -19,104 +14,37 @@ const prisma = new PrismaClient({
 });
 
 const seedRoles = [
-  { slug: 'client', name: 'Client', description: 'Requests services and manages bookings.' },
-  { slug: 'contractor', name: 'Contractor', description: 'Offers services and accepts work.' },
-  { slug: 'admin', name: 'Admin', description: 'Operates moderation, approvals, and support.' },
-  { slug: 'support', name: 'Support', description: 'Helps with operational follow-up.' }
+  { slug: 'jefe', name: 'Jefe', description: 'Organiza y solicita trabajo.' },
+  { slug: 'trabajador', name: 'Trabajador', description: 'Ofrece trabajo y coordina servicios.' }
 ];
 
-const seedMarket = {
-  slug: 'san-martin-de-los-andes',
-  country: 'Argentina',
-  province: 'Neuquen',
-  city: 'San Martin de los Andes',
-  isPrimary: true
-};
+async function upsertSeedUser(input) {
+  const user = await prisma.user.upsert({
+    where: { email: input.email },
+    update: {
+      displayName: input.displayName,
+      status: UserStatus.ACTIVE
+    },
+    create: {
+      email: input.email,
+      displayName: input.displayName,
+      status: UserStatus.ACTIVE
+    }
+  });
 
-const seedWorkZones = [
-  {
-    slug: 'central',
-    name: 'Centro',
-    description: 'Zona central de San Martin de los Andes'
-  }
-];
+  await prisma.profile.upsert({
+    where: { userId: user.id },
+    update: input.profile,
+    create: {
+      userId: user.id,
+      ...input.profile
+    }
+  });
 
-const seedCategories = [
-  { slug: 'construction', name: 'Construction', group: 'construction' },
-  { slug: 'home-services', name: 'Home Services', group: 'home services' },
-  { slug: 'psychologists', name: 'Psychologists', group: 'health' },
-  { slug: 'teachers', name: 'Teachers', group: 'education' },
-  { slug: 'massage-therapists', name: 'Massage Therapists', group: 'wellness' },
-  { slug: 'wellness', name: 'Wellness', group: 'wellness' },
-  { slug: 'delivery', name: 'Delivery', group: 'logistics' },
-  { slug: 'errands', name: 'Errands', group: 'assistance' },
-  { slug: 'technology', name: 'Technology', group: 'technology' }
-];
+  return user;
+}
 
 async function main() {
-  await prisma.market.upsert({
-    where: { slug: seedMarket.slug },
-    update: {
-      country: seedMarket.country,
-      province: seedMarket.province,
-      city: seedMarket.city,
-      isPrimary: seedMarket.isPrimary
-    },
-    create: seedMarket
-  });
-
-  const market = await prisma.market.findUnique({
-    where: { slug: seedMarket.slug }
-  });
-
-  if (!market) {
-    throw new Error('Seed market could not be loaded.');
-  }
-
-  await Promise.all(
-    seedWorkZones.map((workZone) =>
-      prisma.workZone.upsert({
-        where: {
-          marketId_slug: {
-            marketId: market.id,
-            slug: workZone.slug
-          }
-        },
-        update: {
-          name: workZone.name,
-          description: workZone.description
-        },
-        create: {
-          marketId: market.id,
-          slug: workZone.slug,
-          name: workZone.name,
-          description: workZone.description
-        }
-      })
-    )
-  );
-
-  await Promise.all(
-    seedCategories.map((category) =>
-      prisma.category.upsert({
-        where: { slug: category.slug },
-        update: {
-          name: category.name,
-          group: category.group,
-          status: 'ACTIVE',
-          isInitial: true
-        },
-        create: {
-          slug: category.slug,
-          name: category.name,
-          group: category.group,
-          status: 'ACTIVE',
-          isInitial: true
-        }
-      })
-    )
-  );
-
   const roles = await Promise.all(
     seedRoles.map((role) =>
       prisma.role.upsert({
@@ -125,564 +53,55 @@ async function main() {
           name: role.name,
           description: role.description
         },
-        create: {
-          slug: role.slug,
-          name: role.name,
-          description: role.description
-        }
+        create: role
       })
     )
   );
 
-  const foundationAdmin = await prisma.user.upsert({
-    where: { email: 'foundation-admin@yavaa.test' },
-    update: {
-      displayName: 'Foundation Admin',
-      status: UserStatus.ACTIVE
-    },
-    create: {
-      email: 'foundation-admin@yavaa.test',
-      displayName: 'Foundation Admin',
-      status: UserStatus.ACTIVE
+  const jefe = await upsertSeedUser({
+    email: 'jefe@yavaa.test',
+    displayName: 'Jefe Principal',
+    profile: {
+      firstName: 'Jefe',
+      lastName: 'Principal',
+      bio: 'Cuenta deterministica para validar el perfil Jefe.'
     }
   });
 
-  await prisma.profile.upsert({
-    where: { userId: foundationAdmin.id },
-    update: {
-      firstName: 'Foundation',
-      lastName: 'Admin',
-      bio: 'Deterministic seed account for stage 1 validation.'
-    },
-    create: {
-      userId: foundationAdmin.id,
-      firstName: 'Foundation',
-      lastName: 'Admin',
-      bio: 'Deterministic seed account for stage 1 validation.'
+  const trabajador = await upsertSeedUser({
+    email: 'trabajador@yavaa.test',
+    displayName: 'Trabajador Principal',
+    profile: {
+      firstName: 'Trabajador',
+      lastName: 'Principal',
+      bio: 'Cuenta deterministica para validar el perfil Trabajador.'
     }
   });
 
-  const foundationContractor = await prisma.user.upsert({
-    where: { email: 'foundation-contractor@yavaa.test' },
-    update: {
-      displayName: 'Foundation Contractor',
-      status: UserStatus.ACTIVE
-    },
-    create: {
-      email: 'foundation-contractor@yavaa.test',
-      displayName: 'Foundation Contractor',
-      status: UserStatus.ACTIVE
-    }
-  });
+  for (const [user, slug] of [
+    [jefe, 'jefe'],
+    [trabajador, 'trabajador']
+  ]) {
+    const role = roles.find((candidate) => candidate.slug === slug);
 
-  await prisma.profile.upsert({
-    where: { userId: foundationContractor.id },
-    update: {
-      firstName: 'Carlos',
-      lastName: 'Perez',
-      phone: '+54 9 2972 555000',
-      bio: 'Deterministic seed contractor account for stage 2 validation.'
-    },
-    create: {
-      userId: foundationContractor.id,
-      firstName: 'Carlos',
-      lastName: 'Perez',
-      phone: '+54 9 2972 555000',
-      bio: 'Deterministic seed contractor account for stage 2 validation.'
+    if (!role) {
+      throw new Error(`Seed role not found: ${slug}`);
     }
-  });
 
-  const adminRole = roles.find((role) => role.slug === 'admin');
-  if (adminRole) {
     await prisma.userRole.upsert({
       where: {
         userId_roleId: {
-          userId: foundationAdmin.id,
-          roleId: adminRole.id
+          userId: user.id,
+          roleId: role.id
         }
       },
       update: {},
       create: {
-        userId: foundationAdmin.id,
-        roleId: adminRole.id
+        userId: user.id,
+        roleId: role.id
       }
     });
   }
-
-  const contractorRole = roles.find((role) => role.slug === 'contractor');
-  if (contractorRole) {
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: foundationContractor.id,
-          roleId: contractorRole.id
-        }
-      },
-      update: {},
-      create: {
-        userId: foundationContractor.id,
-        roleId: contractorRole.id
-      }
-    });
-  }
-
-  const contractorAddress = await prisma.address.upsert({
-    where: {
-      id: '11111111-1111-1111-1111-111111111111'
-    },
-    update: {
-      label: 'Main workshop',
-      line1: 'Av. San Martin 123',
-      city: market.city,
-      province: market.province,
-      postalCode: '8370',
-      notes: 'Primary contractor address used for stage 2 validation.',
-      type: AddressType.WORK,
-      isDefault: true,
-      marketId: market.id
-    },
-    create: {
-      id: '11111111-1111-1111-1111-111111111111',
-      userId: foundationContractor.id,
-      marketId: market.id,
-      label: 'Main workshop',
-      line1: 'Av. San Martin 123',
-      city: market.city,
-      province: market.province,
-      postalCode: '8370',
-      notes: 'Primary contractor address used for stage 2 validation.',
-      type: AddressType.WORK,
-      isDefault: true
-    }
-  });
-
-  const contractorProfile = await prisma.contractorProfile.upsert({
-    where: { userId: foundationContractor.id },
-    update: {
-      addressId: contractorAddress.id,
-      approvalStatus: ContractorApprovalStatus.PENDING_REVIEW,
-      acceptsEmergencies: true,
-      dniNumber: '12345678',
-      dniFrontUrl: 'https://example.com/seeds/dni-front.jpg',
-      dniBackUrl: 'https://example.com/seeds/dni-back.jpg',
-      profilePhotoUrl: 'https://example.com/seeds/profile-photo.jpg',
-      reviewNotes: 'Pending review in deterministic seed dataset.',
-      submittedAt: new Date('2026-01-01T12:00:00.000Z'),
-      reviewedAt: null,
-      reviewedByUserId: null
-    },
-    create: {
-      userId: foundationContractor.id,
-      addressId: contractorAddress.id,
-      approvalStatus: ContractorApprovalStatus.PENDING_REVIEW,
-      acceptsEmergencies: true,
-      dniNumber: '12345678',
-      dniFrontUrl: 'https://example.com/seeds/dni-front.jpg',
-      dniBackUrl: 'https://example.com/seeds/dni-back.jpg',
-      profilePhotoUrl: 'https://example.com/seeds/profile-photo.jpg',
-      reviewNotes: 'Pending review in deterministic seed dataset.',
-      submittedAt: new Date('2026-01-01T12:00:00.000Z')
-    }
-  });
-
-  const publicContractor = await prisma.user.upsert({
-    where: { email: 'foundation-public-contractor@yavaa.test' },
-    update: {
-      displayName: 'Foundation Public Contractor',
-      status: UserStatus.ACTIVE
-    },
-    create: {
-      email: 'foundation-public-contractor@yavaa.test',
-      displayName: 'Foundation Public Contractor',
-      status: UserStatus.ACTIVE
-    }
-  });
-
-  await prisma.profile.upsert({
-    where: { userId: publicContractor.id },
-    update: {
-      firstName: 'Carlos',
-      lastName: 'Perez',
-      phone: '+54 9 2972 555111',
-      bio: 'Approved deterministic contractor used by public discovery tests.'
-    },
-    create: {
-      userId: publicContractor.id,
-      firstName: 'Carlos',
-      lastName: 'Perez',
-      phone: '+54 9 2972 555111',
-      bio: 'Approved deterministic contractor used by public discovery tests.'
-    }
-  });
-
-  if (contractorRole) {
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: publicContractor.id,
-          roleId: contractorRole.id
-        }
-      },
-      update: {},
-      create: {
-        userId: publicContractor.id,
-        roleId: contractorRole.id
-      }
-    });
-  }
-
-  const publicContractorAddress = await prisma.address.upsert({
-    where: {
-      id: '22222222-2222-2222-2222-222222222222'
-    },
-    update: {
-      label: 'Public workshop',
-      line1: 'Av. San Martin 456',
-      city: market.city,
-      province: market.province,
-      postalCode: '8370',
-      notes: 'Approved contractor address used for public discovery.',
-      type: AddressType.WORK,
-      isDefault: true,
-      marketId: market.id
-    },
-    create: {
-      id: '22222222-2222-2222-2222-222222222222',
-      userId: publicContractor.id,
-      marketId: market.id,
-      label: 'Public workshop',
-      line1: 'Av. San Martin 456',
-      city: market.city,
-      province: market.province,
-      postalCode: '8370',
-      notes: 'Approved contractor address used for public discovery.',
-      type: AddressType.WORK,
-      isDefault: true
-    }
-  });
-
-  const publicContractorProfile = await prisma.contractorProfile.upsert({
-    where: { userId: publicContractor.id },
-    update: {
-      addressId: publicContractorAddress.id,
-      approvalStatus: ContractorApprovalStatus.APPROVED,
-      acceptsEmergencies: true,
-      dniNumber: '87654321',
-      dniFrontUrl: 'https://example.com/seeds/public-dni-front.jpg',
-      dniBackUrl: 'https://example.com/seeds/public-dni-back.jpg',
-      profilePhotoUrl: 'https://example.com/seeds/public-profile-photo.jpg',
-      reviewNotes: 'Approved deterministic seed contractor for public discovery.',
-      submittedAt: new Date('2026-01-01T13:00:00.000Z'),
-      reviewedAt: new Date('2026-01-01T14:00:00.000Z'),
-      reviewedByUserId: foundationAdmin.id
-    },
-    create: {
-      userId: publicContractor.id,
-      addressId: publicContractorAddress.id,
-      approvalStatus: ContractorApprovalStatus.APPROVED,
-      acceptsEmergencies: true,
-      dniNumber: '87654321',
-      dniFrontUrl: 'https://example.com/seeds/public-dni-front.jpg',
-      dniBackUrl: 'https://example.com/seeds/public-dni-back.jpg',
-      profilePhotoUrl: 'https://example.com/seeds/public-profile-photo.jpg',
-      reviewNotes: 'Approved deterministic seed contractor for public discovery.',
-      submittedAt: new Date('2026-01-01T13:00:00.000Z'),
-      reviewedAt: new Date('2026-01-01T14:00:00.000Z'),
-      reviewedByUserId: foundationAdmin.id
-    }
-  });
-
-  const homeServicesCategory = await prisma.category.findUnique({
-    where: { slug: 'home-services' }
-  });
-
-  if (homeServicesCategory) {
-    await prisma.contractorCategory.upsert({
-      where: {
-        contractorProfileId_categoryId: {
-          contractorProfileId: contractorProfile.id,
-          categoryId: homeServicesCategory.id
-        }
-      },
-      update: {
-        isPrimary: true
-      },
-      create: {
-        contractorProfileId: contractorProfile.id,
-        categoryId: homeServicesCategory.id,
-        isPrimary: true
-      }
-    });
-  }
-
-  const workZone = await prisma.workZone.findUnique({
-    where: {
-      marketId_slug: {
-        marketId: market.id,
-        slug: 'central'
-      }
-    }
-  });
-
-  if (workZone) {
-    await prisma.contractorWorkZone.upsert({
-      where: {
-        contractorProfileId_workZoneId: {
-          contractorProfileId: contractorProfile.id,
-          workZoneId: workZone.id
-        }
-      },
-      update: {},
-      create: {
-        contractorProfileId: contractorProfile.id,
-        workZoneId: workZone.id
-      }
-    });
-  }
-
-  if (homeServicesCategory) {
-    await prisma.contractorCategory.upsert({
-      where: {
-        contractorProfileId_categoryId: {
-          contractorProfileId: publicContractorProfile.id,
-          categoryId: homeServicesCategory.id
-        }
-      },
-      update: {
-        isPrimary: true
-      },
-      create: {
-        contractorProfileId: publicContractorProfile.id,
-        categoryId: homeServicesCategory.id,
-        isPrimary: true
-      }
-    });
-  }
-
-  if (workZone) {
-    await prisma.contractorWorkZone.upsert({
-      where: {
-        contractorProfileId_workZoneId: {
-          contractorProfileId: publicContractorProfile.id,
-          workZoneId: workZone.id
-        }
-      },
-      update: {},
-      create: {
-        contractorProfileId: publicContractorProfile.id,
-        workZoneId: workZone.id
-      }
-    });
-  }
-
-  if (!homeServicesCategory) {
-    throw new Error('Home services category could not be loaded.');
-  }
-
-  const clientRole = roles.find((role) => role.slug === 'client');
-
-  const foundationClient = await prisma.user.upsert({
-    where: { email: 'foundation-client@yavaa.test' },
-    update: {
-      displayName: 'Foundation Client',
-      status: UserStatus.ACTIVE
-    },
-    create: {
-      email: 'foundation-client@yavaa.test',
-      displayName: 'Foundation Client',
-      status: UserStatus.ACTIVE
-    }
-  });
-
-  await prisma.profile.upsert({
-    where: { userId: foundationClient.id },
-    update: {
-      firstName: 'Lucia',
-      lastName: 'Gomez',
-      phone: '+54 9 2972 555222',
-      bio: 'Deterministic client account used to validate bookings and conversation flows.'
-    },
-    create: {
-      userId: foundationClient.id,
-      firstName: 'Lucia',
-      lastName: 'Gomez',
-      phone: '+54 9 2972 555222',
-      bio: 'Deterministic client account used to validate bookings and conversation flows.'
-    }
-  });
-
-  if (clientRole) {
-    await prisma.userRole.upsert({
-      where: {
-        userId_roleId: {
-          userId: foundationClient.id,
-          roleId: clientRole.id
-        }
-      },
-      update: {},
-      create: {
-        userId: foundationClient.id,
-        roleId: clientRole.id
-      }
-    });
-  }
-
-  const foundationClientAddress = await prisma.address.upsert({
-    where: {
-      id: '33333333-3333-3333-3333-333333333333'
-    },
-    update: {
-      label: 'Client home',
-      line1: 'Calle Falsa 123',
-      city: market.city,
-      province: market.province,
-      postalCode: '8370',
-      notes: 'Client address used for deterministic booking seeds.',
-      type: AddressType.HOME,
-      isDefault: true,
-      marketId: market.id
-    },
-    create: {
-      id: '33333333-3333-3333-3333-333333333333',
-      userId: foundationClient.id,
-      marketId: market.id,
-      label: 'Client home',
-      line1: 'Calle Falsa 123',
-      city: market.city,
-      province: market.province,
-      postalCode: '8370',
-      notes: 'Client address used for deterministic booking seeds.',
-      type: AddressType.HOME,
-      isDefault: true
-    }
-  });
-
-  const seededBooking = await prisma.booking.upsert({
-    where: {
-      id: '44444444-4444-4444-4444-444444444444'
-    },
-    update: {
-      clientUserId: foundationClient.id,
-      contractorProfileId: publicContractorProfile.id,
-      categoryId: homeServicesCategory.id,
-      addressId: foundationClientAddress.id,
-      scheduledFor: new Date('2026-05-10T10:00:00.000Z'),
-      description: 'Necesito reparar una canilla que gotea en la cocina.',
-      status: 'ACCEPTED',
-      contractorNote: 'Voy a pasar a primera hora de la mañana.',
-      decisionReason: null,
-      acceptedAt: new Date('2026-05-09T15:00:00.000Z'),
-      rejectedAt: null,
-      cancelledAt: null,
-      rescheduleRequestedAt: null
-    },
-    create: {
-      id: '44444444-4444-4444-4444-444444444444',
-      clientUserId: foundationClient.id,
-      contractorProfileId: publicContractorProfile.id,
-      categoryId: homeServicesCategory.id,
-      addressId: foundationClientAddress.id,
-      scheduledFor: new Date('2026-05-10T10:00:00.000Z'),
-      description: 'Necesito reparar una canilla que gotea en la cocina.',
-      status: 'ACCEPTED',
-      contractorNote: 'Voy a pasar a primera hora de la mañana.',
-      decisionReason: null,
-      acceptedAt: new Date('2026-05-09T15:00:00.000Z'),
-      rejectedAt: null,
-      cancelledAt: null,
-      rescheduleRequestedAt: null
-    }
-  });
-
-  await prisma.bookingMessage.upsert({
-    where: { id: '55555555-5555-4555-8555-555555555551' },
-    update: {
-      bookingId: seededBooking.id,
-      senderUserId: null,
-      kind: 'SYSTEM',
-      systemEvent: 'booking.seeded',
-      body: 'Booking created in the deterministic seed dataset.'
-    },
-    create: {
-      id: '55555555-5555-4555-8555-555555555551',
-      bookingId: seededBooking.id,
-      senderUserId: null,
-      kind: 'SYSTEM',
-      systemEvent: 'booking.seeded',
-      body: 'Booking created in the deterministic seed dataset.'
-    }
-  });
-
-  await prisma.bookingMessage.upsert({
-    where: { id: '55555555-5555-4555-8555-555555555552' },
-    update: {
-      bookingId: seededBooking.id,
-      senderUserId: foundationClient.id,
-      kind: 'USER',
-      systemEvent: null,
-      body: 'La canilla sigue goteando, pero no hay olor a gas ni pérdida mayor.'
-    },
-    create: {
-      id: '55555555-5555-4555-8555-555555555552',
-      bookingId: seededBooking.id,
-      senderUserId: foundationClient.id,
-      kind: 'USER',
-      systemEvent: null,
-      body: 'La canilla sigue goteando, pero no hay olor a gas ni pérdida mayor.'
-    }
-  });
-
-  await prisma.notification.upsert({
-    where: { id: '66666666-6666-4666-8666-666666666661' },
-    update: {
-      recipientUserId: foundationClient.id,
-      actorUserId: foundationClient.id,
-      bookingId: seededBooking.id,
-      type: 'BOOKING_CREATED',
-      title: 'Booking creado',
-      body: 'Tu booking quedó registrado y esperando respuesta.',
-      metadata: null,
-      isRead: true,
-      readAt: new Date('2026-05-09T10:30:00.000Z')
-    },
-    create: {
-      id: '66666666-6666-4666-8666-666666666661',
-      recipientUserId: foundationClient.id,
-      actorUserId: publicContractorProfile.userId,
-      bookingId: seededBooking.id,
-      type: 'BOOKING_CREATED',
-      title: 'Booking creado',
-      body: 'Tu booking quedó registrado y esperando respuesta.',
-      isRead: true,
-      readAt: new Date('2026-05-09T10:30:00.000Z')
-    }
-  });
-
-  await prisma.notification.upsert({
-    where: { id: '66666666-6666-4666-8666-666666666662' },
-    update: {
-      recipientUserId: foundationClient.id,
-      actorUserId: publicContractorProfile.userId,
-      bookingId: seededBooking.id,
-      type: 'BOOKING_STATUS_CHANGED',
-      title: 'Booking aceptado',
-      body: 'El contractor aceptó tu booking.',
-      metadata: null,
-      isRead: false,
-      readAt: null
-    },
-    create: {
-      id: '66666666-6666-4666-8666-666666666662',
-      recipientUserId: foundationClient.id,
-      actorUserId: publicContractorProfile.userId,
-      bookingId: seededBooking.id,
-      type: 'BOOKING_STATUS_CHANGED',
-      title: 'Booking aceptado',
-      body: 'El contractor aceptó tu booking.',
-      isRead: false,
-      readAt: null
-    }
-  });
 }
 
 main()

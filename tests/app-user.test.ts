@@ -2,8 +2,8 @@ import { UserStatus } from '@prisma/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { resolveAppUser } from '@/lib/app-user';
-import { getPrismaClient } from '@/lib/prisma';
 import { hasDatabaseEnv } from '@/lib/env';
+import { getPrismaClient } from '@/lib/prisma';
 
 vi.mock('@/lib/env', () => ({
   hasDatabaseEnv: vi.fn()
@@ -26,61 +26,37 @@ describe('app user resolver', () => {
 
     const result = await resolveAppUser({
       id: 'auth_001',
-      email: 'foundation-admin@yavaa.test'
+      email: 'jefe@yavaa.test'
     });
 
     expect(result.configured).toBe(false);
     expect(result.user).toBeNull();
   });
 
-  it('resolves a user by supabase auth id and maps roles, profile, and addresses', async () => {
+  it('resolves a user by supabase auth id and maps roles and profile', async () => {
     mockedHasDatabaseEnv.mockReturnValue(true);
 
     const findFirst = vi.fn().mockResolvedValue({
       id: 'user_001',
-      email: 'foundation-admin@yavaa.test',
+      email: 'jefe@yavaa.test',
       supabaseAuthId: 'auth_001',
-      displayName: 'Foundation Admin',
+      displayName: 'Jefa Principal',
       status: UserStatus.ACTIVE,
       profile: {
-        firstName: 'Foundation',
-        lastName: 'Admin',
+        firstName: 'Jefa',
+        lastName: 'Principal',
         avatarUrl: null,
         phone: '+54 9 1111 1111',
-        bio: 'Seed admin'
+        bio: 'Cuenta jefe'
       },
-      addresses: [
-        {
-          id: 'address_001',
-          label: 'Home',
-          line1: 'Av. San Martin 123',
-          line2: null,
-          city: 'San Martin de los Andes',
-          province: 'Neuquen',
-          postalCode: '8370',
-          notes: null,
-          type: 'HOME',
-          isDefault: true,
-          latitude: -40.1579,
-          longitude: -71.3534,
-          market: {
-            id: 'market_001',
-            slug: 'san-martin-de-los-andes',
-            city: 'San Martin de los Andes',
-            province: 'Neuquen',
-            country: 'Argentina'
-          }
-        }
-      ],
       roles: [
         {
           role: {
-            slug: 'admin',
-            name: 'Admin'
+            slug: 'jefe',
+            name: 'Jefe'
           }
         }
-      ],
-      contractorProfile: null
+      ]
     });
 
     mockedGetPrismaClient.mockReturnValue({
@@ -91,18 +67,13 @@ describe('app user resolver', () => {
 
     const result = await resolveAppUser({
       id: 'auth_001',
-      email: 'foundation-admin@yavaa.test'
+      email: 'jefe@yavaa.test'
     });
 
     expect(findFirst).toHaveBeenCalledTimes(1);
     expect(result.matchedBy).toBe('supabase_auth_id');
-    expect(result.permissionContext?.roles).toEqual(['admin']);
-    expect(result.user?.profile?.firstName).toBe('Foundation');
-    expect(result.user?.addresses).toHaveLength(1);
-    expect(result.user?.addresses[0]).toMatchObject({
-      latitude: -40.1579,
-      longitude: -71.3534
-    });
+    expect(result.permissionContext?.roles).toEqual(['jefe']);
+    expect(result.user?.profile?.firstName).toBe('Jefa');
   });
 
   it('falls back to matching by email when the auth id is not linked yet', async () => {
@@ -113,21 +84,19 @@ describe('app user resolver', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({
         id: 'user_002',
-        email: 'foundation-contractor@yavaa.test',
+        email: 'trabajador@yavaa.test',
         supabaseAuthId: null,
-        displayName: 'Foundation Contractor',
+        displayName: 'Trabajador Principal',
         status: UserStatus.ACTIVE,
         profile: null,
-        addresses: [],
         roles: [
           {
             role: {
-              slug: 'contractor',
-              name: 'Contractor'
+              slug: 'trabajador',
+              name: 'Trabajador'
             }
           }
-        ],
-        contractorProfile: null
+        ]
       });
 
     mockedGetPrismaClient.mockReturnValue({
@@ -138,62 +107,11 @@ describe('app user resolver', () => {
 
     const result = await resolveAppUser({
       id: 'auth_002',
-      email: 'foundation-contractor@yavaa.test'
+      email: 'trabajador@yavaa.test'
     });
 
     expect(findFirst).toHaveBeenCalledTimes(2);
     expect(result.matchedBy).toBe('email');
-    expect(result.permissionContext?.roles).toEqual(['contractor']);
-  });
-
-  it('maps contractor emergency eligibility when the contractor profile is loaded', async () => {
-    mockedHasDatabaseEnv.mockReturnValue(true);
-
-    const findFirst = vi.fn().mockResolvedValue({
-      id: 'user_003',
-      email: 'foundation-emergency@yavaa.test',
-      supabaseAuthId: 'auth_003',
-      displayName: 'Emergency Contractor',
-      status: UserStatus.ACTIVE,
-      profile: null,
-      addresses: [],
-      roles: [
-        {
-          role: {
-            slug: 'contractor',
-            name: 'Contractor'
-          }
-        }
-      ],
-      contractorProfile: {
-        id: 'cp_003',
-        approvalStatus: 'APPROVED',
-        acceptsEmergencies: true,
-        dniNumber: null,
-        dniFrontUrl: null,
-        dniBackUrl: null,
-        profilePhotoUrl: null,
-        reviewNotes: null,
-        submittedAt: null,
-        reviewedAt: null,
-        reviewedByUserId: null,
-        addressId: null,
-        categories: [],
-        workZones: []
-      }
-    });
-
-    mockedGetPrismaClient.mockReturnValue({
-      user: {
-        findFirst
-      }
-    } as never);
-
-    const result = await resolveAppUser({
-      id: 'auth_003',
-      email: 'foundation-emergency@yavaa.test'
-    });
-
-    expect(result.user?.contractorProfile?.acceptsEmergencies).toBe(true);
+    expect(result.permissionContext?.roles).toEqual(['trabajador']);
   });
 });
