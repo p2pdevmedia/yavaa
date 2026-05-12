@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import type { Route } from 'next';
 
 import { AuthForm } from '@/components/auth/auth-form';
-import { YavaaHero, YavaaPageShell, YavaaSurface } from '@/components/ui/yavaa-layout';
+import { AuthPageFrame } from '@/components/ui/yavaa-layout';
 import { getAuthSessionState, normalizeNextPath } from '@/lib/auth';
 
 type SignUpPageProps = {
@@ -27,18 +27,14 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   }
 
   return (
-    <YavaaPageShell width="md" className="flex min-h-screen items-center py-12">
-      <section className="grid w-full gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-        <YavaaHero
-          eyebrow="Crear cuenta"
-          title="Creá tu acceso a Yavaa."
-          description="Después del registro vas a poder entrar y elegir entre Jefe o Trabajador."
-        />
-
-        <YavaaSurface className="p-6 backdrop-blur">
-          <AuthForm mode="sign-up" nextPath={nextPath} configured={authState.configured} />
-        </YavaaSurface>
-      </section>
-    </YavaaPageShell>
+    <AuthPageFrame
+      eyebrow="Crear cuenta"
+      title="Tu cuenta empieza simple."
+      description="Registrate y después elegí si querés trabajar o contratar. Cada perfil tiene su propio wizard."
+      previewTitle="Un acceso, dos caminos"
+      previewDescription="Yavaa prepara una experiencia distinta para trabajador y jefe, sin pedir más datos de los necesarios al inicio."
+    >
+      <AuthForm mode="sign-up" nextPath={nextPath} configured={authState.configured} />
+    </AuthPageFrame>
   );
 }

@@ -31,15 +31,15 @@ const copyByMode: Record<
   }
 > = {
   'sign-in': {
-    title: 'Iniciar sesión',
-    description: 'Entrá con tu correo y contraseña para acceder al área protegida.',
-    submitLabel: 'Ingresar',
+    title: 'Entrá a Yavaa',
+    description: 'Usá tu correo para seguir con tu perfil, completar tu wizard o volver a tu home.',
+    submitLabel: 'Iniciar sesión',
     alternateLabel: 'Crear cuenta',
     alternateHref: '/sign-up' as Route
   },
   'sign-up': {
-    title: 'Crear cuenta',
-    description: 'Registrate con correo y contraseña para activar tu acceso a Yavaa.',
+    title: 'Creá tu cuenta',
+    description: 'Primero creamos tu acceso. Después elegís si querés trabajar o contratar.',
     submitLabel: 'Registrar cuenta',
     alternateLabel: 'Ya tengo cuenta',
     alternateHref: '/sign-in' as Route
@@ -164,12 +164,12 @@ export function AuthForm({ mode, nextPath, configured, initialError = null }: Au
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">{copy.title}</h1>
+        <h1 className="font-display text-3xl font-bold tracking-normal text-foreground">{copy.title}</h1>
         <p className="text-sm leading-6 text-muted-foreground">{copy.description}</p>
       </div>
 
       {!configured ? (
-        <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
+        <p className="rounded-[18px] border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
           Supabase todavía no está configurado. Cuando agregues las variables de entorno, este
           formulario queda activo sin cambios de código.
         </p>
@@ -233,7 +233,7 @@ export function AuthForm({ mode, nextPath, configured, initialError = null }: Au
 
         {errorMessage ? (
           <p
-            className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm leading-6 text-destructive"
+            className="rounded-[18px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm leading-6 text-destructive"
             data-testid="auth-error"
             role="alert"
           >
@@ -243,7 +243,7 @@ export function AuthForm({ mode, nextPath, configured, initialError = null }: Au
 
         {statusMessage ? (
           <p
-            className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground"
+            className="rounded-[18px] border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground"
             role="status"
           >
             {statusMessage}
@@ -255,17 +255,17 @@ export function AuthForm({ mode, nextPath, configured, initialError = null }: Au
         </Button>
       </form>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground">
         {mode === 'sign-in' ? '¿No tenés cuenta?' : '¿Ya tenés cuenta?'}{' '}
-        <Link className="font-medium text-foreground underline underline-offset-4" href={copy.alternateHref}>
+        <Link className="font-bold text-primary underline underline-offset-4" href={copy.alternateHref}>
           {copy.alternateLabel}
         </Link>
       </p>
 
       {mode === 'sign-in' ? (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-center text-sm text-muted-foreground">
           <Link
-            className="font-medium text-foreground underline underline-offset-4"
+            className="font-bold text-foreground underline underline-offset-4"
             href={'/forgot-password' as Route}
           >
             Olvidé mi contraseña

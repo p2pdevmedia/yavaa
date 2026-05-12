@@ -68,14 +68,14 @@ export function ResetPasswordForm({ configured, authError }: ResetPasswordFormPr
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Nueva contraseña</h1>
+        <h1 className="font-display text-3xl font-bold tracking-normal text-foreground">Nueva contraseña</h1>
         <p className="text-sm leading-6 text-muted-foreground">
           Elegí una contraseña nueva para completar la recuperación de tu cuenta.
         </p>
       </div>
 
       {!configured ? (
-        <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
+        <p className="rounded-[18px] border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
           Supabase todavía no está configurado. El cambio de contraseña queda activo cuando estén
           listas las variables de entorno.
         </p>
@@ -114,7 +114,7 @@ export function ResetPasswordForm({ configured, authError }: ResetPasswordFormPr
 
         {errorMessage ? (
           <p
-            className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm leading-6 text-destructive"
+            className="rounded-[18px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm leading-6 text-destructive"
             data-testid="reset-password-error"
             role="alert"
           >
@@ -124,7 +124,7 @@ export function ResetPasswordForm({ configured, authError }: ResetPasswordFormPr
 
         {statusMessage ? (
           <p
-            className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground"
+            className="rounded-[18px] border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground"
             role="status"
           >
             {statusMessage}
@@ -136,9 +136,9 @@ export function ResetPasswordForm({ configured, authError }: ResetPasswordFormPr
         </Button>
       </form>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-center text-sm text-muted-foreground">
         <Link
-          className="font-medium text-foreground underline underline-offset-4"
+          className="font-bold text-foreground underline underline-offset-4"
           href={'/dashboard' as Route}
         >
           Ir al panel

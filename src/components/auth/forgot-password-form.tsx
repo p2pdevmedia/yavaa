@@ -67,14 +67,14 @@ export function ForgotPasswordForm({ configured, authError }: ForgotPasswordForm
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight text-foreground">Recuperar contraseña</h1>
+        <h1 className="font-display text-3xl font-bold tracking-normal text-foreground">Recuperar contraseña</h1>
         <p className="text-sm leading-6 text-muted-foreground">
           Ingresá tu correo y te mandamos un enlace seguro para cambiarla.
         </p>
       </div>
 
       {!configured ? (
-        <p className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
+        <p className="rounded-[18px] border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground">
           Supabase todavía no está configurado. El envío de recuperación queda activo cuando estén
           listas las variables de entorno.
         </p>
@@ -97,7 +97,7 @@ export function ForgotPasswordForm({ configured, authError }: ForgotPasswordForm
 
         {errorMessage ? (
           <p
-            className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm leading-6 text-destructive"
+            className="rounded-[18px] border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm leading-6 text-destructive"
             data-testid="forgot-password-error"
             role="alert"
           >
@@ -107,7 +107,7 @@ export function ForgotPasswordForm({ configured, authError }: ForgotPasswordForm
 
         {statusMessage ? (
           <p
-            className="rounded-lg border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground"
+            className="rounded-[18px] border border-border/70 bg-muted/40 px-4 py-3 text-sm leading-6 text-muted-foreground"
             role="status"
           >
             {statusMessage}
@@ -119,8 +119,8 @@ export function ForgotPasswordForm({ configured, authError }: ForgotPasswordForm
         </Button>
       </form>
 
-      <p className="text-sm text-muted-foreground">
-        <Link className="font-medium text-foreground underline underline-offset-4" href="/sign-in">
+      <p className="text-center text-sm text-muted-foreground">
+        <Link className="font-bold text-foreground underline underline-offset-4" href="/sign-in">
           Volver a iniciar sesión
         </Link>
       </p>

@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 
 import { ForgotPasswordForm } from '@/components/auth/forgot-password-form';
-import { YavaaHero, YavaaPageShell, YavaaSurface } from '@/components/ui/yavaa-layout';
+import { AuthPageFrame } from '@/components/ui/yavaa-layout';
 import { getAuthSessionState } from '@/lib/auth';
 
 type ForgotPasswordPageProps = {
@@ -21,18 +21,14 @@ export default async function ForgotPasswordPage({ searchParams }: ForgotPasswor
     : resolvedSearchParams.authError;
 
   return (
-    <YavaaPageShell width="md" className="flex min-h-screen items-center py-12">
-      <section className="grid w-full gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-        <YavaaHero
-          eyebrow="Recuperación"
-          title="Pedí un enlace seguro para volver a entrar."
-          description="El enlace abre una sesión temporal de Supabase y permite guardar una contraseña nueva sin exponer tokens en formularios propios."
-        />
-
-        <YavaaSurface className="p-6 backdrop-blur">
-          <ForgotPasswordForm configured={authState.configured} authError={authError} />
-        </YavaaSurface>
-      </section>
-    </YavaaPageShell>
+    <AuthPageFrame
+      eyebrow="Recuperación"
+      title="Volvé a entrar con un enlace seguro."
+      description="Te mandamos un enlace para crear una contraseña nueva y seguir usando tu cuenta."
+      previewTitle="Sin vueltas"
+      previewDescription="El enlace abre una sesión temporal de Supabase y evita exponer tokens en formularios propios."
+    >
+      <ForgotPasswordForm configured={authState.configured} authError={authError} />
+    </AuthPageFrame>
   );
 }

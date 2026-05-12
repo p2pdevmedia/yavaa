@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import type { Route } from 'next';
 
 import { AuthForm } from '@/components/auth/auth-form';
-import { YavaaHero, YavaaPageShell, YavaaSurface } from '@/components/ui/yavaa-layout';
+import { AuthPageFrame } from '@/components/ui/yavaa-layout';
 import { getAuthSessionState, normalizeNextPath } from '@/lib/auth';
 
 type SignInPageProps = {
@@ -32,18 +32,14 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   }
 
   return (
-    <YavaaPageShell width="md" className="flex min-h-screen items-center py-12">
-      <section className="grid w-full gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-        <YavaaHero
-          eyebrow="Acceso seguro"
-          title="Entrá para elegir tu perfil."
-          description="Tu cuenta mantiene usuarios, perfiles y roles protegidos con Supabase Auth."
-        />
-
-        <YavaaSurface className="p-6 backdrop-blur">
-          <AuthForm mode="sign-in" nextPath={nextPath} configured={authState.configured} initialError={authError ?? null} />
-        </YavaaSurface>
-      </section>
-    </YavaaPageShell>
+    <AuthPageFrame
+      eyebrow="Acceso seguro"
+      title="Entrá y seguí con tu perfil."
+      description="Usá tu cuenta para trabajar, contratar o completar el onboarding que tengas pendiente."
+      previewTitle="¿Qué necesitás resolver hoy?"
+      previewDescription="Después de iniciar sesión, Yavaa te lleva a elegir tipo, completar tu wizard o entrar directo a tu home."
+    >
+      <AuthForm mode="sign-in" nextPath={nextPath} configured={authState.configured} initialError={authError ?? null} />
+    </AuthPageFrame>
   );
 }
