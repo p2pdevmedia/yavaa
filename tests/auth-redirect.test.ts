@@ -44,14 +44,14 @@ describe('auth redirect helpers', () => {
   });
 
   it('builds signup confirmation redirects through the auth callback', () => {
-    expect(buildAuthEmailRedirectTo('/dashboard?tab=bookings', 'http://127.0.0.1:3000')).toBe(
-      'http://127.0.0.1:3000/auth/callback?next=%2Fdashboard%3Ftab%3Dbookings'
+    expect(buildAuthEmailRedirectTo('/dashboard/seleccionar-modo', 'http://127.0.0.1:3000')).toBe(
+      'http://127.0.0.1:3000/auth/callback?next=%2Fdashboard%2Fseleccionar-modo'
     );
   });
 
   it('builds OAuth redirects through the auth callback', () => {
-    expect(buildAuthCallbackRedirectTo('/providers', 'http://127.0.0.1:3000')).toBe(
-      'http://127.0.0.1:3000/auth/callback?next=%2Fproviders'
+    expect(buildAuthCallbackRedirectTo('/dashboard/seleccionar-modo', 'http://127.0.0.1:3000')).toBe(
+      'http://127.0.0.1:3000/auth/callback?next=%2Fdashboard%2Fseleccionar-modo'
     );
   });
 

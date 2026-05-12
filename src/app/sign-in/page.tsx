@@ -36,8 +36,8 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
       <section className="grid w-full gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <YavaaHero
           eyebrow="Acceso seguro"
-          title="Entrá para coordinar servicios, bookings y mensajes."
-          description="Tu cuenta mantiene permisos, roles y datos operativos protegidos mientras Yavaa coordina el trabajo real."
+          title="Entrá para elegir tu perfil."
+          description="Tu cuenta mantiene usuarios, perfiles y roles protegidos con Supabase Auth."
         />
 
         <YavaaSurface className="p-6 backdrop-blur">

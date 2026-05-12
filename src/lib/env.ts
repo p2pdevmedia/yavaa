@@ -8,8 +8,7 @@ const envSchema = z
     NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1).optional(),
     NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
-    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
-    OPENAPI_OUTPUT_PATH: z.string().min(1).default('public/openapi.json')
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional()
   })
   .passthrough();
 

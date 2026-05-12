@@ -31,8 +31,8 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
       <section className="grid w-full gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
         <YavaaHero
           eyebrow="Crear cuenta"
-          title="Activá tu acceso para pedir, ofrecer y coordinar servicios."
-          description="Una sola cuenta puede crecer con roles de cliente, contractor, soporte o administración sin perder trazabilidad."
+          title="Creá tu acceso a Yavaa."
+          description="Después del registro vas a poder entrar y elegir entre Jefe o Trabajador."
         />
 
         <YavaaSurface className="p-6 backdrop-blur">

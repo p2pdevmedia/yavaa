@@ -4,7 +4,6 @@ import type { Route } from 'next';
 
 import { buildSignInPath, getAuthSessionState } from '@/lib/auth';
 import { resolveAppUser, type AppUserSummary, type ResolvedAppUser } from '@/lib/app-user';
-import { isDatabaseUnavailableError } from '@/lib/public-db-fallback';
 import type { PermissionContext } from '@/lib/permissions';
 
 type DashboardReadyUser = ResolvedAppUser & {
@@ -28,6 +27,14 @@ export type DashboardPageContext =
       kind: 'unlinked-user';
       authState: DashboardAuthState;
     };
+
+function isDatabaseUnavailableError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return /database|connection|connect|ECONNREFUSED|ENOTFOUND|P1001|P1002/i.test(error.message);
+}
 
 export async function getDashboardPageContext(nextPath: string): Promise<DashboardPageContext> {
   const cookieStore = await cookies();

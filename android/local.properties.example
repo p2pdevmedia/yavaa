@@ -1,9 +1,0 @@
-# Copy this file to android/local.properties and fill in local values.
-#
-# Only public client configuration belongs here. Never add a Supabase service
-# role key or any backend secret to the Android app.
-
-yavaa.supabaseUrl=https://your-project.supabase.co
-yavaa.supabasePublishableKey=sb_publishable_your_key
-yavaa.backendBaseUrl=http://10.0.2.2:3000
-
