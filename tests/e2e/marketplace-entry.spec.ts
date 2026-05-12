@@ -137,13 +137,14 @@ async function hasMarketplaceSchema(): Promise<boolean> {
         'description',
         'address_text',
         'desired_time',
+        'photo_pathnames',
         'status',
         'created_at',
         'updated_at'
       )
   `;
 
-  return rows.length === 10;
+  return rows.length === 11;
 }
 
 async function seedRoles(): Promise<Record<'jefe' | 'trabajador', Role>> {
@@ -274,6 +275,28 @@ test.describe('mobile marketplace entry flow', () => {
         lastName: 'Mercado',
         addressText: 'Salta Capital'
       });
+      const photoPathname = `jobs/${client.id}/photos/e2e-job-photo.jpg`;
+
+      await page.route('**/api/job-posts/photos**', async (route) => {
+        if (route.request().method() === 'POST') {
+          await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+              ok: true,
+              pathname: photoPathname,
+              previewSrc: `/api/job-posts/photos?pathname=${encodeURIComponent(photoPathname)}`
+            })
+          });
+          return;
+        }
+
+        await route.fulfill({
+          status: 200,
+          contentType: 'image/jpeg',
+          body: Buffer.from('photo')
+        });
+      });
 
       await authenticateAs(page, clientEmail);
       await page.goto('/dashboard/jefe/publicar-trabajo');
@@ -285,8 +308,14 @@ test.describe('mobile marketplace entry flow', () => {
         .getByLabel('Descripción')
         .fill('Necesito pintar un living chico, revisar paredes y coordinar materiales.');
       await page.getByLabel('Ubicación').fill('Salta Capital');
-      await page.getByRole('button', { name: /Mañana/ }).click();
-      await page.getByRole('button', { name: '10:00' }).click();
+      await page.locator('input[name="desiredDate"]').fill('2026-06-15');
+      await page.locator('input[name="desiredClockTime"]').fill('10:30');
+      await page.setInputFiles('input[name="jobPhotos"]', {
+        name: 'pared.jpg',
+        mimeType: 'image/jpeg',
+        buffer: Buffer.from('photo')
+      });
+      await expect(page.getByAltText('Vista previa de foto del trabajo')).toBeVisible();
       await page.getByRole('button', { name: 'Publicar y recibir ofertas' }).click();
 
       await expect(page.getByText('Trabajo publicado')).toBeVisible();
@@ -304,6 +333,7 @@ test.describe('mobile marketplace entry flow', () => {
       expect(jobPost.category).toBe('painting');
       expect(jobPost.status).toBe(JobPostStatus.PUBLISHED);
       expect(jobPost.desiredTime).toBeTruthy();
+      expect(jobPost.photoPathnames).toEqual([photoPathname]);
 
       await page.getByRole('link', { name: 'Volver al home' }).click();
 

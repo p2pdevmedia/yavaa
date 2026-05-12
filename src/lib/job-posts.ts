@@ -1,6 +1,7 @@
 import { JobPostStatus } from '@prisma/client';
 import { z } from 'zod';
 
+import { isJobPhotoBlobPath, isJobPhotoBlobPathForUser, maxJobPhotos } from '@/lib/job-photos';
 import { hasCompletedOnboarding } from '@/lib/onboarding';
 import { hasRole } from '@/lib/permissions';
 import { getPrismaClient } from '@/lib/prisma';
@@ -15,7 +16,9 @@ const messages = {
   descriptionMax: 'Usá 800 caracteres o menos.',
   addressRequired: 'Ingresá una ubicación válida.',
   addressMax: 'Usá 160 caracteres o menos.',
-  desiredTimeInvalid: 'Elegí una fecha válida.'
+  desiredTimeInvalid: 'Elegí una fecha válida.',
+  photoInvalid: 'Usá fotos subidas desde este trabajo.',
+  photoMax: `Usá ${maxJobPhotos} fotos o menos.`
 } as const;
 
 export const createJobPostSchema = z.object({
@@ -51,7 +54,11 @@ export const createJobPostSchema = z.object({
     .trim()
     .min(3, messages.addressRequired)
     .max(160, messages.addressMax),
-  desiredTime: z.string().datetime(messages.desiredTimeInvalid).optional()
+  desiredTime: z.string().datetime(messages.desiredTimeInvalid).optional(),
+  photoPathnames: z
+    .array(z.string().refine((value) => isJobPhotoBlobPath(value), messages.photoInvalid))
+    .max(maxJobPhotos, messages.photoMax)
+    .optional()
 });
 
 export type CreateJobPostInput = z.infer<typeof createJobPostSchema>;
@@ -65,6 +72,7 @@ export type JobPostSummary = {
   description: string;
   addressText: string;
   desiredTime: Date | null;
+  photoPathnames: string[];
   status: JobPostStatus;
   createdAt: Date;
 };
@@ -122,6 +130,7 @@ const jobPostSelect = {
   description: true,
   addressText: true,
   desiredTime: true,
+  photoPathnames: true,
   status: true,
   createdAt: true
 } as const;
@@ -212,6 +221,19 @@ export async function createJobPost(auth: RequestAuthState, input: unknown): Pro
   }
 
   const data = validation.data;
+  const photoPathnames = data.photoPathnames ?? [];
+
+  if (photoPathnames.some((pathname) => !isJobPhotoBlobPathForUser(pathname, readyAuth.userId))) {
+    return {
+      ok: false,
+      status: 422,
+      message: 'Revisá los datos del trabajo.',
+      fieldErrors: {
+        photoPathnames: [messages.photoInvalid]
+      }
+    };
+  }
+
   const jobPost = await getPrismaClient().jobPost.create({
     data: {
       clientId: readyAuth.userId,
@@ -219,7 +241,8 @@ export async function createJobPost(auth: RequestAuthState, input: unknown): Pro
       category: data.category,
       description: data.description,
       addressText: data.addressText,
-      desiredTime: data.desiredTime ? new Date(data.desiredTime) : null
+      desiredTime: data.desiredTime ? new Date(data.desiredTime) : null,
+      photoPathnames
     },
     select: jobPostSelect
   });

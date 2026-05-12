@@ -21,7 +21,8 @@ const validPayload = {
   category: 'painting',
   description: ' Necesito pintar una habitación chica esta semana. ',
   addressText: ' Salta Capital ',
-  desiredTime: '2026-05-20T15:00:00.000Z'
+  desiredTime: '2026-05-20T15:00:00.000Z',
+  photoPathnames: ['jobs/user_001/photos/pared.jpg']
 };
 
 const activeJefeAuth = {
@@ -80,7 +81,8 @@ describe('job post helpers', () => {
         category: 'painting',
         description: 'Necesito pintar una habitación chica esta semana.',
         addressText: 'Salta Capital',
-        desiredTime: '2026-05-20T15:00:00.000Z'
+        desiredTime: '2026-05-20T15:00:00.000Z',
+        photoPathnames: ['jobs/user_001/photos/pared.jpg']
       });
     }
   });
@@ -91,7 +93,8 @@ describe('job post helpers', () => {
       category: '',
       description: 'corto',
       addressText: 'Sa',
-      desiredTime: 'mañana'
+      desiredTime: 'mañana',
+      photoPathnames: ['profiles/user_001/avatars/avatar.jpg']
     });
 
     expect(result).toEqual({
@@ -103,7 +106,8 @@ describe('job post helpers', () => {
         category: ['Elegí una categoría.'],
         description: ['Contá un poco más del trabajo.'],
         addressText: ['Ingresá una ubicación válida.'],
-        desiredTime: ['Elegí una fecha válida.']
+        desiredTime: ['Elegí una fecha válida.'],
+        photoPathnames: ['Usá fotos subidas desde este trabajo.']
       }
     });
     expect(getPrismaClientMock).not.toHaveBeenCalled();
@@ -140,6 +144,7 @@ describe('job post helpers', () => {
       description: 'Necesito pintar una habitación chica esta semana.',
       addressText: 'Salta Capital',
       desiredTime: new Date('2026-05-20T15:00:00.000Z'),
+      photoPathnames: ['jobs/user_001/photos/pared.jpg'],
       status: JobPostStatus.PUBLISHED,
       createdAt: new Date('2026-05-12T00:00:00.000Z')
     });
@@ -169,7 +174,8 @@ describe('job post helpers', () => {
         category: 'painting',
         description: 'Necesito pintar una habitación chica esta semana.',
         addressText: 'Salta Capital',
-        desiredTime: new Date('2026-05-20T15:00:00.000Z')
+        desiredTime: new Date('2026-05-20T15:00:00.000Z'),
+        photoPathnames: ['jobs/user_001/photos/pared.jpg']
       },
       select: {
         id: true,
@@ -178,6 +184,7 @@ describe('job post helpers', () => {
         description: true,
         addressText: true,
         desiredTime: true,
+        photoPathnames: true,
         status: true,
         createdAt: true
       }
@@ -193,6 +200,7 @@ describe('job post helpers', () => {
         description: 'Necesito limpiar un patio.',
         addressText: 'Salta Capital',
         desiredTime: null,
+        photoPathnames: ['jobs/user_001/photos/patio.jpg'],
         status: JobPostStatus.PUBLISHED,
         createdAt: new Date('2026-05-13T00:00:00.000Z')
       }
@@ -220,6 +228,7 @@ describe('job post helpers', () => {
         description: true,
         addressText: true,
         desiredTime: true,
+        photoPathnames: true,
         status: true,
         createdAt: true
       },

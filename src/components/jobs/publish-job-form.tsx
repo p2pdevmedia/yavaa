@@ -14,11 +14,15 @@ type PublishJobFormState = {
   description: string;
   addressText: string;
   desiredDate: string;
-  desiredTimeSlot: string;
+  desiredClockTime: string;
   desiredTime: string;
+  photoPathnames: string[];
 };
 
-const timeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'] as const;
+type JobPhotoPreview = {
+  pathname: string;
+  previewSrc: string;
+};
 
 type PublishJobResponse =
   | {
@@ -36,11 +40,16 @@ type PublishJobResponse =
       fieldErrors?: Partial<Record<keyof PublishJobFormState, string[]>>;
     };
 
-type DateOption = {
-  value: string;
-  label: string;
-  detail: string;
-};
+type JobPhotoUploadResponse =
+  | {
+      ok: true;
+      pathname: string;
+      previewSrc: string;
+    }
+  | {
+      ok: false;
+      message?: string;
+    };
 
 function padDatePart(value: number): string {
   return String(value).padStart(2, '0');
@@ -50,35 +59,11 @@ function formatDateValue(date: Date): string {
   return `${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
 }
 
-function buildDateOptions(today: Date): DateOption[] {
-  const formatter = new Intl.DateTimeFormat('es-AR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short'
-  });
-
-  return [0, 1, 2, 3].map((offset) => {
-    const date = new Date(today);
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() + offset);
-
-    return {
-      value: formatDateValue(date),
-      label: offset === 0 ? 'Hoy' : offset === 1 ? 'Mañana' : formatter.format(date),
-      detail: formatter.format(date)
-    };
-  });
-}
-
 function buildDesiredTimeIso(dateValue: string, timeValue: string): string {
   const [year, month, day] = dateValue.split('-').map(Number);
   const [hour, minute] = timeValue.split(':').map(Number);
 
   return new Date(year, month - 1, day, hour, minute, 0, 0).toISOString();
-}
-
-function isPastTimeSlot(dateValue: string, timeValue: string, now: Date): boolean {
-  return new Date(buildDesiredTimeIso(dateValue, timeValue)).getTime() <= now.getTime();
 }
 
 function FieldError({ messages }: { messages?: string[] }) {
@@ -90,22 +75,22 @@ function FieldError({ messages }: { messages?: string[] }) {
 }
 
 export function PublishJobForm({ initialAddress = '' }: { initialAddress?: string | null }) {
-  const now = useMemo(() => new Date(), []);
-  const dateOptions = useMemo(() => buildDateOptions(now), [now]);
-  const defaultDate = dateOptions[1]?.value ?? dateOptions[0]?.value ?? '';
+  const todayDate = useMemo(() => formatDateValue(new Date()), []);
   const [formState, setFormState] = useState<PublishJobFormState>({
     title: '',
     category: 'cleaning',
     description: '',
     addressText: initialAddress ?? '',
     desiredDate: '',
-    desiredTimeSlot: '',
-    desiredTime: ''
+    desiredClockTime: '',
+    desiredTime: '',
+    photoPathnames: []
   });
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof PublishJobFormState | 'form', string[]>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [publishedTitle, setPublishedTitle] = useState<string | null>(null);
-  const selectedDate = formState.desiredDate || defaultDate;
+  const [jobPhotos, setJobPhotos] = useState<JobPhotoPreview[]>([]);
 
   const payload = useMemo(
     () => ({
@@ -113,9 +98,17 @@ export function PublishJobForm({ initialAddress = '' }: { initialAddress?: strin
       category: formState.category,
       description: formState.description,
       addressText: formState.addressText,
-      ...(formState.desiredTime ? { desiredTime: formState.desiredTime } : {})
+      ...(formState.desiredTime ? { desiredTime: formState.desiredTime } : {}),
+      ...(formState.photoPathnames.length > 0 ? { photoPathnames: formState.photoPathnames } : {})
     }),
-    [formState.addressText, formState.category, formState.description, formState.desiredTime, formState.title]
+    [
+      formState.addressText,
+      formState.category,
+      formState.description,
+      formState.desiredTime,
+      formState.photoPathnames,
+      formState.title
+    ]
   );
 
   function updateField(field: keyof PublishJobFormState, value: string) {
@@ -130,12 +123,12 @@ export function PublishJobForm({ initialAddress = '' }: { initialAddress?: strin
     }));
   }
 
-  function updateSchedule(nextDate: string, nextTimeSlot: string) {
+  function updateSchedule(nextDate: string, nextClockTime: string) {
     setFormState((current) => ({
       ...current,
       desiredDate: nextDate,
-      desiredTimeSlot: nextTimeSlot,
-      desiredTime: nextDate && nextTimeSlot ? buildDesiredTimeIso(nextDate, nextTimeSlot) : ''
+      desiredClockTime: nextClockTime,
+      desiredTime: nextDate && nextClockTime ? buildDesiredTimeIso(nextDate, nextClockTime) : ''
     }));
     setFieldErrors((current) => ({
       ...current,
@@ -145,30 +138,101 @@ export function PublishJobForm({ initialAddress = '' }: { initialAddress?: strin
   }
 
   function handleDateSelection(dateValue: string) {
-    const nextTimeSlot =
-      formState.desiredTimeSlot && !isPastTimeSlot(dateValue, formState.desiredTimeSlot, now)
-        ? formState.desiredTimeSlot
-        : '';
-
-    updateSchedule(dateValue, nextTimeSlot);
+    updateSchedule(dateValue, formState.desiredClockTime);
   }
 
-  function handleTimeSelection(timeSlot: string) {
-    if (!selectedDate || isPastTimeSlot(selectedDate, timeSlot, now)) {
+  function handleTimeSelection(clockTime: string) {
+    updateSchedule(formState.desiredDate, clockTime);
+  }
+
+  function removeJobPhoto(pathname: string) {
+    setJobPhotos((current) => current.filter((photo) => photo.pathname !== pathname));
+    setFormState((current) => ({
+      ...current,
+      photoPathnames: current.photoPathnames.filter((currentPathname) => currentPathname !== pathname)
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      photoPathnames: undefined,
+      form: undefined
+    }));
+  }
+
+  async function uploadJobPhoto(file: File): Promise<JobPhotoPreview> {
+    const formData = new FormData();
+    formData.set('file', file);
+
+    const response = await fetch('/api/job-posts/photos', {
+      method: 'POST',
+      body: formData
+    });
+    const responseBody = (await response.json()) as JobPhotoUploadResponse;
+
+    if (!response.ok || !responseBody.ok) {
+      throw new Error(!responseBody.ok && responseBody.message ? responseBody.message : 'No pudimos subir la foto.');
+    }
+
+    return {
+      pathname: responseBody.pathname,
+      previewSrc: responseBody.previewSrc
+    };
+  }
+
+  async function handlePhotoFiles(files: FileList | null) {
+    const selectedFiles = Array.from(files ?? []);
+
+    if (selectedFiles.length === 0 || isUploadingPhoto) {
       return;
     }
 
-    updateSchedule(selectedDate, timeSlot);
-  }
+    if (jobPhotos.length + selectedFiles.length > 6) {
+      setFieldErrors((current) => ({
+        ...current,
+        photoPathnames: ['Usá 6 fotos o menos.']
+      }));
+      return;
+    }
 
-  function clearSchedule() {
-    updateSchedule(selectedDate, '');
+    setIsUploadingPhoto(true);
+    setFieldErrors((current) => ({
+      ...current,
+      photoPathnames: undefined,
+      form: undefined
+    }));
+
+    try {
+      const uploadedPhotos: JobPhotoPreview[] = [];
+
+      for (const file of selectedFiles) {
+        uploadedPhotos.push(await uploadJobPhoto(file));
+      }
+
+      setJobPhotos((current) => [...current, ...uploadedPhotos]);
+      setFormState((current) => ({
+        ...current,
+        photoPathnames: [...current.photoPathnames, ...uploadedPhotos.map((photo) => photo.pathname)]
+      }));
+    } catch (error) {
+      setFieldErrors((current) => ({
+        ...current,
+        photoPathnames: [error instanceof Error ? error.message : 'No pudimos subir la foto.']
+      }));
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (isSubmitting) {
+      return;
+    }
+
+    if ((formState.desiredDate || formState.desiredClockTime) && !formState.desiredTime) {
+      setFieldErrors({
+        desiredTime: ['Elegí fecha y hora o dejalo vacío.']
+      });
       return;
     }
 
@@ -279,55 +343,68 @@ export function PublishJobForm({ initialAddress = '' }: { initialAddress?: strin
       </div>
 
       <div className="space-y-2">
-        <Label>Horario deseado</Label>
-        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Elegir día">
-          {dateOptions.map((dateOption) => {
-            const isSelected = selectedDate === dateOption.value;
-
-            return (
-              <Button
-                key={dateOption.value}
-                type="button"
-                variant={isSelected ? 'default' : 'outline'}
-                className="h-auto min-w-24 flex-col items-start rounded-[18px] px-4 py-3"
-                onClick={() => handleDateSelection(dateOption.value)}
-              >
-                <span>{dateOption.label}</span>
-                <span className="text-xs font-semibold opacity-75">{dateOption.detail}</span>
-              </Button>
-            );
-          })}
+        <Label htmlFor="desiredDate">Fecha y hora</Label>
+        <div className="grid grid-cols-[minmax(0,1fr)_8rem] gap-2">
+          <Input
+            id="desiredDate"
+            name="desiredDate"
+            type="date"
+            min={todayDate}
+            value={formState.desiredDate}
+            onChange={(event) => handleDateSelection(event.target.value)}
+          />
+          <Input
+            id="desiredClockTime"
+            name="desiredClockTime"
+            type="time"
+            step={60}
+            value={formState.desiredClockTime}
+            onChange={(event) => handleTimeSelection(event.target.value)}
+          />
         </div>
-        <div className="grid grid-cols-3 gap-2" role="group" aria-label="Elegir hora">
-          {timeSlots.map((timeSlot) => {
-            const isDisabled = !selectedDate || isPastTimeSlot(selectedDate, timeSlot, now);
-            const isSelected = formState.desiredTimeSlot === timeSlot && Boolean(formState.desiredTime);
-
-            return (
-              <Button
-                key={timeSlot}
-                type="button"
-                variant={isSelected ? 'default' : 'outline'}
-                className="h-12 rounded-[16px] px-3"
-                disabled={isDisabled}
-                onClick={() => handleTimeSelection(timeSlot)}
-              >
-                {timeSlot}
-              </Button>
-            );
-          })}
-        </div>
-        <Button type="button" variant={!formState.desiredTime ? 'default' : 'outline'} onClick={clearSchedule}>
-          Sin horario
-        </Button>
+        <p className="text-sm leading-6 text-muted-foreground">
+          Opcional. Podés elegir cualquier mes y horario.
+        </p>
         <FieldError messages={fieldErrors.desiredTime} />
       </div>
 
       <div className="rounded-[24px] border border-dashed border-border bg-muted/40 p-5">
         <p className="text-sm font-bold text-foreground">Fotos opcionales</p>
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          La UI queda preparada; la carga real de fotos del trabajo entra en una etapa de storage aparte.
-        </p>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">Sumá fotos privadas del lugar o del problema.</p>
+        <label className="mt-4 inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-[16px] border border-input bg-background px-4 text-sm font-bold text-foreground">
+          {isUploadingPhoto ? 'Subiendo...' : 'Subir o tomar fotos'}
+          <input
+            className="sr-only"
+            name="jobPhotos"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            capture="environment"
+            multiple
+            disabled={isUploadingPhoto}
+            onChange={(event) => {
+              void handlePhotoFiles(event.currentTarget.files);
+              event.currentTarget.value = '';
+            }}
+          />
+        </label>
+        {jobPhotos.length > 0 ? (
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {jobPhotos.map((photo) => (
+              <div key={photo.pathname} className="relative overflow-hidden rounded-[16px] border border-border bg-background">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photo.previewSrc} alt="Vista previa de foto del trabajo" className="aspect-square w-full object-cover" />
+                <button
+                  type="button"
+                  className="absolute right-1 top-1 rounded-full bg-background/90 px-2 py-1 text-xs font-bold text-foreground"
+                  onClick={() => removeJobPhoto(photo.pathname)}
+                >
+                  Quitar
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        <FieldError messages={fieldErrors.photoPathnames} />
       </div>
 
       <FieldError messages={fieldErrors.form} />

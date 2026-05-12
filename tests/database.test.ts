@@ -81,6 +81,7 @@ suite('database foundation', () => {
           'description',
           'address_text',
           'desired_time',
+          'photo_pathnames',
           'status',
           'created_at',
           'updated_at'
@@ -96,6 +97,7 @@ suite('database foundation', () => {
       'description',
       'desired_time',
       'id',
+      'photo_pathnames',
       'status',
       'title',
       'updated_at'

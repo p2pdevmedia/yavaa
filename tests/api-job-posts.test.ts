@@ -123,6 +123,7 @@ describe('/api/job-posts', () => {
       description: 'Necesito pintar una habitación chica esta semana.',
       addressText: 'Salta Capital',
       desiredTime: null,
+      photoPathnames: ['jobs/user_001/photos/pared.jpg'],
       status: JobPostStatus.PUBLISHED,
       createdAt: new Date('2026-05-12T00:00:00.000Z')
     });
@@ -137,7 +138,8 @@ describe('/api/job-posts', () => {
         title: 'Pintar una habitación',
         category: 'painting',
         description: 'Necesito pintar una habitación chica esta semana.',
-        addressText: 'Salta Capital'
+        addressText: 'Salta Capital',
+        photoPathnames: ['jobs/user_001/photos/pared.jpg']
       })
     );
 
@@ -164,6 +166,7 @@ describe('/api/job-posts', () => {
         description: 'Necesito pintar una habitación chica esta semana.',
         addressText: 'Salta Capital',
         desiredTime: null,
+        photoPathnames: ['jobs/user_001/photos/pared.jpg'],
         status: JobPostStatus.PUBLISHED,
         createdAt
       }
@@ -187,6 +190,7 @@ describe('/api/job-posts', () => {
           description: 'Necesito pintar una habitación chica esta semana.',
           addressText: 'Salta Capital',
           desiredTime: null,
+          photoPathnames: ['jobs/user_001/photos/pared.jpg'],
           status: 'PUBLISHED',
           createdAt: createdAt.toISOString()
         }

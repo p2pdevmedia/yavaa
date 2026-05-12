@@ -113,6 +113,7 @@ model JobPost {
   description String
   addressText String        @map("address_text")
   desiredTime DateTime?     @map("desired_time")
+  photoPathnames String[]    @default([]) @map("photo_pathnames")
   status      JobPostStatus @default(PUBLISHED)
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")

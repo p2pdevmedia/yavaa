@@ -17,19 +17,25 @@ describe('stage 5 marketplace screens', () => {
     expect(page).toContain('PublishJobForm');
     expect(page).toContain("hasCompletedOnboarding(context.appUser.user.profile, 'jefe')");
     expect(form).toContain("fetch('/api/job-posts'");
+    expect(form).toContain("fetch('/api/job-posts/photos'");
     expect(form).toContain('Publicar y recibir ofertas');
     expect(form).toContain('Fotos opcionales');
+    expect(form).not.toContain('storage aparte');
+    expect(form).toContain('Subir o tomar fotos');
+    expect(form).toContain('capture="environment"');
   });
 
-  it('uses a touch-friendly schedule picker instead of the native datetime field', () => {
+  it('uses a compact one-line date and time widget instead of preset chips', () => {
     const form = readProjectFile('src/components/jobs/publish-job-form.tsx');
 
     expect(form).not.toContain('datetime-local');
-    expect(form).toContain('dateOptions');
-    expect(form).toContain('timeSlots');
-    expect(form).toContain('Hoy');
-    expect(form).toContain('Mañana');
-    expect(form).toContain('Sin horario');
+    expect(form).not.toContain('dateOptions');
+    expect(form).not.toContain('timeSlots');
+    expect(form).not.toContain('Hoy');
+    expect(form).not.toContain('Mañana');
+    expect(form).toContain('type="date"');
+    expect(form).toContain('type="time"');
+    expect(form).toContain('Fecha y hora');
   });
 
   it('connects the protected worker search page to the search API', () => {
