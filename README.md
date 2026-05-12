@@ -24,7 +24,7 @@ The active database tables are:
 - `roles`
 - `user_roles`
 
-Marketplace, bookings, emergencies, providers, chat, files, notifications, admin operations, Android, and iPhone have been removed from the active codebase.
+The active codebase intentionally contains only the minimal auth foundation.
 
 ## Development
 
