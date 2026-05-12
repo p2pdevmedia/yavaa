@@ -285,6 +285,52 @@ test.describe('DB-backed onboarding workflow', () => {
     }
   });
 
+  test('assigns a selected role for active users without preassigned roles', async ({ page }) => {
+    test.skip(!databaseAvailable, 'DATABASE_URL is missing or the database is not reachable.');
+    test.skip(!onboardingSchemaAvailable, 'The onboarding Prisma migration has not been applied to this database.');
+
+    const email = `e2e-selects-role-${randomUUID()}@yavaa.test`;
+
+    try {
+      const user = await createWorkflowUser({
+        email,
+        roles: []
+      });
+
+      await authenticateAs(page, email);
+      await page.goto('/dashboard/seleccionar-modo');
+
+      await expect(page.getByRole('heading', { name: '¿Cómo querés usar Yavaa?' })).toBeVisible();
+      await expect(page.getByText('Rol no asignado')).toHaveCount(0);
+
+      await page
+        .locator('article')
+        .filter({ hasText: 'Quiero trabajar' })
+        .getByRole('link', { name: 'Continuar' })
+        .click();
+
+      await expect(page).toHaveURL(/\/dashboard\/onboarding\/trabajador$/);
+      await expect(page.getByRole('heading', { name: '¿Cómo te llamás?' })).toBeVisible();
+
+      const assignedRoles = await getPrisma().userRole.findMany({
+        where: {
+          userId: user.id
+        },
+        select: {
+          role: {
+            select: {
+              slug: true
+            }
+          }
+        }
+      });
+
+      expect(assignedRoles.map((entry) => entry.role.slug)).toEqual(['trabajador']);
+    } finally {
+      await cleanupWorkflowUsers([email]);
+    }
+  });
+
   test('routes inserted completed profiles directly to their role home', async ({ page }) => {
     test.skip(!databaseAvailable, 'DATABASE_URL is missing or the database is not reachable.');
     test.skip(!onboardingSchemaAvailable, 'The onboarding Prisma migration has not been applied to this database.');

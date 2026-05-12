@@ -97,6 +97,11 @@ describe('onboarding status API route', () => {
           mode: 'jefe',
           completed: false,
           nextPath: '/dashboard/onboarding/jefe'
+        },
+        {
+          mode: 'trabajador',
+          completed: false,
+          nextPath: '/dashboard/seleccionar-modo?perfil=trabajador'
         }
       ]
     });

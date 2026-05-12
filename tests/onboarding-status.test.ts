@@ -102,7 +102,7 @@ describe('onboarding status', () => {
     });
   });
 
-  it('keeps linked users without selectable roles on mode selection without preselecting a role', () => {
+  it('returns both selectable mode paths for active linked users without preassigned roles', () => {
     const status = getOnboardingStatus({
       authenticated: true,
       configured: true,
@@ -148,7 +148,18 @@ describe('onboarding status', () => {
       authenticated: true,
       linkedUser: true,
       nextPath: '/dashboard/seleccionar-modo',
-      modes: []
+      modes: [
+        {
+          mode: 'jefe',
+          completed: false,
+          nextPath: '/dashboard/seleccionar-modo?perfil=jefe'
+        },
+        {
+          mode: 'trabajador',
+          completed: false,
+          nextPath: '/dashboard/seleccionar-modo?perfil=trabajador'
+        }
+      ]
     });
   });
 });

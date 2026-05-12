@@ -1,7 +1,18 @@
 import type { Route } from 'next';
 
 import type { AppUserSummary } from '@/lib/app-user';
-import { dashboardDefaultPath, getNextDashboardPathForMode, type DashboardMode } from '@/lib/dashboard-routes';
+import {
+  dashboardDefaultPath,
+  getModeSelectionPath,
+  getNextDashboardPathForMode,
+  type DashboardMode
+} from '@/lib/dashboard-routes';
+import {
+  appRoleSlugs,
+  canSelectProfileMode,
+  hasRole,
+  type PermissionContext
+} from '@/lib/permissions';
 import type { RequestAuthState } from '@/lib/request-auth';
 
 export type OnboardingModeStatus = {
@@ -29,8 +40,14 @@ export type OnboardingStatus =
       modes: OnboardingModeStatus[];
     };
 
-function getModeCompletion(appUser: AppUserSummary, mode: DashboardMode): OnboardingModeStatus {
-  const nextPath = getNextDashboardPathForMode(appUser, mode);
+function getModeCompletion(
+  appUser: AppUserSummary,
+  permissionContext: PermissionContext,
+  mode: DashboardMode
+): OnboardingModeStatus {
+  const nextPath = hasRole(permissionContext, mode)
+    ? getNextDashboardPathForMode(appUser, mode)
+    : getModeSelectionPath(mode);
 
   return {
     mode,
@@ -57,12 +74,19 @@ export function getOnboardingStatus(auth: RequestAuthState): OnboardingStatus {
     };
   }
 
-  const modes = auth.permissionContext.roles.map((mode) => getModeCompletion(auth.appUser as AppUserSummary, mode));
+  const permissionContext = auth.permissionContext;
+  const appUser = auth.appUser as AppUserSummary;
+  const modes = appRoleSlugs
+    .filter((mode) => canSelectProfileMode(permissionContext, mode))
+    .map((mode) => getModeCompletion(appUser, permissionContext, mode));
+  const assignedMode = appRoleSlugs.find((mode) => hasRole(permissionContext, mode));
 
   return {
     authenticated: true,
     linkedUser: true,
-    nextPath: modes[0]?.nextPath ?? dashboardDefaultPath,
+    nextPath: assignedMode
+      ? getModeCompletion(appUser, permissionContext, assignedMode).nextPath
+      : dashboardDefaultPath,
     modes
   };
 }

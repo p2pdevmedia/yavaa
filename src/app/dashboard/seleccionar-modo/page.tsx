@@ -12,6 +12,7 @@ import { getDashboardPageContext } from '@/lib/dashboard-page-data';
 import { getNextDashboardPathForMode, type DashboardMode } from '@/lib/dashboard-routes';
 import { isOnboardingMode } from '@/lib/onboarding';
 import { canSelectProfileMode } from '@/lib/permissions';
+import { ensureUserProfileModeRole } from '@/lib/profile-mode-selection';
 
 type SelectModePageProps = {
   searchParams?: Promise<{
@@ -57,6 +58,7 @@ export default async function SelectModePage({ searchParams }: SelectModePagePro
 
   if (selectedProfile && isOnboardingMode(selectedProfile)) {
     if (canSelectProfileMode(context.appUser.permissionContext, selectedProfile)) {
+      await ensureUserProfileModeRole(context.appUser.user.id, selectedProfile);
       redirect(getNextDashboardPathForMode(context.appUser.user, selectedProfile) as Route);
     }
   }

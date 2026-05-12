@@ -34,10 +34,10 @@ export function canManageOwnProfile(context: PermissionContext, ownerUserId: str
   return canAccessOwnResource(context, ownerUserId);
 }
 
-export function canSelectProfileMode(context: PermissionContext, mode: AppRoleSlug): boolean {
-  return isActiveContext(context) && hasRole(context, mode);
+export function canSelectProfileMode(context: PermissionContext, _mode: AppRoleSlug): boolean {
+  return isActiveContext(context);
 }
 
 export function canCompleteOnboarding(context: PermissionContext, mode: AppRoleSlug): boolean {
-  return canSelectProfileMode(context, mode);
+  return isActiveContext(context) && hasRole(context, mode);
 }

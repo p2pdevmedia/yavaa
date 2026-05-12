@@ -30,6 +30,12 @@ const suspendedJefe: PermissionContext = {
   roles: ['jefe']
 };
 
+const activeWithoutRoles: PermissionContext = {
+  userId: 'user_004',
+  status: UserStatus.ACTIVE,
+  roles: []
+};
+
 describe('permission helpers', () => {
   it('recognizes jefe and trabajador roles', () => {
     expect(hasRole(activeJefe, 'jefe')).toBe(true);
@@ -50,10 +56,12 @@ describe('permission helpers', () => {
     expect(canViewUserRecord(suspendedJefe, 'user_003')).toBe(false);
   });
 
-  it('allows active users to select a mode they own', () => {
+  it('allows active users to select any profile mode from the selector', () => {
     expect(canSelectProfileMode(activeJefe, 'jefe')).toBe(true);
     expect(canSelectProfileMode(activeTrabajador, 'trabajador')).toBe(true);
-    expect(canSelectProfileMode(activeJefe, 'trabajador')).toBe(false);
+    expect(canSelectProfileMode(activeJefe, 'trabajador')).toBe(true);
+    expect(canSelectProfileMode(activeWithoutRoles, 'jefe')).toBe(true);
+    expect(canSelectProfileMode(activeWithoutRoles, 'trabajador')).toBe(true);
     expect(canSelectProfileMode(suspendedJefe, 'jefe')).toBe(false);
   });
 
@@ -61,6 +69,7 @@ describe('permission helpers', () => {
     expect(canCompleteOnboarding(activeJefe, 'jefe')).toBe(true);
     expect(canCompleteOnboarding(activeTrabajador, 'trabajador')).toBe(true);
     expect(canCompleteOnboarding(activeJefe, 'trabajador')).toBe(false);
+    expect(canCompleteOnboarding(activeWithoutRoles, 'jefe')).toBe(false);
     expect(canCompleteOnboarding(suspendedJefe, 'jefe')).toBe(false);
   });
 });
