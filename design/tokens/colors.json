@@ -1,0 +1,19 @@
+{
+  "primary": {
+    "violet": "#6E3FF3",
+    "violetHover": "#5B30D9",
+    "violetSoft": "#EFE7FF"
+  },
+  "neutral": {
+    "background": "#FBFAF8",
+    "surface": "#FFFFFF",
+    "textPrimary": "#111111",
+    "textSecondary": "#666666",
+    "border": "#E5E5E5"
+  },
+  "semantic": {
+    "success": "#10B981",
+    "warning": "#F59E0B",
+    "danger": "#EF4444"
+  }
+}
