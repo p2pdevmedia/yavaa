@@ -3,7 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   outputFileTracingIncludes: {
-    '/supabase': ['./node_modules/.prisma/client/**/*']
+    '/*': ['./node_modules/.prisma/client/**/*']
   },
   turbopack: {
     root: process.cwd()
