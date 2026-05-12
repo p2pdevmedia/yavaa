@@ -65,6 +65,23 @@ Multi-select categories:
 
 ---
 
+# Step 6 — Hourly Price
+
+Fields:
+- hourly price
+
+Validation:
+- required
+- numeric only
+- greater than 0
+
+UX:
+- show currency as ARS
+- explain that the worker can change it later
+- keep it as a suggested base rate, not a final quote
+
+---
+
 # Success
 
 Show:

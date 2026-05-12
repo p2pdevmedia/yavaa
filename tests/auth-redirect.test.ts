@@ -55,6 +55,12 @@ describe('auth redirect helpers', () => {
     );
   });
 
+  it('sends OAuth dashboard redirects directly to profile selection', () => {
+    expect(buildAuthCallbackRedirectTo('/dashboard', 'http://127.0.0.1:3000')).toBe(
+      'http://127.0.0.1:3000/auth/callback?next=%2Fdashboard%2Fseleccionar-modo'
+    );
+  });
+
   it('recovers Supabase PKCE auth codes that land on the site root', () => {
     expect(buildRootAuthCodeRedirectPath({ code: 'pkce-test-code' })).toBe(
       '/auth/callback?code=pkce-test-code&next=%2Freset-password'

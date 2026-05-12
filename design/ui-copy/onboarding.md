@@ -17,6 +17,9 @@
 ### Step 5
 "¿Qué trabajos hacés?"
 
+### Step 6
+"¿Cuánto cobrás por hora?"
+
 ### Success
 "Tu perfil está listo"
 

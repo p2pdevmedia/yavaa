@@ -1,3 +1,5 @@
+import { dashboardDefaultPath } from '@/lib/dashboard-routes';
+
 type AuthRedirectBaseInput = {
   siteUrl?: string;
   windowOrigin: string;
@@ -21,6 +23,10 @@ function normalizeBaseUrl(url: string): string {
   return absoluteUrl.replace(/\/+$/, '');
 }
 
+function normalizeAuthCallbackNextPath(nextPath: string): string {
+  return nextPath === '/dashboard' ? dashboardDefaultPath : nextPath;
+}
+
 export function getAuthRedirectBaseUrl({
   siteUrl,
   windowOrigin
@@ -40,7 +46,7 @@ export function buildAuthCallbackRedirectTo(nextPath: string, windowOrigin: stri
     windowOrigin
   });
 
-  return `${baseUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`;
+  return `${baseUrl}/auth/callback?next=${encodeURIComponent(normalizeAuthCallbackNextPath(nextPath))}`;
 }
 
 export function buildAuthEmailRedirectTo(nextPath: string, windowOrigin: string): string {

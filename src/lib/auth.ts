@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 
+import { dashboardDefaultPath } from '@/lib/dashboard-routes';
 import { hasSupabaseEnv } from '@/lib/env';
 import { createClient as createSupabaseServerClient } from '@/utils/supabase/server';
 
@@ -18,7 +19,7 @@ export function hasSupabaseSessionCookie(cookieStore: Pick<CookieStore, 'getAll'
   return cookieStore.getAll().some((cookie) => cookie.name.startsWith('sb-'));
 }
 
-export function normalizeNextPath(nextPath: unknown, fallback = '/dashboard'): string {
+export function normalizeNextPath(nextPath: unknown, fallback = dashboardDefaultPath): string {
   if (typeof nextPath !== 'string' || nextPath.trim().length === 0) {
     return fallback;
   }
