@@ -304,6 +304,26 @@ export async function listActiveClientJobPosts(clientId: string, take = 10): Pro
   });
 }
 
+export async function listPublishedWorkerJobPosts(workerCategories: readonly string[], take = 10): Promise<JobPostSummary[]> {
+  if (workerCategories.length === 0) {
+    return [];
+  }
+
+  return getPrismaClient().jobPost.findMany({
+    where: {
+      status: JobPostStatus.PUBLISHED,
+      category: {
+        in: [...workerCategories]
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: jobPostSelect,
+    take
+  });
+}
+
 export async function getActiveClientJobPost(clientId: string, jobPostId: string): Promise<JobPostSummary | null> {
   return getPrismaClient().jobPost.findFirst({
     where: {

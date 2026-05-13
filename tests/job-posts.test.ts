@@ -6,6 +6,7 @@ import {
   createJobPostSchema,
   getActiveClientJobPost,
   listClientJobPosts,
+  listPublishedWorkerJobPosts,
   updateAuthenticatedClientJobPost,
   type JobPostSummary
 } from '@/lib/job-posts';
@@ -235,6 +236,54 @@ describe('job post helpers', () => {
         createdAt: true
       },
       take: 10
+    });
+  });
+
+  it('lists published job posts that match worker categories newest first', async () => {
+    const jobPosts: JobPostSummary[] = [
+      {
+        id: 'job_003',
+        title: 'Pintar rejas',
+        category: 'painting',
+        description: 'Pintar rejas del frente.',
+        addressText: 'Salta Capital',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.PUBLISHED,
+        createdAt: new Date('2026-05-13T00:00:00.000Z')
+      }
+    ];
+    const findMany = vi.fn().mockResolvedValue(jobPosts);
+
+    getPrismaClientMock.mockReturnValue({
+      jobPost: {
+        findMany
+      }
+    } as never);
+
+    await expect(listPublishedWorkerJobPosts(['painting', 'cleaning'], 3)).resolves.toEqual(jobPosts);
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        status: JobPostStatus.PUBLISHED,
+        category: {
+          in: ['painting', 'cleaning']
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        addressText: true,
+        desiredTime: true,
+        photoPathnames: true,
+        status: true,
+        createdAt: true
+      },
+      take: 3
     });
   });
 

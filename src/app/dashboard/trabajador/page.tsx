@@ -8,6 +8,7 @@ import {
 import { WorkerHome } from '@/components/dashboard/worker-home';
 import { getDashboardPageContext } from '@/lib/dashboard-page-data';
 import { getOnboardingPath } from '@/lib/dashboard-routes';
+import { listPublishedWorkerJobPosts } from '@/lib/job-posts';
 import { hasCompletedOnboarding } from '@/lib/onboarding';
 import { canSelectProfileMode } from '@/lib/permissions';
 
@@ -30,5 +31,7 @@ export default async function TrabajadorDashboardPage() {
     redirect(getOnboardingPath('trabajador') as Route);
   }
 
-  return <WorkerHome profile={context.appUser.user.profile} />;
+  const jobPosts = await listPublishedWorkerJobPosts(context.appUser.user.profile?.workerCategories ?? [], 3);
+
+  return <WorkerHome profile={context.appUser.user.profile} jobPosts={jobPosts} />;
 }

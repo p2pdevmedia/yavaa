@@ -2,6 +2,7 @@ import { IdentityVerificationStatus } from '@prisma/client';
 
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 import type { AppUserProfile } from '@/lib/app-user';
+import type { JobPostSummary } from '@/lib/job-posts';
 import { workerCategoryLabels, type WorkerCategorySlug, workerCategorySlugs } from '@/lib/onboarding';
 
 function isWorkerCategorySlug(value: string): value is WorkerCategorySlug {
@@ -18,6 +19,21 @@ function formatHourlyRate(cents: number | null): string {
     currency: 'ARS',
     maximumFractionDigits: 0
   }).format(cents / 100);
+}
+
+function formatDesiredTime(value: Date | null): string {
+  if (!value) {
+    return 'Horario a coordinar';
+  }
+
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'medium',
+    timeStyle: 'short'
+  }).format(value);
+}
+
+function formatJobCategory(category: string): string {
+  return isWorkerCategorySlug(category) ? workerCategoryLabels[category] : category;
 }
 
 function getVerificationCopy(status: IdentityVerificationStatus): {
@@ -44,7 +60,13 @@ function getVerificationCopy(status: IdentityVerificationStatus): {
   };
 }
 
-export function WorkerHome({ profile }: { profile: AppUserProfile | null }) {
+export function WorkerHome({
+  profile,
+  jobPosts = []
+}: {
+  profile: AppUserProfile | null;
+  jobPosts?: JobPostSummary[];
+}) {
   const verification = getVerificationCopy(
     profile?.identityVerificationStatus ?? IdentityVerificationStatus.NOT_STARTED
   );
@@ -93,10 +115,39 @@ export function WorkerHome({ profile }: { profile: AppUserProfile | null }) {
 
         <article className="rounded-[24px] border border-dashed border-border bg-card p-5">
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos cercanos</p>
-          <h2 className="mt-3 text-xl font-bold text-foreground">No hay trabajos cercanos todavía</h2>
-          <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            En la etapa de marketplace vamos a mostrar oportunidades compatibles con tu zona y rubros.
-          </p>
+          {jobPosts.length > 0 ? (
+            <div className="mt-3 space-y-3">
+              {jobPosts.map((jobPost) => (
+                <div key={jobPost.id} className="space-y-3 rounded-[18px] border border-border bg-background px-4 py-3">
+                  <div className="space-y-1">
+                    <h2 className="text-base font-bold text-foreground">{jobPost.title}</h2>
+                    <p className="text-sm leading-6 text-muted-foreground">{jobPost.description}</p>
+                  </div>
+                  <div className="grid gap-2 text-sm sm:grid-cols-3">
+                    <div>
+                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Rubro</p>
+                      <p className="mt-1 font-bold text-foreground">{formatJobCategory(jobPost.category)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Zona</p>
+                      <p className="mt-1 font-bold text-foreground">{jobPost.addressText}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Cuándo</p>
+                      <p className="mt-1 font-bold text-foreground">{formatDesiredTime(jobPost.desiredTime)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              <h2 className="mt-3 text-xl font-bold text-foreground">No hay trabajos cercanos todavía</h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                En la etapa de marketplace vamos a mostrar oportunidades compatibles con tu zona y rubros.
+              </p>
+            </>
+          )}
         </article>
       </section>
     </YavaaPageShell>
