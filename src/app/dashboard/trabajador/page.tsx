@@ -31,7 +31,7 @@ export default async function TrabajadorDashboardPage() {
     redirect(getOnboardingPath('trabajador') as Route);
   }
 
-  const jobPosts = await listPublishedWorkerJobPosts(context.appUser.user.profile?.workerCategories ?? [], 3);
+  const jobPosts = await listPublishedWorkerJobPosts(context.appUser.user.profile?.workerCategories ?? []);
 
   return <WorkerHome profile={context.appUser.user.profile} jobPosts={jobPosts} />;
 }

@@ -239,8 +239,19 @@ describe('job post helpers', () => {
     });
   });
 
-  it('lists published job posts that match worker categories newest first', async () => {
+  it('lists every published job post with worker category matches first', async () => {
     const jobPosts: JobPostSummary[] = [
+      {
+        id: 'job_004',
+        title: 'Cambio de toma corriente',
+        category: 'construction',
+        description: 'Cambiar una ficha hembra.',
+        addressText: 'Salta Capital',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.PUBLISHED,
+        createdAt: new Date('2026-05-14T00:00:00.000Z')
+      },
       {
         id: 'job_003',
         title: 'Pintar rejas',
@@ -261,13 +272,10 @@ describe('job post helpers', () => {
       }
     } as never);
 
-    await expect(listPublishedWorkerJobPosts(['painting', 'cleaning'], 3)).resolves.toEqual(jobPosts);
+    await expect(listPublishedWorkerJobPosts(['painting', 'cleaning'])).resolves.toEqual([jobPosts[1], jobPosts[0]]);
     expect(findMany).toHaveBeenCalledWith({
       where: {
-        status: JobPostStatus.PUBLISHED,
-        category: {
-          in: ['painting', 'cleaning']
-        }
+        status: JobPostStatus.PUBLISHED
       },
       orderBy: {
         createdAt: 'desc'
@@ -282,8 +290,7 @@ describe('job post helpers', () => {
         photoPathnames: true,
         status: true,
         createdAt: true
-      },
-      take: 3
+      }
     });
   });
 

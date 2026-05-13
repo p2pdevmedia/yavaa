@@ -304,23 +304,29 @@ export async function listActiveClientJobPosts(clientId: string, take = 10): Pro
   });
 }
 
-export async function listPublishedWorkerJobPosts(workerCategories: readonly string[], take = 10): Promise<JobPostSummary[]> {
-  if (workerCategories.length === 0) {
-    return [];
-  }
-
-  return getPrismaClient().jobPost.findMany({
+export async function listPublishedWorkerJobPosts(workerCategories: readonly string[], take?: number): Promise<JobPostSummary[]> {
+  const jobPosts = await getPrismaClient().jobPost.findMany({
     where: {
-      status: JobPostStatus.PUBLISHED,
-      category: {
-        in: [...workerCategories]
-      }
+      status: JobPostStatus.PUBLISHED
     },
     orderBy: {
       createdAt: 'desc'
     },
     select: jobPostSelect,
-    take
+    ...(take ? { take } : {})
+  });
+
+  const preferredCategories = new Set(workerCategories);
+
+  return [...jobPosts].sort((firstJobPost, secondJobPost) => {
+    const firstIsPreferred = preferredCategories.has(firstJobPost.category);
+    const secondIsPreferred = preferredCategories.has(secondJobPost.category);
+
+    if (firstIsPreferred === secondIsPreferred) {
+      return 0;
+    }
+
+    return firstIsPreferred ? -1 : 1;
   });
 }
 
