@@ -57,4 +57,16 @@ describe('showcase seed', () => {
     expect(seed).toContain('prisma.jobOfferMessage.createMany');
     expect(seed).toContain('prisma.jobPayment.createMany');
   });
+
+  it('associates every seeded non-zingueria job with Hernan through accepted offers', () => {
+    const seed = readProjectFile('prisma/seed.mjs');
+
+    expect(seed).toContain('const showcaseJobs = [');
+    expect(seed).toContain('createAcceptedOffer');
+    expect(seed).toContain("title: 'Showcase: Bajo mesada de cocina en madera/MDF'");
+    expect(seed).toContain("title: 'Showcase: Mueble sobre mesada para cocina compacta'");
+    expect(seed).toContain('status: JobPostStatus.IN_PROGRESS');
+    expect(seed).toContain('payments: [');
+    expect(seed).not.toContain("title: 'Zingueria kaleuche'");
+  });
 });
