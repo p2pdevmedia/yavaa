@@ -18,6 +18,11 @@ describe('client post-wizard home design', () => {
     expect(clientHome).toContain('Buscar trabajadores');
     expect(clientHome).toContain('/dashboard/jefe/buscar-trabajadores');
     expect(clientHome).toContain('Trabajos activos');
+    expect(clientHome).toContain('Trabajos en progreso');
+    expect(clientHome).toContain('Trabajos terminados');
+    expect(clientHome).toContain('JobPostStatus.IN_PROGRESS');
+    expect(clientHome).toContain('JobPostStatus.READY_FOR_REVIEW');
+    expect(clientHome).toContain('JobPostStatus.CLOSED');
     expect(clientHome).toContain('jobPosts');
   });
 
@@ -46,6 +51,7 @@ describe('client post-wizard home design', () => {
     const page = readProjectFile('src/app/dashboard/jefe/page.tsx');
 
     expect(page).toContain('ClientHome');
+    expect(page).toContain('listClientJobPosts');
     expect(page).toContain("hasCompletedOnboarding(context.appUser.user.profile, 'jefe')");
     expect(page).not.toContain('listActiveClientJobPosts(context.appUser.user.id, 3)');
   });

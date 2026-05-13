@@ -53,13 +53,15 @@ describe('stage 5 marketplace screens', () => {
     expect(search).toContain('Sin calificaciones todavía');
   });
 
-  it('renders recent client job posts on client home', () => {
+  it('renders grouped client job posts on client home', () => {
     const page = readProjectFile('src/app/dashboard/jefe/page.tsx');
     const home = readProjectFile('src/components/dashboard/client-home.tsx');
 
-    expect(page).toContain('listActiveClientJobPosts');
+    expect(page).toContain('listClientJobPosts');
     expect(home).toContain('jobPosts');
     expect(home).toContain('Trabajos activos');
+    expect(home).toContain('Trabajos en progreso');
+    expect(home).toContain('Trabajos terminados');
   });
 
   it('renders client offer management on job detail pages', () => {

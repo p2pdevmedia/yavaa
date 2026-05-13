@@ -8,7 +8,7 @@ import {
 import { ClientHome } from '@/components/dashboard/client-home';
 import { getDashboardPageContext } from '@/lib/dashboard-page-data';
 import { getOnboardingPath } from '@/lib/dashboard-routes';
-import { listActiveClientJobPosts } from '@/lib/job-posts';
+import { listClientJobPosts } from '@/lib/job-posts';
 import { hasCompletedOnboarding } from '@/lib/onboarding';
 import { canSelectProfileMode } from '@/lib/permissions';
 
@@ -31,7 +31,7 @@ export default async function JefeDashboardPage() {
     redirect(getOnboardingPath('jefe') as Route);
   }
 
-  const jobPosts = await listActiveClientJobPosts(context.appUser.user.id);
+  const jobPosts = await listClientJobPosts(context.appUser.user.id);
 
   return <ClientHome profile={context.appUser.user.profile} jobPosts={jobPosts} />;
 }
