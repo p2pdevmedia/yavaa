@@ -153,6 +153,12 @@ const jobPostSelect = {
   createdAt: true
 } as const;
 
+const activeEditableJobPostStatuses: JobPostStatus[] = [
+  JobPostStatus.PUBLISHED,
+  JobPostStatus.IN_PROGRESS,
+  JobPostStatus.READY_FOR_REVIEW
+];
+
 function mapZodFieldErrors(error: z.ZodError): JobPostFieldErrors {
   const fieldErrors: JobPostFieldErrors = {};
 
@@ -295,7 +301,7 @@ export async function listActiveClientJobPosts(clientId: string, take?: number):
     where: {
       clientId,
       status: {
-        in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+        in: activeEditableJobPostStatuses
       }
     },
     orderBy: {
@@ -337,7 +343,9 @@ export async function getActiveClientJobPost(clientId: string, jobPostId: string
     where: {
       id: jobPostId,
       clientId,
-      status: JobPostStatus.PUBLISHED
+      status: {
+        in: activeEditableJobPostStatuses
+      }
     },
     select: jobPostSelect
   });
@@ -400,7 +408,9 @@ export async function updateAuthenticatedClientJobPost(
   const where = {
     id: jobPostId,
     clientId: readyAuth.userId,
-    status: JobPostStatus.PUBLISHED
+    status: {
+      in: activeEditableJobPostStatuses
+    }
   } as const;
 
   const updateResult = await getPrismaClient().jobPost.updateMany({

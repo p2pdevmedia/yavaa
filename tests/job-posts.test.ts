@@ -354,7 +354,7 @@ describe('job post helpers', () => {
     });
   });
 
-  it('finds active job posts only for the owning client', async () => {
+  it('finds editable active job posts only for the owning client', async () => {
     const jobPost: JobPostSummary = {
       id: 'job_001',
       title: 'Mural',
@@ -363,7 +363,7 @@ describe('job post helpers', () => {
       addressText: 'San Martin de los Andes',
       desiredTime: null,
       photoPathnames: [],
-      status: JobPostStatus.PUBLISHED,
+      status: JobPostStatus.IN_PROGRESS,
       createdAt: new Date('2026-05-13T00:00:00.000Z')
     };
     const findFirst = vi.fn().mockResolvedValue(jobPost);
@@ -379,7 +379,9 @@ describe('job post helpers', () => {
       where: {
         id: 'job_001',
         clientId: 'user_001',
-        status: JobPostStatus.PUBLISHED
+        status: {
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+        }
       },
       select: {
         id: true,
@@ -443,7 +445,7 @@ describe('job post helpers', () => {
     });
   });
 
-  it('updates active job posts only through ready jefe auth and owner scope', async () => {
+  it('updates editable active job posts only through ready jefe auth and owner scope', async () => {
     const updateMany = vi.fn().mockResolvedValue({
       count: 1
     });
@@ -455,7 +457,7 @@ describe('job post helpers', () => {
       addressText: 'San Martin de los Andes',
       desiredTime: null,
       photoPathnames: [],
-      status: JobPostStatus.PUBLISHED,
+      status: JobPostStatus.IN_PROGRESS,
       createdAt: new Date('2026-05-13T00:00:00.000Z')
     });
 
@@ -484,7 +486,7 @@ describe('job post helpers', () => {
         addressText: 'San Martin de los Andes',
         desiredTime: null,
         photoPathnames: [],
-        status: JobPostStatus.PUBLISHED,
+        status: JobPostStatus.IN_PROGRESS,
         createdAt: new Date('2026-05-13T00:00:00.000Z')
       }
     });
@@ -492,7 +494,9 @@ describe('job post helpers', () => {
       where: {
         id: 'job_001',
         clientId: 'user_001',
-        status: JobPostStatus.PUBLISHED
+        status: {
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+        }
       },
       data: {
         title: 'Mural renovado',
@@ -506,7 +510,9 @@ describe('job post helpers', () => {
       where: {
         id: 'job_001',
         clientId: 'user_001',
-        status: JobPostStatus.PUBLISHED
+        status: {
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+        }
       },
       select: {
         id: true,
