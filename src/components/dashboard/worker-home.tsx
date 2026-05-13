@@ -1,5 +1,8 @@
 import { IdentityVerificationStatus } from '@prisma/client';
+import Link from 'next/link';
+import type { Route } from 'next';
 
+import { Button } from '@/components/ui/button';
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 import type { AppUserProfile } from '@/lib/app-user';
 import type { JobPostSummary } from '@/lib/job-posts';
@@ -137,6 +140,9 @@ export function WorkerHome({
                       <p className="mt-1 font-bold text-foreground">{formatDesiredTime(jobPost.desiredTime)}</p>
                     </div>
                   </div>
+                  <Button asChild variant="outline" className="w-full sm:w-auto">
+                    <Link href={`/dashboard/trabajador/trabajos/${jobPost.id}` as Route}>Ver trabajo</Link>
+                  </Button>
                 </div>
               ))}
             </div>

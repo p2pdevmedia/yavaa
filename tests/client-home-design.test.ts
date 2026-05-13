@@ -58,7 +58,7 @@ describe('client post-wizard home design', () => {
     expect(clientHome).toContain('Editar');
     expect(clientHome).toContain('/dashboard/jefe/trabajos/');
     expect(detailPage).toContain("hasRole(context.appUser.permissionContext, 'jefe')");
-    expect(detailPage).toContain('getActiveClientJobPost');
+    expect(detailPage).toContain('getClientJobPostForDetail');
     expect(editPage).toContain("hasRole(context.appUser.permissionContext, 'jefe')");
     expect(editPage).toContain('getActiveClientJobPost');
     expect(editPage).toContain('EditJobForm');
