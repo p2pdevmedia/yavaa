@@ -430,19 +430,19 @@ export function LocationMapPicker({
             href="https://www.openstreetmap.org/copyright"
             target="_blank"
             rel="noreferrer"
-            className="absolute bottom-2 right-2 rounded-md bg-card/90 px-2 py-1 text-[11px] font-semibold text-foreground"
+            className="absolute right-16 top-3 rounded-md bg-card/90 px-2 py-1 text-[11px] font-semibold text-foreground"
             onClick={(event) => event.stopPropagation()}
           >
             © OpenStreetMap
           </a>
-        </div>
-        <div className="grid gap-2 bg-card px-4 py-3 text-sm">
-          {getSearchStatusText(displayedSearchStatus) ? (
-            <p className="font-semibold text-muted-foreground">{getSearchStatusText(displayedSearchStatus)}</p>
-          ) : null}
-          <p className="font-bold text-foreground">
-            {formatCoordinate(selectedLocation.latitude)}, {formatCoordinate(selectedLocation.longitude)}
-          </p>
+          <div className="absolute left-3 top-3 max-w-[calc(100%-11rem)] rounded-md bg-card/95 px-3 py-2 text-sm shadow-soft">
+            {getSearchStatusText(displayedSearchStatus) ? (
+              <p className="font-semibold text-muted-foreground">{getSearchStatusText(displayedSearchStatus)}</p>
+            ) : null}
+            <p className="font-bold text-foreground">
+              {formatCoordinate(selectedLocation.latitude)}, {formatCoordinate(selectedLocation.longitude)}
+            </p>
+          </div>
         </div>
       </div>
     </div>

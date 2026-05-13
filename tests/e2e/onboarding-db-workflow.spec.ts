@@ -515,8 +515,16 @@ test.describe('DB-backed onboarding workflow', () => {
       await page.goto('/dashboard/onboarding/jefe');
 
       await expect(page.getByRole('heading', { name: 'Tus datos' })).toBeVisible();
+      await page.waitForLoadState('networkidle');
       await page.getByLabel('Nombre').fill('Martin');
       await page.getByLabel('Apellido').fill('Ruiz');
+      console.log(
+        await page.evaluate(() => ({
+          formCount: document.querySelectorAll('form').length,
+          formButtonCount: document.querySelectorAll('form button').length,
+          buttonType: document.querySelector('button')?.getAttribute('type')
+        }))
+      );
       await page.getByRole('button', { name: 'Continuar' }).click();
 
       await expect(page.getByRole('heading', { name: '¿Dónde necesitás ayuda?' })).toBeVisible();
