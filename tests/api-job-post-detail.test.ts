@@ -74,7 +74,7 @@ describe('/api/job-posts/[jobPostId]', () => {
     vi.resetAllMocks();
   });
 
-  it('updates an editable active job post for its owning jefe', async () => {
+  it('updates an editable closed job post for its owning jefe', async () => {
     resolveRequestAuthMock.mockResolvedValueOnce(activeJefeAuth);
     const updateMany = vi.fn().mockResolvedValue({ count: 1 });
     const findFirst = vi.fn().mockResolvedValue({
@@ -85,7 +85,7 @@ describe('/api/job-posts/[jobPostId]', () => {
       addressText: 'San Martin de los Andes',
       desiredTime: null,
       photoPathnames: [],
-      status: JobPostStatus.IN_PROGRESS,
+      status: JobPostStatus.CLOSED,
       createdAt: new Date('2026-05-13T00:00:00.000Z')
     });
 
@@ -116,7 +116,7 @@ describe('/api/job-posts/[jobPostId]', () => {
         addressText: 'San Martin de los Andes',
         desiredTime: null,
         photoPathnames: [],
-        status: 'IN_PROGRESS',
+        status: 'CLOSED',
         createdAt: '2026-05-13T00:00:00.000Z'
       }
     });
@@ -125,7 +125,7 @@ describe('/api/job-posts/[jobPostId]', () => {
         id: 'job_001',
         clientId: 'user_001',
         status: {
-          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW, JobPostStatus.CLOSED]
         }
       },
       data: {

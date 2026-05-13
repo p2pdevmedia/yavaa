@@ -156,7 +156,8 @@ const jobPostSelect = {
 const activeEditableJobPostStatuses: JobPostStatus[] = [
   JobPostStatus.PUBLISHED,
   JobPostStatus.IN_PROGRESS,
-  JobPostStatus.READY_FOR_REVIEW
+  JobPostStatus.READY_FOR_REVIEW,
+  JobPostStatus.CLOSED
 ];
 
 function mapZodFieldErrors(error: z.ZodError): JobPostFieldErrors {

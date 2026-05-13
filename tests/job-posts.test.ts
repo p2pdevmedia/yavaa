@@ -241,8 +241,19 @@ describe('job post helpers', () => {
     });
   });
 
-  it('lists every active client job post across published and accepted states', async () => {
+  it('lists every editable client job post across published, accepted, and closed states', async () => {
     const jobPosts: JobPostSummary[] = [
+      {
+        id: 'job_closed',
+        title: 'Placard terminado',
+        category: 'carpinteria',
+        description: 'Placard terminado.',
+        addressText: 'San Martin de los Andes',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.CLOSED,
+        createdAt: new Date('2026-05-15T00:00:00.000Z')
+      },
       {
         id: 'job_accepted',
         title: 'Placard en curso',
@@ -279,7 +290,7 @@ describe('job post helpers', () => {
       where: {
         clientId: 'user_001',
         status: {
-          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW, JobPostStatus.CLOSED]
         }
       },
       orderBy: {
@@ -354,7 +365,7 @@ describe('job post helpers', () => {
     });
   });
 
-  it('finds editable active job posts only for the owning client', async () => {
+  it('finds editable job posts through closed state only for the owning client', async () => {
     const jobPost: JobPostSummary = {
       id: 'job_001',
       title: 'Mural',
@@ -363,7 +374,7 @@ describe('job post helpers', () => {
       addressText: 'San Martin de los Andes',
       desiredTime: null,
       photoPathnames: [],
-      status: JobPostStatus.IN_PROGRESS,
+      status: JobPostStatus.CLOSED,
       createdAt: new Date('2026-05-13T00:00:00.000Z')
     };
     const findFirst = vi.fn().mockResolvedValue(jobPost);
@@ -380,7 +391,7 @@ describe('job post helpers', () => {
         id: 'job_001',
         clientId: 'user_001',
         status: {
-          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW, JobPostStatus.CLOSED]
         }
       },
       select: {
@@ -445,7 +456,7 @@ describe('job post helpers', () => {
     });
   });
 
-  it('updates editable active job posts only through ready jefe auth and owner scope', async () => {
+  it('updates editable job posts through closed state only through ready jefe auth and owner scope', async () => {
     const updateMany = vi.fn().mockResolvedValue({
       count: 1
     });
@@ -457,7 +468,7 @@ describe('job post helpers', () => {
       addressText: 'San Martin de los Andes',
       desiredTime: null,
       photoPathnames: [],
-      status: JobPostStatus.IN_PROGRESS,
+      status: JobPostStatus.CLOSED,
       createdAt: new Date('2026-05-13T00:00:00.000Z')
     });
 
@@ -486,7 +497,7 @@ describe('job post helpers', () => {
         addressText: 'San Martin de los Andes',
         desiredTime: null,
         photoPathnames: [],
-        status: JobPostStatus.IN_PROGRESS,
+        status: JobPostStatus.CLOSED,
         createdAt: new Date('2026-05-13T00:00:00.000Z')
       }
     });
@@ -495,7 +506,7 @@ describe('job post helpers', () => {
         id: 'job_001',
         clientId: 'user_001',
         status: {
-          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW, JobPostStatus.CLOSED]
         }
       },
       data: {
@@ -511,7 +522,7 @@ describe('job post helpers', () => {
         id: 'job_001',
         clientId: 'user_001',
         status: {
-          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW, JobPostStatus.CLOSED]
         }
       },
       select: {
