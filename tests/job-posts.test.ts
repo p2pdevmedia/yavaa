@@ -5,6 +5,7 @@ import {
   createJobPost,
   createJobPostSchema,
   getActiveClientJobPost,
+  getClientJobPostForDetail,
   listClientJobPosts,
   listPublishedWorkerJobPosts,
   updateAuthenticatedClientJobPost,
@@ -320,6 +321,54 @@ describe('job post helpers', () => {
         id: 'job_001',
         clientId: 'user_001',
         status: JobPostStatus.PUBLISHED
+      },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        addressText: true,
+        desiredTime: true,
+        photoPathnames: true,
+        status: true,
+        createdAt: true
+      }
+    });
+  });
+
+  it('finds owned job detail across the client lifecycle but not cancelled jobs', async () => {
+    const jobPost: JobPostSummary = {
+      id: 'job_001',
+      title: 'Mural',
+      category: 'painting',
+      description: 'Pintar un mural exterior.',
+      addressText: 'San Martin de los Andes',
+      desiredTime: null,
+      photoPathnames: [],
+      status: JobPostStatus.IN_PROGRESS,
+      createdAt: new Date('2026-05-13T00:00:00.000Z')
+    };
+    const findFirst = vi.fn().mockResolvedValue(jobPost);
+
+    getPrismaClientMock.mockReturnValue({
+      jobPost: {
+        findFirst
+      }
+    } as never);
+
+    await expect(getClientJobPostForDetail('user_001', 'job_001')).resolves.toEqual(jobPost);
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'job_001',
+        clientId: 'user_001',
+        status: {
+          in: [
+            JobPostStatus.PUBLISHED,
+            JobPostStatus.IN_PROGRESS,
+            JobPostStatus.READY_FOR_REVIEW,
+            JobPostStatus.CLOSED
+          ]
+        }
       },
       select: {
         id: true,

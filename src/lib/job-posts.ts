@@ -341,6 +341,24 @@ export async function getActiveClientJobPost(clientId: string, jobPostId: string
   });
 }
 
+export async function getClientJobPostForDetail(clientId: string, jobPostId: string): Promise<JobPostSummary | null> {
+  return getPrismaClient().jobPost.findFirst({
+    where: {
+      id: jobPostId,
+      clientId,
+      status: {
+        in: [
+          JobPostStatus.PUBLISHED,
+          JobPostStatus.IN_PROGRESS,
+          JobPostStatus.READY_FOR_REVIEW,
+          JobPostStatus.CLOSED
+        ]
+      }
+    },
+    select: jobPostSelect
+  });
+}
+
 export async function updateAuthenticatedClientJobPost(
   auth: RequestAuthState,
   jobPostId: string,
