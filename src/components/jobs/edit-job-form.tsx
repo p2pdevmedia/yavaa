@@ -59,7 +59,6 @@ function FieldError({ messages }: { messages?: string[] }) {
 }
 
 export function EditJobForm({ jobPost }: { jobPost: JobPostApiSummary }) {
-  const todayDate = useMemo(() => formatDateValue(new Date()), []);
   const initialDesiredTime = jobPost.desiredTime ? new Date(jobPost.desiredTime) : null;
   const [formState, setFormState] = useState<EditJobFormState>({
     title: jobPost.title,
@@ -238,7 +237,6 @@ export function EditJobForm({ jobPost }: { jobPost: JobPostApiSummary }) {
             id="desiredDate"
             name="desiredDate"
             type="date"
-            min={todayDate}
             value={formState.desiredDate}
             onChange={(event) => updateSchedule(event.target.value, formState.desiredClockTime)}
           />

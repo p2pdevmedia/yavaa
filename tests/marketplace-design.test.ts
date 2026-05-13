@@ -38,6 +38,14 @@ describe('stage 5 marketplace screens', () => {
     expect(form).toContain('Fecha y hora');
   });
 
+  it('does not force future dates when editing existing job posts', () => {
+    const publishForm = readProjectFile('src/components/jobs/publish-job-form.tsx');
+    const editForm = readProjectFile('src/components/jobs/edit-job-form.tsx');
+
+    expect(publishForm).toContain('min={todayDate}');
+    expect(editForm).not.toContain('min={todayDate}');
+  });
+
   it('connects the protected worker search page to the search API', () => {
     const page = readProjectFile('src/app/dashboard/jefe/buscar-trabajadores/page.tsx');
     const search = readProjectFile('src/components/workers/worker-search.tsx');
