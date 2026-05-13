@@ -290,17 +290,19 @@ export async function listClientJobPosts(clientId: string, take = 10): Promise<J
   });
 }
 
-export async function listActiveClientJobPosts(clientId: string, take = 10): Promise<JobPostSummary[]> {
+export async function listActiveClientJobPosts(clientId: string, take?: number): Promise<JobPostSummary[]> {
   return getPrismaClient().jobPost.findMany({
     where: {
       clientId,
-      status: JobPostStatus.PUBLISHED
+      status: {
+        in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+      }
     },
     orderBy: {
       createdAt: 'desc'
     },
     select: jobPostSelect,
-    take
+    ...(take ? { take } : {})
   });
 }
 

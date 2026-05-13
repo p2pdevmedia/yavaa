@@ -61,7 +61,7 @@ export function ClientHome({ profile, jobPosts = [] }: { profile: AppUserProfile
             <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos activos</p>
             {jobPosts.length > 0 ? (
               <div className="mt-3 space-y-3">
-                {jobPosts.slice(0, 3).map((jobPost) => (
+                {jobPosts.map((jobPost) => (
                   <div key={jobPost.id} className="space-y-3 rounded-[18px] border border-border bg-background px-4 py-3">
                     <h2 className="text-base font-bold text-foreground">{jobPost.title}</h2>
                     <p className="mt-1 text-sm text-muted-foreground">{jobPost.addressText}</p>

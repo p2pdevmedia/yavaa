@@ -42,4 +42,19 @@ describe('showcase seed', () => {
     expect(seed).toContain('await prisma.jobPost.deleteMany({');
     expect(seed).toContain('clientId: client.id');
   });
+
+  it('seeds an accepted in-progress showcase offer with messages and payments', () => {
+    const seed = readProjectFile('prisma/seed.mjs');
+
+    expect(seed).toContain("const acceptedShowcaseJobTitle = 'Placard / armario grande con cajones y puertas pendientes'");
+    expect(seed).toContain("title: acceptedShowcaseJobTitle");
+    expect(seed).toContain('findFirst');
+    expect(seed).toContain('upsert');
+    expect(seed).toContain('JobOfferStatus');
+    expect(seed).toContain('JobOfferStatus.ACCEPTED');
+    expect(seed).toContain('JobPostStatus.IN_PROGRESS');
+    expect(seed).toContain('acceptedOfferId: acceptedOffer.id');
+    expect(seed).toContain('prisma.jobOfferMessage.createMany');
+    expect(seed).toContain('prisma.jobPayment.createMany');
+  });
 });

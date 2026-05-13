@@ -1,6 +1,7 @@
 import { PrismaPg } from '@prisma/adapter-pg';
 import {
   IdentityVerificationStatus,
+  JobOfferStatus,
   JobPostStatus,
   OnboardingRole,
   PrismaClient,
@@ -23,6 +24,8 @@ const seedRoles = [
   { slug: 'jefe', name: 'Jefe', description: 'Organiza y solicita trabajo.' },
   { slug: 'trabajador', name: 'Trabajador', description: 'Ofrece trabajo y coordina servicios.' }
 ];
+
+const acceptedShowcaseJobTitle = 'Placard / armario grande con cajones y puertas pendientes';
 
 const removableShowcaseJobTitles = [
   'Mural',
@@ -109,11 +112,148 @@ function showcaseDescription({ contractor, budget, payments, source, notes }) {
 }
 
 async function seedHernanShowcase({ client, contractor }) {
+  await prisma.jobPost.updateMany({
+    where: {
+      clientId: client.id,
+      title: { in: [...removableShowcaseJobTitles, acceptedShowcaseJobTitle] }
+    },
+    data: {
+      acceptedOfferId: null
+    }
+  });
+
   await prisma.jobPost.deleteMany({
     where: {
       clientId: client.id,
       title: { in: removableShowcaseJobTitles }
     }
+  });
+
+  const existingAcceptedJob = await prisma.jobPost.findFirst({
+    where: {
+      clientId: client.id,
+      title: acceptedShowcaseJobTitle
+    },
+    select: {
+      id: true
+    }
+  });
+
+  const activeJob = existingAcceptedJob
+    ? await prisma.jobPost.update({
+        where: {
+          id: existingAcceptedJob.id
+        },
+        data: {
+          category: 'carpinteria',
+          description: showcaseDescription({
+            contractor: contractor.displayName ?? 'Hernán Esteban Boan',
+            budget: 1100000,
+            payments: 400000,
+            source: 'presupuesto del 05/05/2026 y aclaración del 07/05/2026',
+            notes:
+              'Placard/armario grande para casa chica, pensado para guardar ropa, platos y objetos. Presupuesto detectado: ARS 400.000 de materiales + ARS 700.000 de mano de obra. El 07/05 se aclara que las puertas no estaban contempladas: 2 corredizas y 3 superiores quedarían como extra fuera del presupuesto original. Este caso queda en curso para mostrar oferta aceptada, chat y pagos parciales.'
+          }),
+          addressText: 'San Martín de los Andes, Neuquén',
+          desiredTime: new Date('2026-05-05T10:20:00-03:00'),
+          status: JobPostStatus.PUBLISHED
+        }
+      })
+    : await prisma.jobPost.create({
+        data: {
+          clientId: client.id,
+          title: acceptedShowcaseJobTitle,
+          category: 'carpinteria',
+          description: showcaseDescription({
+            contractor: contractor.displayName ?? 'Hernán Esteban Boan',
+            budget: 1100000,
+            payments: 400000,
+            source: 'presupuesto del 05/05/2026 y aclaración del 07/05/2026',
+            notes:
+              'Placard/armario grande para casa chica, pensado para guardar ropa, platos y objetos. Presupuesto detectado: ARS 400.000 de materiales + ARS 700.000 de mano de obra. El 07/05 se aclara que las puertas no estaban contempladas: 2 corredizas y 3 superiores quedarían como extra fuera del presupuesto original. Este caso queda en curso para mostrar oferta aceptada, chat y pagos parciales.'
+          }),
+          addressText: 'San Martín de los Andes, Neuquén',
+          desiredTime: new Date('2026-05-05T10:20:00-03:00'),
+          status: JobPostStatus.PUBLISHED
+        }
+      });
+
+  await prisma.jobOffer.deleteMany({
+    where: {
+      jobPostId: activeJob.id
+    }
+  });
+
+  const acceptedOffer = await prisma.jobOffer.create({
+    data: {
+      jobPostId: activeJob.id,
+      workerId: contractor.id,
+      amountCents: 110000000,
+      status: JobOfferStatus.ACCEPTED,
+      createdAt: new Date('2026-05-05T11:15:00-03:00')
+    }
+  });
+
+  await prisma.jobPost.update({
+    where: {
+      id: activeJob.id
+    },
+    data: {
+      acceptedOfferId: acceptedOffer.id,
+      status: JobPostStatus.IN_PROGRESS
+    }
+  });
+
+  await prisma.jobOfferMessage.createMany({
+    data: [
+      {
+        offerId: acceptedOffer.id,
+        authorId: contractor.id,
+        body:
+          'Hola Iván, puedo tomar el placard grande. Mantengo el presupuesto de materiales y mano de obra, dejando las puertas corredizas y superiores como extra si las definimos después.',
+        createdAt: new Date('2026-05-05T11:20:00-03:00')
+      },
+      {
+        offerId: acceptedOffer.id,
+        authorId: client.id,
+        body:
+          'Dale Hernán, acepto la oferta. Priorizá que quede usable para guardar ropa y platos, y vamos viendo las puertas cuando avancemos.',
+        createdAt: new Date('2026-05-05T11:42:00-03:00')
+      },
+      {
+        offerId: acceptedOffer.id,
+        authorId: contractor.id,
+        body:
+          'Perfecto. Compro materiales y arranco con estructura, cajones y divisiones. Te voy pasando avances por acá.',
+        createdAt: new Date('2026-05-05T12:05:00-03:00')
+      },
+      {
+        offerId: acceptedOffer.id,
+        authorId: client.id,
+        body:
+          'Te dejo pagos parciales cargados para materiales y avance. Avisame antes de cerrar medidas finales.',
+        createdAt: new Date('2026-05-06T09:10:00-03:00')
+      }
+    ]
+  });
+
+  await prisma.jobPayment.createMany({
+    data: [
+      {
+        offerId: acceptedOffer.id,
+        createdById: client.id,
+        amountCents: 25000000,
+        paidAt: new Date('2026-05-05T13:30:00-03:00'),
+        description: 'Anticipo para compra de materiales del placard.'
+      },
+      {
+        offerId: acceptedOffer.id,
+        createdById: client.id,
+        amountCents: 15000000,
+        paidAt: new Date('2026-05-06T18:45:00-03:00'),
+        description: 'Pago parcial por avance de estructura y cajones.'
+      }
+    ]
   });
 
   await prisma.jobPost.createMany({
@@ -198,22 +338,6 @@ async function seedHernanShowcase({ client, contractor }) {
         desiredTime: new Date('2026-05-03T12:30:00-03:00'),
         status: JobPostStatus.CLOSED
       },
-      {
-        clientId: client.id,
-        title: 'Showcase: Placard / armario grande con cajones y puertas pendientes',
-        category: 'carpinteria',
-        description: showcaseDescription({
-          contractor: contractor.displayName ?? 'Hernán Esteban Boan',
-          budget: 1100000,
-          payments: 400000,
-          source: 'presupuesto del 05/05/2026 y aclaración del 07/05/2026',
-          notes:
-            'Placard/armario grande para casa chica, pensado para guardar ropa, platos y objetos. Presupuesto detectado: ARS 400.000 de materiales + ARS 700.000 de mano de obra. El 07/05 se aclara que las puertas no estaban contempladas: 2 corredizas y 3 superiores quedarían como extra fuera del presupuesto original.'
-        }),
-        addressText: 'San Martín de los Andes, Neuquén',
-        desiredTime: new Date('2026-05-05T10:20:00-03:00'),
-        status: JobPostStatus.PUBLISHED
-      }
     ]
   });
 }

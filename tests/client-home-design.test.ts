@@ -47,6 +47,7 @@ describe('client post-wizard home design', () => {
 
     expect(page).toContain('ClientHome');
     expect(page).toContain("hasCompletedOnboarding(context.appUser.user.profile, 'jefe')");
+    expect(page).not.toContain('listActiveClientJobPosts(context.appUser.user.id, 3)');
   });
 
   it('links each active job post to protected detail and edit pages', () => {
@@ -57,6 +58,7 @@ describe('client post-wizard home design', () => {
     expect(clientHome).toContain('Ver');
     expect(clientHome).toContain('Editar');
     expect(clientHome).toContain('/dashboard/jefe/trabajos/');
+    expect(clientHome).not.toContain('jobPosts.slice(0, 3)');
     expect(detailPage).toContain("hasRole(context.appUser.permissionContext, 'jefe')");
     expect(detailPage).toContain('getClientJobPostForDetail');
     expect(editPage).toContain("hasRole(context.appUser.permissionContext, 'jefe')");

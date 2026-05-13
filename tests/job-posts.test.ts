@@ -6,6 +6,7 @@ import {
   createJobPostSchema,
   getActiveClientJobPost,
   getClientJobPostForDetail,
+  listActiveClientJobPosts,
   listClientJobPosts,
   listPublishedWorkerJobPosts,
   updateAuthenticatedClientJobPost,
@@ -237,6 +238,64 @@ describe('job post helpers', () => {
         createdAt: true
       },
       take: 10
+    });
+  });
+
+  it('lists every active client job post across published and accepted states', async () => {
+    const jobPosts: JobPostSummary[] = [
+      {
+        id: 'job_accepted',
+        title: 'Placard en curso',
+        category: 'carpinteria',
+        description: 'Placard con oferta aceptada.',
+        addressText: 'San Martin de los Andes',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.IN_PROGRESS,
+        createdAt: new Date('2026-05-13T00:00:00.000Z')
+      },
+      {
+        id: 'job_new',
+        title: 'Trabajo nuevo',
+        category: 'electricidad',
+        description: 'Instalacion nueva.',
+        addressText: 'San Martin de los Andes',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.PUBLISHED,
+        createdAt: new Date('2026-05-14T00:00:00.000Z')
+      }
+    ];
+    const findMany = vi.fn().mockResolvedValue(jobPosts);
+
+    getPrismaClientMock.mockReturnValue({
+      jobPost: {
+        findMany
+      }
+    } as never);
+
+    await expect(listActiveClientJobPosts('user_001')).resolves.toEqual(jobPosts);
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        clientId: 'user_001',
+        status: {
+          in: [JobPostStatus.PUBLISHED, JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW]
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        addressText: true,
+        desiredTime: true,
+        photoPathnames: true,
+        status: true,
+        createdAt: true
+      }
     });
   });
 

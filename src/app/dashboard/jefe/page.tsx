@@ -31,7 +31,7 @@ export default async function JefeDashboardPage() {
     redirect(getOnboardingPath('jefe') as Route);
   }
 
-  const jobPosts = await listActiveClientJobPosts(context.appUser.user.id, 3);
+  const jobPosts = await listActiveClientJobPosts(context.appUser.user.id);
 
   return <ClientHome profile={context.appUser.user.profile} jobPosts={jobPosts} />;
 }
