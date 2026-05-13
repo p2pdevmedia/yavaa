@@ -151,6 +151,7 @@ describe('POST /api/onboarding/jefe', () => {
       createRequest({
         firstName: '',
         lastName: 'Ruiz',
+        addressName: 'Casa',
         addressText: 'Salta Capital',
         locationLatitude: -24.782127,
         locationLongitude: -65.423197,
@@ -173,17 +174,29 @@ describe('POST /api/onboarding/jefe', () => {
   it('returns 200 and the next path after a valid jefe payload', async () => {
     resolveRequestAuthMock.mockResolvedValueOnce(activeJefeAuth);
 
-    const upsert = vi.fn().mockResolvedValue({});
+    const profileUpsert = vi.fn().mockResolvedValue({});
+    const addressUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+    const addressCreate = vi.fn().mockResolvedValue({});
+    const transaction = vi.fn(async (callback: (tx: never) => Promise<unknown>) =>
+      callback({
+        profile: {
+          upsert: profileUpsert
+        },
+        userAddress: {
+          updateMany: addressUpdateMany,
+          create: addressCreate
+        }
+      } as never)
+    );
     getPrismaClientMock.mockReturnValue({
-      profile: {
-        upsert
-      }
+      $transaction: transaction
     } as never);
 
     const response = await POST(
       createRequest({
         firstName: 'Martin',
         lastName: 'Ruiz',
+        addressName: 'Casa',
         addressText: 'Salta Capital',
         locationLatitude: -24.782127,
         locationLongitude: -65.423197,
@@ -196,6 +209,7 @@ describe('POST /api/onboarding/jefe', () => {
       ok: true,
       nextPath: '/dashboard/jefe'
     });
-    expect(upsert).toHaveBeenCalledOnce();
+    expect(profileUpsert).toHaveBeenCalledOnce();
+    expect(addressCreate).toHaveBeenCalledOnce();
   });
 });

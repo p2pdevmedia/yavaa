@@ -28,6 +28,7 @@ type JefeWizardInitialProfile = {
 type JefeWizardState = {
   firstName: string;
   lastName: string;
+  addressName: string;
   addressText: string;
   location: LocationCoordinate | null;
   avatarBlobPath: string;
@@ -83,7 +84,7 @@ const steps = [
 
 const fieldByStep: Record<number, JefeOnboardingField[]> = {
   0: ['firstName', 'lastName'],
-  1: ['addressText', 'locationLatitude', 'locationLongitude'],
+  1: ['addressName', 'addressText', 'locationLatitude', 'locationLongitude'],
   2: ['avatarBlobPath']
 };
 
@@ -105,6 +106,7 @@ function getInitialState(profile?: JefeWizardInitialProfile | null): JefeWizardS
   return {
     firstName: profile?.firstName ?? '',
     lastName: profile?.lastName ?? '',
+    addressName: '',
     addressText: profile?.addressText ?? '',
     location: getInitialLocation(profile),
     avatarBlobPath: profile?.avatarUrl ?? ''
@@ -139,7 +141,12 @@ function getFirstErrorStep(fieldErrors: OnboardingFieldErrors<JefeOnboardingFiel
     return 0;
   }
 
-  if (fieldErrors.addressText || fieldErrors.locationLatitude || fieldErrors.locationLongitude) {
+  if (
+    fieldErrors.addressName ||
+    fieldErrors.addressText ||
+    fieldErrors.locationLatitude ||
+    fieldErrors.locationLongitude
+  ) {
     return 1;
   }
 
@@ -163,6 +170,7 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
     () => ({
       firstName: formState.firstName,
       lastName: formState.lastName,
+      addressName: formState.addressName,
       addressText: formState.addressText,
       locationLatitude: formState.location?.latitude,
       locationLongitude: formState.location?.longitude,
@@ -170,6 +178,7 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
     }),
     [
       formState.addressText,
+      formState.addressName,
       formState.avatarBlobPath,
       formState.firstName,
       formState.lastName,
@@ -206,6 +215,18 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
     setFieldErrors((current) => ({
       ...current,
       addressText: undefined,
+      form: undefined
+    }));
+  }, []);
+
+  const updateAddressName = useCallback((value: string) => {
+    setFormState((current) => ({
+      ...current,
+      addressName: value
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      addressName: undefined,
       form: undefined
     }));
   }, []);
@@ -433,10 +454,13 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
     if (step.id === 'address') {
       return (
         <LocationMapPicker
+          addressName={formState.addressName}
           address={formState.addressText}
           location={formState.location}
+          addressNameError={fieldErrors.addressName?.[0]}
           addressError={fieldErrors.addressText?.[0]}
           locationError={fieldErrors.locationLatitude?.[0] ?? fieldErrors.locationLongitude?.[0]}
+          onAddressNameChange={updateAddressName}
           onAddressChange={updateAddress}
           onLocationChange={updateLocation}
         />
@@ -506,6 +530,10 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
             {formState.firstName || 'Tu perfil'} queda listo para publicar trabajos.
           </p>
           <dl className="mt-4 grid gap-3 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Dirección</dt>
+              <dd className="font-bold text-foreground">{formState.addressName || 'Sin nombre'}</dd>
+            </div>
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Zona principal</dt>
               <dd className="font-bold text-foreground">{formState.addressText || 'Sin zona'}</dd>

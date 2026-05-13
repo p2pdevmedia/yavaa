@@ -197,8 +197,9 @@ export async function completeJefeOnboarding(
   }
 
   const data: JefeOnboardingInput = validation.data;
+  const userId = auth.appUser.id;
 
-  if (data.avatarBlobPath && !isProfileAvatarBlobPathForUser(data.avatarBlobPath, auth.appUser.id)) {
+  if (data.avatarBlobPath && !isProfileAvatarBlobPathForUser(data.avatarBlobPath, userId)) {
     return {
       ok: false,
       status: 422,
@@ -215,20 +216,44 @@ export async function completeJefeOnboarding(
     avatarUrl: data.avatarBlobPath ?? null,
     onboardingRole: OnboardingRole.JEFE,
     jefeOnboardingCompletedAt: completedAt,
+    addressText: data.addressText
+  };
+  const primaryAddressData = {
+    name: data.addressName,
     addressText: data.addressText,
     locationLatitude: data.locationLatitude,
     locationLongitude: data.locationLongitude
   };
 
-  await getPrismaClient().profile.upsert({
-    where: {
-      userId: auth.appUser.id
-    },
-    create: {
-      userId: auth.appUser.id,
-      ...profileData
-    },
-    update: profileData
+  await getPrismaClient().$transaction(async (tx) => {
+    await tx.profile.upsert({
+      where: {
+        userId
+      },
+      create: {
+        userId,
+        ...profileData
+      },
+      update: profileData
+    });
+
+    const updatedPrimaryAddress = await tx.userAddress.updateMany({
+      where: {
+        userId,
+        isPrimary: true
+      },
+      data: primaryAddressData
+    });
+
+    if (updatedPrimaryAddress.count === 0) {
+      await tx.userAddress.create({
+        data: {
+          userId,
+          ...primaryAddressData,
+          isPrimary: true
+        }
+      });
+    }
   });
 
   return {

@@ -26,6 +26,16 @@ describe('client post-wizard home design', () => {
     expect(clientHome).toContain('jobPosts');
   });
 
+  it('keeps in-progress and finished job sections collapsed by default', () => {
+    const clientHome = readProjectFile('src/components/dashboard/client-home.tsx');
+
+    expect(clientHome).toContain('<details');
+    expect(clientHome).toContain('<summary');
+    expect(clientHome).toContain('Trabajos en progreso');
+    expect(clientHome).toContain('Trabajos terminados');
+    expect(clientHome).not.toContain('<details open');
+  });
+
   it('renders private profile photos through the authenticated avatar API', () => {
     const clientHome = readProjectFile('src/components/dashboard/client-home.tsx');
 
@@ -74,7 +84,7 @@ describe('client post-wizard home design', () => {
     expect(editPage).toContain('EditJobForm');
   });
 
-  it('shows active work payment progress with budget paid and remaining colors', () => {
+  it('shows active work payment progress as a math expression with colored numbers', () => {
     const clientHome = readProjectFile('src/components/dashboard/client-home.tsx');
     const page = readProjectFile('src/app/dashboard/jefe/page.tsx');
     const paymentProgress = readProjectFile('src/components/dashboard/job-payment-progress.tsx');
@@ -82,11 +92,22 @@ describe('client post-wizard home design', () => {
     expect(page).toContain('listClientDashboardJobPosts');
     expect(clientHome).toContain('JobPaymentProgress');
     expect(paymentProgress).toContain('Presupuesto');
-    expect(paymentProgress).toContain('Pagado');
-    expect(paymentProgress).toContain('Falta pagar');
+    expect(paymentProgress).toContain('menos pagado');
+    expect(paymentProgress).toContain('igual falta pagar');
+    expect(paymentProgress).toContain('<span className="mx-1 text-slate-500">-</span>');
+    expect(paymentProgress).toContain('<span className="mx-1 text-slate-500">=</span>');
     expect(paymentProgress).toContain('text-green-700');
     expect(paymentProgress).toContain('text-yellow-700');
     expect(paymentProgress).toContain('text-red-700');
     expect(paymentProgress).toContain('getPaymentProgress');
+  });
+
+  it('shows the accepted worker on in-progress and finished job cards', () => {
+    const clientHome = readProjectFile('src/components/dashboard/client-home.tsx');
+    const jobPosts = readProjectFile('src/lib/job-posts.ts');
+
+    expect(clientHome).toContain('Trabajador');
+    expect(clientHome).toContain('formatJobPostPersonName(jobPost.acceptedOffer?.worker');
+    expect(jobPosts).toContain('worker: jobPostPersonSelect');
   });
 });

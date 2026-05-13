@@ -66,6 +66,7 @@ const messages = {
   firstNameRequired: 'Ingresá tu nombre.',
   lastNameRequired: 'Ingresá tu apellido.',
   textMax40: 'Usá 40 caracteres o menos.',
+  addressNameRequired: 'Ingresá un nombre para esta dirección.',
   addressRequired: 'Ingresá una ubicación válida.',
   addressMax: 'Usá 160 caracteres o menos.',
   dniInvalid: 'Ingresá un DNI válido de 7 u 8 números.',
@@ -107,6 +108,15 @@ const addressSchema = z
   .trim()
   .min(3, messages.addressRequired)
   .max(160, messages.addressMax);
+
+const addressNameSchema = z
+  .string({
+    required_error: messages.addressNameRequired,
+    invalid_type_error: messages.addressNameRequired
+  })
+  .trim()
+  .min(1, messages.addressNameRequired)
+  .max(40, messages.textMax40);
 
 const dniNumberSchema = z
   .string({
@@ -185,6 +195,7 @@ export const workerOnboardingSchema = z.object({
 export const jefeOnboardingSchema = z.object({
   firstName: firstNameSchema,
   lastName: lastNameSchema,
+  addressName: addressNameSchema,
   addressText: addressSchema,
   locationLatitude: latitudeSchema,
   locationLongitude: longitudeSchema,

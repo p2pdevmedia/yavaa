@@ -24,6 +24,7 @@ const validPayload = {
 const validJefePayload = {
   firstName: '  Martin ',
   lastName: ' Ruiz ',
+  addressName: ' Casa ',
   addressText: 'Salta Capital',
   locationLatitude: -24.782127,
   locationLongitude: -65.423197,
@@ -330,12 +331,23 @@ describe('jefe onboarding service', () => {
 
   it('updates only the current jefe profile and redirects to client home', async () => {
     const now = new Date('2026-05-12T13:00:00.000Z');
-    const upsert = vi.fn().mockResolvedValue({});
+    const profileUpsert = vi.fn().mockResolvedValue({});
+    const addressUpdateMany = vi.fn().mockResolvedValue({ count: 0 });
+    const addressCreate = vi.fn().mockResolvedValue({});
+    const transaction = vi.fn(async (callback: (tx: never) => Promise<unknown>) =>
+      callback({
+        profile: {
+          upsert: profileUpsert
+        },
+        userAddress: {
+          updateMany: addressUpdateMany,
+          create: addressCreate
+        }
+      } as never)
+    );
 
     getPrismaClientMock.mockReturnValue({
-      profile: {
-        upsert
-      }
+      $transaction: transaction
     } as never);
 
     const result = await completeJefeOnboarding(activeJefeAuth, validJefePayload, now);
@@ -345,7 +357,7 @@ describe('jefe onboarding service', () => {
       status: 200,
       nextPath: '/dashboard/jefe'
     });
-    expect(upsert).toHaveBeenCalledWith({
+    expect(profileUpsert).toHaveBeenCalledWith({
       where: {
         userId: 'user_002'
       },
@@ -356,9 +368,7 @@ describe('jefe onboarding service', () => {
         avatarUrl: 'profiles/user_002/avatars/avatar.jpg',
         onboardingRole: OnboardingRole.JEFE,
         jefeOnboardingCompletedAt: now,
-        addressText: 'Salta Capital',
-        locationLatitude: -24.782127,
-        locationLongitude: -65.423197
+        addressText: 'Salta Capital'
       },
       update: {
         firstName: 'Martin',
@@ -366,9 +376,29 @@ describe('jefe onboarding service', () => {
         avatarUrl: 'profiles/user_002/avatars/avatar.jpg',
         onboardingRole: OnboardingRole.JEFE,
         jefeOnboardingCompletedAt: now,
+        addressText: 'Salta Capital'
+      }
+    });
+    expect(addressUpdateMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user_002',
+        isPrimary: true
+      },
+      data: {
+        name: 'Casa',
         addressText: 'Salta Capital',
         locationLatitude: -24.782127,
         locationLongitude: -65.423197
+      }
+    });
+    expect(addressCreate).toHaveBeenCalledWith({
+      data: {
+        userId: 'user_002',
+        name: 'Casa',
+        addressText: 'Salta Capital',
+        locationLatitude: -24.782127,
+        locationLongitude: -65.423197,
+        isPrimary: true
       }
     });
   });

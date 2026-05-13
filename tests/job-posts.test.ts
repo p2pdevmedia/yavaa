@@ -257,6 +257,14 @@ describe('job post helpers', () => {
         createdAt: new Date('2026-05-13T00:00:00.000Z'),
         acceptedOffer: {
           amountCents: 1250000,
+          worker: {
+            email: 'trabajador@yavaa.test',
+            displayName: null,
+            profile: {
+              firstName: 'Hernan',
+              lastName: 'Suarez'
+            }
+          },
           payments: [
             {
               amountCents: 500000
@@ -294,6 +302,18 @@ describe('job post helpers', () => {
         acceptedOffer: {
           select: {
             amountCents: true,
+            worker: {
+              select: {
+                email: true,
+                displayName: true,
+                profile: {
+                  select: {
+                    firstName: true,
+                    lastName: true
+                  }
+                }
+              }
+            },
             payments: {
               select: {
                 amountCents: true
@@ -386,7 +406,15 @@ describe('job post helpers', () => {
         desiredTime: null,
         photoPathnames: [],
         status: JobPostStatus.PUBLISHED,
-        createdAt: new Date('2026-05-14T00:00:00.000Z')
+        createdAt: new Date('2026-05-14T00:00:00.000Z'),
+        client: {
+          email: 'jefe@yavaa.test',
+          displayName: null,
+          profile: {
+            firstName: 'Martin',
+            lastName: 'Ruiz'
+          }
+        }
       },
       {
         id: 'job_003',
@@ -397,7 +425,15 @@ describe('job post helpers', () => {
         desiredTime: null,
         photoPathnames: [],
         status: JobPostStatus.PUBLISHED,
-        createdAt: new Date('2026-05-13T00:00:00.000Z')
+        createdAt: new Date('2026-05-13T00:00:00.000Z'),
+        client: {
+          email: 'lucia@yavaa.test',
+          displayName: null,
+          profile: {
+            firstName: 'Lucia',
+            lastName: 'Gomez'
+          }
+        }
       }
     ];
     const findMany = vi.fn().mockResolvedValue(jobPosts);
@@ -425,7 +461,19 @@ describe('job post helpers', () => {
         desiredTime: true,
         photoPathnames: true,
         status: true,
-        createdAt: true
+        createdAt: true,
+        client: {
+          select: {
+            email: true,
+            displayName: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true
+              }
+            }
+          }
+        }
       }
     });
   });
@@ -441,7 +489,15 @@ describe('job post helpers', () => {
         desiredTime: null,
         photoPathnames: [],
         status: JobPostStatus.READY_FOR_REVIEW,
-        createdAt: new Date('2026-05-14T00:00:00.000Z')
+        createdAt: new Date('2026-05-14T00:00:00.000Z'),
+        client: {
+          email: 'jefe@yavaa.test',
+          displayName: null,
+          profile: {
+            firstName: 'Martin',
+            lastName: 'Ruiz'
+          }
+        }
       },
       {
         id: 'job_closed',
@@ -452,7 +508,15 @@ describe('job post helpers', () => {
         desiredTime: null,
         photoPathnames: [],
         status: JobPostStatus.CLOSED,
-        createdAt: new Date('2026-05-13T00:00:00.000Z')
+        createdAt: new Date('2026-05-13T00:00:00.000Z'),
+        client: {
+          email: 'lucia@yavaa.test',
+          displayName: null,
+          profile: {
+            firstName: 'Lucia',
+            lastName: 'Gomez'
+          }
+        }
       }
     ];
     const findMany = vi.fn().mockResolvedValue(jobPosts);
@@ -495,6 +559,18 @@ describe('job post helpers', () => {
             payments: {
               select: {
                 amountCents: true
+              }
+            }
+          }
+        },
+        client: {
+          select: {
+            email: true,
+            displayName: true,
+            profile: {
+              select: {
+                firstName: true,
+                lastName: true
               }
             }
           }

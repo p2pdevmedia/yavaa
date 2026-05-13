@@ -5,7 +5,7 @@ import type { Route } from 'next';
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 import { JobPaymentProgress } from '@/components/dashboard/job-payment-progress';
 import type { AppUserProfile } from '@/lib/app-user';
-import type { JobPostSummary } from '@/lib/job-posts';
+import { formatJobPostPersonName, type JobPostSummary } from '@/lib/job-posts';
 import { workerCategoryLabels, type WorkerCategorySlug, workerCategorySlugs } from '@/lib/onboarding';
 import { getPrivateProfileAvatarSrc } from '@/lib/profile-avatar';
 
@@ -90,6 +90,9 @@ function WorkerJobPostList({
               ) : null}
             </div>
             {showDescription ? <p className="text-sm leading-6 text-muted-foreground">{jobPost.description}</p> : null}
+            <p className="text-sm font-semibold text-muted-foreground">
+              Jefe: {formatJobPostPersonName(jobPost.client, 'Sin asignar')}
+            </p>
           </div>
           <JobPaymentProgress acceptedOffer={jobPost.acceptedOffer} />
           <div className="grid gap-2 text-sm sm:grid-cols-3">

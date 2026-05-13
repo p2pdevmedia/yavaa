@@ -6,6 +6,7 @@ import {
   DashboardUnlinkedUserState
 } from '@/components/dashboard/dashboard-states';
 import { ClientHome } from '@/components/dashboard/client-home';
+import { listClientAcceptedWorkers } from '@/lib/client-workers';
 import { getDashboardPageContext } from '@/lib/dashboard-page-data';
 import { getOnboardingPath } from '@/lib/dashboard-routes';
 import { listClientDashboardJobPosts } from '@/lib/job-posts';
@@ -32,6 +33,7 @@ export default async function JefeDashboardPage() {
   }
 
   const jobPosts = await listClientDashboardJobPosts(context.appUser.user.id);
+  const acceptedWorkers = await listClientAcceptedWorkers(context.appUser.user.id);
 
-  return <ClientHome profile={context.appUser.user.profile} jobPosts={jobPosts} />;
+  return <ClientHome profile={context.appUser.user.profile} jobPosts={jobPosts} acceptedWorkers={acceptedWorkers} />;
 }

@@ -145,6 +145,7 @@ describe('onboarding field validation', () => {
     const result = validateJefeOnboardingInput({
       firstName: '  Martin ',
       lastName: ' Ruiz  ',
+      addressName: '  Casa ',
       addressText: '  Salta Capital ',
       locationLatitude: ' -24.782127 ',
       locationLongitude: ' -65.423197 ',
@@ -156,6 +157,7 @@ describe('onboarding field validation', () => {
       data: {
         firstName: 'Martin',
         lastName: 'Ruiz',
+        addressName: 'Casa',
         addressText: 'Salta Capital',
         locationLatitude: -24.782127,
         locationLongitude: -65.423197,
@@ -169,6 +171,7 @@ describe('onboarding field validation', () => {
     const result = validateJefeOnboardingInput({
       firstName: '',
       lastName: '',
+      addressName: '',
       addressText: 'x',
       locationLatitude: undefined,
       locationLongitude: undefined,
@@ -183,6 +186,7 @@ describe('onboarding field validation', () => {
     expect(result.fieldErrors).toEqual({
       firstName: ['Ingresá tu nombre.'],
       lastName: ['Ingresá tu apellido.'],
+      addressName: ['Ingresá un nombre para esta dirección.'],
       addressText: ['Ingresá una ubicación válida.'],
       locationLatitude: ['Seleccioná un punto en el mapa.'],
       locationLongitude: ['Seleccioná un punto en el mapa.']
@@ -194,6 +198,7 @@ describe('onboarding field validation', () => {
     const result = validateJefeOnboardingInput({
       firstName: 'Martin',
       lastName: 'Ruiz',
+      addressName: 'Casa',
       addressText: 'Salta Capital',
       locationLatitude: -91,
       locationLongitude: 181,
@@ -215,6 +220,7 @@ describe('onboarding field validation', () => {
     const result = validateJefeOnboardingInput({
       firstName: 'Martin',
       lastName: 'Ruiz',
+      addressName: 'Casa',
       addressText: 'Salta Capital',
       locationLatitude: -24.782127,
       locationLongitude: -65.423197,

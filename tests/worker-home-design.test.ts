@@ -92,17 +92,28 @@ describe('worker post-wizard home design', () => {
     expect(jobPayments).toContain('serializePaidAtForPayload');
   });
 
-  it('shows active work payment progress with budget paid and remaining colors', () => {
+  it('shows active work payment progress as a math expression with colored numbers', () => {
     const workerHome = readProjectFile('src/components/dashboard/worker-home.tsx');
     const paymentProgress = readProjectFile('src/components/dashboard/job-payment-progress.tsx');
 
     expect(workerHome).toContain('JobPaymentProgress');
     expect(paymentProgress).toContain('Presupuesto');
-    expect(paymentProgress).toContain('Pagado');
-    expect(paymentProgress).toContain('Falta pagar');
+    expect(paymentProgress).toContain('menos pagado');
+    expect(paymentProgress).toContain('igual falta pagar');
+    expect(paymentProgress).toContain('<span className="mx-1 text-slate-500">-</span>');
+    expect(paymentProgress).toContain('<span className="mx-1 text-slate-500">=</span>');
     expect(paymentProgress).toContain('text-green-700');
     expect(paymentProgress).toContain('text-yellow-700');
     expect(paymentProgress).toContain('text-red-700');
     expect(paymentProgress).toContain('getPaymentProgress');
+  });
+
+  it('shows the jefe on nearby, active, and finished job cards', () => {
+    const workerHome = readProjectFile('src/components/dashboard/worker-home.tsx');
+    const jobPosts = readProjectFile('src/lib/job-posts.ts');
+
+    expect(workerHome).toContain('Jefe');
+    expect(workerHome).toContain('formatJobPostPersonName(jobPost.client');
+    expect(jobPosts).toContain('client: jobPostPersonSelect');
   });
 });

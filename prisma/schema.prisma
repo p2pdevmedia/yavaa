@@ -62,6 +62,7 @@ model User {
   jobOffers     JobOffer[]        @relation("worker_job_offers")
   offerMessages JobOfferMessage[]
   jobPayments   JobPayment[]
+  addresses     UserAddress[]
 
   @@map("users")
 }
@@ -90,6 +91,23 @@ model Profile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profiles")
+}
+
+model UserAddress {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String   @map("user_id") @db.Uuid
+  name              String
+  addressText       String   @map("address_text")
+  locationLatitude  Decimal  @map("location_latitude") @db.Decimal(9, 6)
+  locationLongitude Decimal  @map("location_longitude") @db.Decimal(9, 6)
+  isPrimary         Boolean  @default(false) @map("is_primary")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isPrimary])
+  @@map("user_addresses")
 }
 
 model Role {

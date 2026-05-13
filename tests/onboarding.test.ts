@@ -76,6 +76,7 @@ describe('onboarding helpers', () => {
     const result = jefeOnboardingSchema.safeParse({
       firstName: 'Martin',
       lastName: 'Ruiz',
+      addressName: 'Casa',
       addressText: 'Salta Capital',
       locationLatitude: -24.782127,
       locationLongitude: -65.423197,

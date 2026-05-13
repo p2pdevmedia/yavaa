@@ -142,7 +142,22 @@ async function hasOnboardingSchema(): Promise<boolean> {
       )
   `;
 
-  return rows.length === 8;
+  const addressRows = await getPrisma().$queryRaw<Array<{ column_name: string }>>`
+    SELECT column_name::text AS column_name
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'user_addresses'
+      AND column_name IN (
+        'user_id',
+        'name',
+        'address_text',
+        'location_latitude',
+        'location_longitude',
+        'is_primary'
+      )
+  `;
+
+  return rows.length === 8 && addressRows.length === 6;
 }
 
 async function seedRoles(): Promise<Record<'jefe' | 'trabajador', Role>> {
@@ -518,18 +533,13 @@ test.describe('DB-backed onboarding workflow', () => {
       await page.waitForLoadState('networkidle');
       await page.getByLabel('Nombre').fill('Martin');
       await page.getByLabel('Apellido').fill('Ruiz');
-      console.log(
-        await page.evaluate(() => ({
-          formCount: document.querySelectorAll('form').length,
-          formButtonCount: document.querySelectorAll('form button').length,
-          buttonType: document.querySelector('button')?.getAttribute('type')
-        }))
-      );
       await page.getByRole('button', { name: 'Continuar' }).click();
 
       await expect(page.getByRole('heading', { name: '¿Dónde necesitás ayuda?' })).toBeVisible();
       await page.getByRole('button', { name: 'Continuar' }).click();
+      await expect(page.getByText('Ingresá un nombre para esta dirección.')).toBeVisible();
       await expect(page.getByText('Ingresá una ubicación válida.')).toBeVisible();
+      await page.getByLabel('Nombre de la dirección').fill('Casa');
       await page.getByLabel('Zona donde necesitás ayuda').fill('Salta Capital');
       await expect(page.getByText('Punto aproximado encontrado.')).toBeVisible();
       await page.getByRole('button', { name: 'Continuar' }).click();
@@ -564,11 +574,21 @@ test.describe('DB-backed onboarding workflow', () => {
       expect(profile.firstName).toBe('Martin');
       expect(profile.lastName).toBe('Ruiz');
       expect(profile.addressText).toBe('Salta Capital');
-      expect(profile.locationLatitude?.toString()).toBe('-24.782127');
-      expect(profile.locationLongitude?.toString()).toBe('-65.423197');
       expect(profile.avatarUrl).toBe(avatarPath);
       expect(profile.onboardingRole).toBe(OnboardingRole.JEFE);
       expect(profile.jefeOnboardingCompletedAt).toBeTruthy();
+
+      const primaryAddress = await getPrisma().userAddress.findFirstOrThrow({
+        where: {
+          userId: user.id,
+          isPrimary: true
+        }
+      });
+
+      expect(primaryAddress.name).toBe('Casa');
+      expect(primaryAddress.addressText).toBe('Salta Capital');
+      expect(primaryAddress.locationLatitude.toString()).toBe('-24.782127');
+      expect(primaryAddress.locationLongitude.toString()).toBe('-65.423197');
     } finally {
       await cleanupWorkflowUsers([email]);
     }

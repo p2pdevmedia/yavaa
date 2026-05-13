@@ -65,6 +65,15 @@ export type CreateJobPostInput = z.infer<typeof createJobPostSchema>;
 export type JobPostField = keyof CreateJobPostInput;
 export type JobPostFieldErrors = Partial<Record<JobPostField, string[]>>;
 
+export type JobPostPersonSummary = {
+  email: string;
+  displayName: string | null;
+  profile: {
+    firstName: string | null;
+    lastName: string | null;
+  } | null;
+};
+
 export type JobPostSummary = {
   id: string;
   title: string;
@@ -75,8 +84,10 @@ export type JobPostSummary = {
   photoPathnames: string[];
   status: JobPostStatus;
   createdAt: Date;
+  client?: JobPostPersonSummary | null;
   acceptedOffer?: {
     amountCents: number;
+    worker?: JobPostPersonSummary | null;
     payments: {
       amountCents: number;
     }[];
@@ -159,8 +170,41 @@ const jobPostSelect = {
   createdAt: true
 } as const;
 
+const jobPostPersonSelect = {
+  select: {
+    email: true,
+    displayName: true,
+    profile: {
+      select: {
+        firstName: true,
+        lastName: true
+      }
+    }
+  }
+} as const;
+
 const jobPostPaymentProgressSelect = {
   ...jobPostSelect,
+  acceptedOffer: {
+    select: {
+      amountCents: true,
+      worker: jobPostPersonSelect,
+      payments: {
+        select: {
+          amountCents: true
+        }
+      }
+    }
+  }
+} as const;
+
+const workerJobPostSelect = {
+  ...jobPostSelect,
+  client: jobPostPersonSelect
+} as const;
+
+const acceptedWorkerJobPostSelect = {
+  ...workerJobPostSelect,
   acceptedOffer: {
     select: {
       amountCents: true,
@@ -204,6 +248,25 @@ export function serializeJobPost(jobPost: JobPostSummary): JobPostApiSummary {
     desiredTime: jobPost.desiredTime?.toISOString() ?? null,
     createdAt: jobPost.createdAt.toISOString()
   };
+}
+
+export function formatJobPostPersonName(person: JobPostPersonSummary | null | undefined, fallback: string): string {
+  if (!person) {
+    return fallback;
+  }
+
+  const firstName = person.profile?.firstName?.trim();
+  const lastInitial = person.profile?.lastName?.trim().charAt(0);
+
+  if (firstName && lastInitial) {
+    return `${firstName} ${lastInitial.toLocaleUpperCase('es-AR')}.`;
+  }
+
+  if (firstName) {
+    return firstName;
+  }
+
+  return person.displayName?.trim() || person.email.split('@')[0] || fallback;
 }
 
 export function getReadyJefeMarketplaceAuth(auth: RequestAuthState): ReadyJefeAuth {
@@ -360,7 +423,7 @@ export async function listPublishedWorkerJobPosts(workerCategories: readonly str
     orderBy: {
       createdAt: 'desc'
     },
-    select: jobPostSelect,
+    select: workerJobPostSelect,
     ...(take ? { take } : {})
   });
 
@@ -394,7 +457,7 @@ export async function listAcceptedWorkerJobPosts(workerId: string, take?: number
     orderBy: {
       createdAt: 'desc'
     },
-    select: jobPostPaymentProgressSelect,
+    select: acceptedWorkerJobPostSelect,
     ...(take ? { take } : {})
   });
 }

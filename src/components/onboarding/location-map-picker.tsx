@@ -12,10 +12,13 @@ export type LocationCoordinate = {
 };
 
 type LocationMapPickerProps = {
+  addressName: string;
   address: string;
   location: LocationCoordinate | null;
+  addressNameError?: string;
   addressError?: string;
   locationError?: string;
+  onAddressNameChange: (value: string) => void;
   onAddressChange: (value: string) => void;
   onLocationChange: (location: LocationCoordinate) => void;
 };
@@ -127,10 +130,13 @@ function getSearchStatusText(status: SearchStatus): string | null {
 }
 
 export function LocationMapPicker({
+  addressName,
   address,
   location,
+  addressNameError,
   addressError,
   locationError,
+  onAddressNameChange,
   onAddressChange,
   onLocationChange
 }: LocationMapPickerProps) {
@@ -340,6 +346,19 @@ export function LocationMapPicker({
 
   return (
     <div className="grid gap-4">
+      <div className="space-y-2">
+        <Label htmlFor="addressName">Nombre de la dirección</Label>
+        <Input
+          id="addressName"
+          name="addressName"
+          placeholder="Casa"
+          autoComplete="off"
+          value={addressName}
+          onChange={(event) => onAddressNameChange(event.target.value)}
+        />
+        {addressNameError ? <p className="text-sm font-semibold text-destructive">{addressNameError}</p> : null}
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="addressText">Zona donde necesitás ayuda</Label>
         <div className="flex gap-2">
