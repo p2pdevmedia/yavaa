@@ -10,13 +10,25 @@ export type WorkerSearchParams = {
   q?: string | null;
 };
 
+export type WorkerWorkHistoryItem = {
+  id: string;
+  title: string;
+  completedAtLabel: string;
+};
+
 export type WorkerSearchResultItem = {
   id: string;
   displayName: string;
   categories: string[];
+  bio: string | null;
   hourlyRateCents: number | null;
   identityVerificationStatus: IdentityVerificationStatus;
   distanceLabel: string;
+  rating: {
+    average: number | null;
+    count: number;
+  };
+  workHistory: WorkerWorkHistoryItem[];
 };
 
 export type WorkerSearchResult =
@@ -38,6 +50,7 @@ type WorkerRecord = {
   profile: {
     firstName: string | null;
     lastName: string | null;
+    bio: string | null;
     workerCategories: string[];
     workerHourlyRateCents: number | null;
     identityVerificationStatus: IdentityVerificationStatus;
@@ -53,6 +66,7 @@ const workerSearchSelect = {
     select: {
       firstName: true,
       lastName: true,
+      bio: true,
       workerCategories: true,
       workerHourlyRateCents: true,
       identityVerificationStatus: true,
@@ -140,9 +154,15 @@ function mapWorker(worker: WorkerRecord): WorkerSearchResultItem {
     id: worker.id,
     displayName: buildDisplayName(worker),
     categories: worker.profile?.workerCategories ?? [],
+    bio: worker.profile?.bio?.trim() || null,
     hourlyRateCents: worker.profile?.workerHourlyRateCents ?? null,
     identityVerificationStatus: worker.profile?.identityVerificationStatus ?? IdentityVerificationStatus.NOT_STARTED,
-    distanceLabel: 'Cerca'
+    distanceLabel: 'Cerca',
+    rating: {
+      average: null,
+      count: 0
+    },
+    workHistory: []
   };
 }
 

@@ -16,10 +16,14 @@ export function ClientHome({ profile, jobPosts = [] }: { profile: AppUserProfile
       <section className="space-y-5">
         <div className="flex items-center gap-4 px-1">
           {avatarSrc ? (
-            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+            <Link
+              href={'/dashboard/jefe/perfil' as Route}
+              aria-label="Abrir perfil público"
+              className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={avatarSrc} alt={`Foto de perfil de ${firstName}`} className="h-full w-full object-cover" />
-            </div>
+            </Link>
           ) : null}
           <div className="min-w-0 space-y-2">
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Cliente home</p>
@@ -58,9 +62,17 @@ export function ClientHome({ profile, jobPosts = [] }: { profile: AppUserProfile
             {jobPosts.length > 0 ? (
               <div className="mt-3 space-y-3">
                 {jobPosts.slice(0, 3).map((jobPost) => (
-                  <div key={jobPost.id} className="rounded-[18px] border border-border bg-background px-4 py-3">
+                  <div key={jobPost.id} className="space-y-3 rounded-[18px] border border-border bg-background px-4 py-3">
                     <h2 className="text-base font-bold text-foreground">{jobPost.title}</h2>
                     <p className="mt-1 text-sm text-muted-foreground">{jobPost.addressText}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/dashboard/jefe/trabajos/${jobPost.id}` as Route}>Ver</Link>
+                      </Button>
+                      <Button asChild size="sm">
+                        <Link href={`/dashboard/jefe/trabajos/${jobPost.id}/editar` as Route}>Editar</Link>
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

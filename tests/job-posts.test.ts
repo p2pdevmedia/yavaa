@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createJobPost,
   createJobPostSchema,
+  getActiveClientJobPost,
   listClientJobPosts,
+  updateAuthenticatedClientJobPost,
   type JobPostSummary
 } from '@/lib/job-posts';
 import { getPrismaClient } from '@/lib/prisma';
@@ -233,6 +235,126 @@ describe('job post helpers', () => {
         createdAt: true
       },
       take: 10
+    });
+  });
+
+  it('finds active job posts only for the owning client', async () => {
+    const jobPost: JobPostSummary = {
+      id: 'job_001',
+      title: 'Mural',
+      category: 'painting',
+      description: 'Pintar un mural exterior.',
+      addressText: 'San Martin de los Andes',
+      desiredTime: null,
+      photoPathnames: [],
+      status: JobPostStatus.PUBLISHED,
+      createdAt: new Date('2026-05-13T00:00:00.000Z')
+    };
+    const findFirst = vi.fn().mockResolvedValue(jobPost);
+
+    getPrismaClientMock.mockReturnValue({
+      jobPost: {
+        findFirst
+      }
+    } as never);
+
+    await expect(getActiveClientJobPost('user_001', 'job_001')).resolves.toEqual(jobPost);
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'job_001',
+        clientId: 'user_001',
+        status: JobPostStatus.PUBLISHED
+      },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        addressText: true,
+        desiredTime: true,
+        photoPathnames: true,
+        status: true,
+        createdAt: true
+      }
+    });
+  });
+
+  it('updates active job posts only through ready jefe auth and owner scope', async () => {
+    const updateMany = vi.fn().mockResolvedValue({
+      count: 1
+    });
+    const findFirst = vi.fn().mockResolvedValue({
+      id: 'job_001',
+      title: 'Mural renovado',
+      category: 'painting',
+      description: 'Pintar un mural exterior con dos colores.',
+      addressText: 'San Martin de los Andes',
+      desiredTime: null,
+      photoPathnames: [],
+      status: JobPostStatus.PUBLISHED,
+      createdAt: new Date('2026-05-13T00:00:00.000Z')
+    });
+
+    getPrismaClientMock.mockReturnValue({
+      jobPost: {
+        updateMany,
+        findFirst
+      }
+    } as never);
+
+    const result = await updateAuthenticatedClientJobPost(activeJefeAuth, 'job_001', {
+      title: ' Mural renovado ',
+      category: 'painting',
+      description: ' Pintar un mural exterior con dos colores. ',
+      addressText: ' San Martin de los Andes '
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      status: 200,
+      jobPost: {
+        id: 'job_001',
+        title: 'Mural renovado',
+        category: 'painting',
+        description: 'Pintar un mural exterior con dos colores.',
+        addressText: 'San Martin de los Andes',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.PUBLISHED,
+        createdAt: new Date('2026-05-13T00:00:00.000Z')
+      }
+    });
+    expect(updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'job_001',
+        clientId: 'user_001',
+        status: JobPostStatus.PUBLISHED
+      },
+      data: {
+        title: 'Mural renovado',
+        category: 'painting',
+        description: 'Pintar un mural exterior con dos colores.',
+        addressText: 'San Martin de los Andes',
+        desiredTime: null
+      }
+    });
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'job_001',
+        clientId: 'user_001',
+        status: JobPostStatus.PUBLISHED
+      },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        addressText: true,
+        desiredTime: true,
+        photoPathnames: true,
+        status: true,
+        createdAt: true
+      }
     });
   });
 });

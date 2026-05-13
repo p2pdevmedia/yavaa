@@ -14,9 +14,19 @@ type WorkerResult = {
   id: string;
   displayName: string;
   categories: string[];
+  bio: string | null;
   hourlyRateCents: number | null;
   identityVerificationStatus: string;
   distanceLabel: string;
+  rating: {
+    average: number | null;
+    count: number;
+  };
+  workHistory: Array<{
+    id: string;
+    title: string;
+    completedAtLabel: string;
+  }>;
 };
 
 type WorkerSearchResponse =
@@ -48,12 +58,29 @@ function formatMoney(cents: number | null): string {
   }).format(cents / 100);
 }
 
+function formatRating(worker: WorkerResult): string {
+  if (worker.rating.average === null || worker.rating.count === 0) {
+    return 'Sin calificaciones todavía';
+  }
+
+  return `${worker.rating.average.toFixed(1)} (${worker.rating.count})`;
+}
+
+function getStarState(worker: WorkerResult, star: number): string {
+  if (worker.rating.average === null) {
+    return '☆';
+  }
+
+  return worker.rating.average >= star ? '★' : '☆';
+}
+
 export function WorkerSearch() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string>('');
   const [workers, setWorkers] = useState<WorkerResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedWorkerId, setSelectedWorkerId] = useState<string | null>(null);
 
   const searchUrl = useMemo(() => {
     const params = new URLSearchParams();
@@ -90,6 +117,9 @@ export function WorkerSearch() {
 
         if (!cancelled) {
           setWorkers(responseBody.workers);
+          setSelectedWorkerId((currentWorkerId) =>
+            responseBody.workers.some((worker) => worker.id === currentWorkerId) ? currentWorkerId : null
+          );
         }
       } catch {
         if (!cancelled) {
@@ -157,7 +187,15 @@ export function WorkerSearch() {
           <article key={worker.id} className="rounded-[24px] border border-border bg-card p-5 shadow-soft">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-bold text-foreground">{worker.displayName}</h2>
+                <button
+                  type="button"
+                  className="text-left text-xl font-bold text-foreground underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  aria-expanded={selectedWorkerId === worker.id}
+                  aria-controls={`worker-profile-${worker.id}`}
+                  onClick={() => setSelectedWorkerId((currentWorkerId) => (currentWorkerId === worker.id ? null : worker.id))}
+                >
+                  {worker.displayName}
+                </button>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {worker.categories
                     .map((workerCategory) => workerCategoryLabels[workerCategory as WorkerCategorySlug] ?? workerCategory)
@@ -180,6 +218,55 @@ export function WorkerSearch() {
                 </dd>
               </div>
             </dl>
+            <Button
+              type="button"
+              variant="outline"
+              className="mt-4 w-full"
+              aria-expanded={selectedWorkerId === worker.id}
+              aria-controls={`worker-profile-${worker.id}`}
+              onClick={() => setSelectedWorkerId((currentWorkerId) => (currentWorkerId === worker.id ? null : worker.id))}
+            >
+              Ver perfil público
+            </Button>
+            {selectedWorkerId === worker.id ? (
+              <div id={`worker-profile-${worker.id}`} className="mt-4 space-y-4 border-t border-border pt-4">
+                <div>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Perfil público</p>
+                  <h3 className="mt-1 text-lg font-bold text-foreground">{worker.displayName}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                    {worker.bio ?? 'Este trabajador todavía no cargó una presentación pública.'}
+                  </p>
+                </div>
+
+                <div className="rounded-[18px] bg-secondary/50 p-4">
+                  <p className="text-sm font-bold text-foreground">Estrellas</p>
+                  <div className="mt-2 flex items-center gap-2" aria-label={formatRating(worker)}>
+                    <span className="text-lg font-bold text-primary" aria-hidden="true">
+                      {[1, 2, 3, 4, 5].map((star) => getStarState(worker, star)).join(' ')}
+                    </span>
+                    <span className="text-sm font-semibold text-muted-foreground">{formatRating(worker)}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-bold text-foreground">Historial de trabajos</p>
+                  {worker.workHistory.length > 0 ? (
+                    <ul className="mt-2 space-y-2">
+                      {worker.workHistory.map((work) => (
+                        <li key={work.id} className="rounded-[18px] border border-border px-3 py-2 text-sm text-muted-foreground">
+                          <span className="font-semibold text-foreground">{work.title}</span>
+                          <span className="block">{work.completedAtLabel}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 rounded-[18px] border border-dashed border-border px-3 py-2 text-sm text-muted-foreground">
+                      Todavía no hay trabajos finalizados para mostrar.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : null}
           </article>
         ))}
       </div>

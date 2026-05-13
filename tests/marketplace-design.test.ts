@@ -47,13 +47,17 @@ describe('stage 5 marketplace screens', () => {
     expect(search).toContain('fetch(searchUrl)');
     expect(search).toContain('Buscar trabajadores');
     expect(search).toContain('Precio por hora');
+    expect(search).toContain('Ver perfil público');
+    expect(search).toContain('Estrellas');
+    expect(search).toContain('Historial de trabajos');
+    expect(search).toContain('Sin calificaciones todavía');
   });
 
   it('renders recent client job posts on client home', () => {
     const page = readProjectFile('src/app/dashboard/jefe/page.tsx');
     const home = readProjectFile('src/components/dashboard/client-home.tsx');
 
-    expect(page).toContain('listClientJobPosts');
+    expect(page).toContain('listActiveClientJobPosts');
     expect(home).toContain('jobPosts');
     expect(home).toContain('Trabajos activos');
   });

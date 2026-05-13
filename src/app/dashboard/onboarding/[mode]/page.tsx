@@ -18,16 +18,24 @@ type OnboardingModePageProps = {
   params: Promise<{
     mode: string;
   }>;
+  searchParams?: Promise<{
+    editar?: string | string[];
+  }>;
 };
 
-export default async function OnboardingModePage({ params }: OnboardingModePageProps) {
+export default async function OnboardingModePage({ params, searchParams }: OnboardingModePageProps) {
   const { mode } = await params;
+  const resolvedSearchParams = await searchParams;
+  const editar = Array.isArray(resolvedSearchParams?.editar)
+    ? resolvedSearchParams.editar[0]
+    : resolvedSearchParams?.editar;
+  const isEditingProfile = editar === '1';
 
   if (!isOnboardingMode(mode)) {
     notFound();
   }
 
-  const context = await getDashboardPageContext(`/dashboard/onboarding/${mode}`);
+  const context = await getDashboardPageContext(`/dashboard/onboarding/${mode}${isEditingProfile ? '?editar=1' : ''}`);
 
   if (context.kind === 'database-unavailable') {
     return <DashboardDatabaseUnavailableState email={context.email} />;
@@ -41,7 +49,7 @@ export default async function OnboardingModePage({ params }: OnboardingModePageP
     notFound();
   }
 
-  if (hasCompletedOnboarding(context.appUser.user.profile, mode)) {
+  if (hasCompletedOnboarding(context.appUser.user.profile, mode) && !isEditingProfile) {
     redirect(getDashboardHomePath(mode) as Route);
   }
 

@@ -96,6 +96,7 @@ describe('GET /api/workers/search', () => {
             profile: {
               firstName: 'Carla',
               lastName: 'Rojas',
+              bio: 'Trabajo casas y oficinas por zona centro.',
               workerCategories: ['cleaning'],
               workerHourlyRateCents: 450000,
               identityVerificationStatus: IdentityVerificationStatus.PENDING,
@@ -116,9 +117,15 @@ describe('GET /api/workers/search', () => {
           id: 'worker_001',
           displayName: 'Carla R.',
           categories: ['cleaning'],
+          bio: 'Trabajo casas y oficinas por zona centro.',
           hourlyRateCents: 450000,
           identityVerificationStatus: 'PENDING',
-          distanceLabel: 'Cerca'
+          distanceLabel: 'Cerca',
+          rating: {
+            average: null,
+            count: 0
+          },
+          workHistory: []
         }
       ]
     });

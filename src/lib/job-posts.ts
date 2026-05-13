@@ -123,6 +123,24 @@ export type ListJobPostsResult =
       message: string;
     };
 
+export type UpdateJobPostResult =
+  | {
+      ok: true;
+      status: 200;
+      jobPost: JobPostSummary;
+    }
+  | {
+      ok: false;
+      status: 401 | 403 | 404;
+      message: string;
+    }
+  | {
+      ok: false;
+      status: 422;
+      message: string;
+      fieldErrors: JobPostFieldErrors;
+    };
+
 const jobPostSelect = {
   id: true,
   title: true,
@@ -270,6 +288,110 @@ export async function listClientJobPosts(clientId: string, take = 10): Promise<J
     select: jobPostSelect,
     take
   });
+}
+
+export async function listActiveClientJobPosts(clientId: string, take = 10): Promise<JobPostSummary[]> {
+  return getPrismaClient().jobPost.findMany({
+    where: {
+      clientId,
+      status: JobPostStatus.PUBLISHED
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: jobPostSelect,
+    take
+  });
+}
+
+export async function getActiveClientJobPost(clientId: string, jobPostId: string): Promise<JobPostSummary | null> {
+  return getPrismaClient().jobPost.findFirst({
+    where: {
+      id: jobPostId,
+      clientId,
+      status: JobPostStatus.PUBLISHED
+    },
+    select: jobPostSelect
+  });
+}
+
+export async function updateAuthenticatedClientJobPost(
+  auth: RequestAuthState,
+  jobPostId: string,
+  input: unknown
+): Promise<UpdateJobPostResult> {
+  const readyAuth = getReadyJefeMarketplaceAuth(auth);
+
+  if (!readyAuth.ok) {
+    return readyAuth;
+  }
+
+  const validation = createJobPostSchema.safeParse(input);
+
+  if (!validation.success) {
+    return {
+      ok: false,
+      status: 422,
+      message: 'Revisá los datos del trabajo.',
+      fieldErrors: mapZodFieldErrors(validation.error)
+    };
+  }
+
+  const data = validation.data;
+  const photoPathnames = data.photoPathnames ?? [];
+
+  if (photoPathnames.some((pathname) => !isJobPhotoBlobPathForUser(pathname, readyAuth.userId))) {
+    return {
+      ok: false,
+      status: 422,
+      message: 'Revisá los datos del trabajo.',
+      fieldErrors: {
+        photoPathnames: [messages.photoInvalid]
+      }
+    };
+  }
+
+  const where = {
+    id: jobPostId,
+    clientId: readyAuth.userId,
+    status: JobPostStatus.PUBLISHED
+  } as const;
+
+  const updateResult = await getPrismaClient().jobPost.updateMany({
+    where,
+    data: {
+      title: data.title,
+      category: data.category,
+      description: data.description,
+      addressText: data.addressText,
+      desiredTime: data.desiredTime ? new Date(data.desiredTime) : null,
+      ...(data.photoPathnames ? { photoPathnames } : {})
+    }
+  });
+
+  if (updateResult.count === 0) {
+    return {
+      ok: false,
+      status: 404,
+      message: 'No encontramos ese trabajo activo.'
+    };
+  }
+
+  const jobPost = await getActiveClientJobPost(readyAuth.userId, jobPostId);
+
+  if (!jobPost) {
+    return {
+      ok: false,
+      status: 404,
+      message: 'No encontramos ese trabajo activo.'
+    };
+  }
+
+  return {
+    ok: true,
+    status: 200,
+    jobPost
+  };
 }
 
 export async function listAuthenticatedClientJobPosts(auth: RequestAuthState): Promise<ListJobPostsResult> {
