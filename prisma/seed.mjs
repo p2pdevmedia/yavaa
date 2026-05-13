@@ -24,7 +24,8 @@ const seedRoles = [
   { slug: 'trabajador', name: 'Trabajador', description: 'Ofrece trabajo y coordina servicios.' }
 ];
 
-const showcaseJobTitles = [
+const removableShowcaseJobTitles = [
+  'Mural',
   'Showcase: Baranda, piso y reparación general de cabaña',
   'Showcase: Bajo mesada de cocina en madera/MDF',
   'Showcase: Mueble sobre mesada para cocina compacta',
@@ -59,26 +60,36 @@ async function upsertSeedUser(input) {
   return user;
 }
 
-async function assignRole(user, roleSlug, roles) {
+async function setOnlyRole(user, roleSlug, roles) {
   const role = roles.find((candidate) => candidate.slug === roleSlug);
 
   if (!role) {
     throw new Error(`Seed role not found: ${roleSlug}`);
   }
 
-  await prisma.userRole.upsert({
-    where: {
-      userId_roleId: {
+  await prisma.$transaction([
+    prisma.userRole.deleteMany({
+      where: {
+        userId: user.id,
+        roleId: {
+          not: role.id
+        }
+      }
+    }),
+    prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: user.id,
+          roleId: role.id
+        }
+      },
+      update: {},
+      create: {
         userId: user.id,
         roleId: role.id
       }
-    },
-    update: {},
-    create: {
-      userId: user.id,
-      roleId: role.id
-    }
-  });
+    })
+  ]);
 }
 
 function money(amount) {
@@ -101,7 +112,7 @@ async function seedHernanShowcase({ client, contractor }) {
   await prisma.jobPost.deleteMany({
     where: {
       clientId: client.id,
-      title: { in: showcaseJobTitles }
+      title: { in: removableShowcaseJobTitles }
     }
   });
 
@@ -110,7 +121,7 @@ async function seedHernanShowcase({ client, contractor }) {
       {
         clientId: client.id,
         title: 'Showcase: Baranda, piso y reparación general de cabaña',
-        category: 'Carpintería y remodelación',
+        category: 'carpinteria',
         description: showcaseDescription({
           contractor: contractor.displayName ?? 'Hernán Esteban Boan',
           budget: 750000,
@@ -126,7 +137,7 @@ async function seedHernanShowcase({ client, contractor }) {
       {
         clientId: client.id,
         title: 'Showcase: Bajo mesada de cocina en madera/MDF',
-        category: 'Carpintería de cocina',
+        category: 'carpinteria',
         description: showcaseDescription({
           contractor: contractor.displayName ?? 'Hernán Esteban Boan',
           budget: 950000,
@@ -142,7 +153,7 @@ async function seedHernanShowcase({ client, contractor }) {
       {
         clientId: client.id,
         title: 'Showcase: Mueble sobre mesada para cocina compacta',
-        category: 'Carpintería de cocina',
+        category: 'carpinteria',
         description: showcaseDescription({
           contractor: contractor.displayName ?? 'Hernán Esteban Boan',
           budget: 250000,
@@ -158,7 +169,7 @@ async function seedHernanShowcase({ client, contractor }) {
       {
         clientId: client.id,
         title: 'Showcase: Revestimiento de pared y contramarcos',
-        category: 'Terminaciones interiores',
+        category: 'carpinteria',
         description: showcaseDescription({
           contractor: contractor.displayName ?? 'Hernán Esteban Boan',
           budget: 650000,
@@ -174,7 +185,7 @@ async function seedHernanShowcase({ client, contractor }) {
       {
         clientId: client.id,
         title: 'Showcase: Aislación de ventanas con poliuretano y contramarcos',
-        category: 'Aislación y aberturas',
+        category: 'carpinteria',
         description: showcaseDescription({
           contractor: contractor.displayName ?? 'Hernán Esteban Boan',
           budget: 50000,
@@ -190,7 +201,7 @@ async function seedHernanShowcase({ client, contractor }) {
       {
         clientId: client.id,
         title: 'Showcase: Placard / armario grande con cajones y puertas pendientes',
-        category: 'Placards y muebles a medida',
+        category: 'carpinteria',
         description: showcaseDescription({
           contractor: contractor.displayName ?? 'Hernán Esteban Boan',
           budget: 1100000,
@@ -221,45 +232,25 @@ async function main() {
     )
   );
 
-  const jefe = await upsertSeedUser({
-    email: 'jefe@yavaa.test',
-    displayName: 'Jefe Principal',
-    profile: {
-      firstName: 'Jefe',
-      lastName: 'Principal',
-      bio: 'Cuenta deterministica para validar el perfil Jefe.',
-      onboardingRole: OnboardingRole.JEFE,
-      jefeOnboardingCompletedAt: new Date('2026-01-01T09:00:00-03:00')
-    }
-  });
-
-  const trabajador = await upsertSeedUser({
-    email: 'trabajador@yavaa.test',
-    displayName: 'Trabajador Principal',
-    profile: {
-      firstName: 'Trabajador',
-      lastName: 'Principal',
-      bio: 'Cuenta deterministica para validar el perfil Trabajador.',
-      onboardingRole: OnboardingRole.TRABAJADOR,
-      workerOnboardingCompletedAt: new Date('2026-01-01T09:00:00-03:00')
-    }
-  });
-
   const ivan = await upsertSeedUser({
-    email: 'ivan.muller@yavaa.showcase',
+    email: 'mullerivan@gmail.com',
     displayName: 'Iván Müller',
     profile: {
       firstName: 'Iván',
       lastName: 'Müller',
       bio: 'Cliente showcase de Yavaa. Caso real de remodelación y mejoras en una cabaña chica de San Martín de los Andes.',
       onboardingRole: OnboardingRole.JEFE,
+      workerOnboardingCompletedAt: null,
       jefeOnboardingCompletedAt: new Date('2026-04-08T09:00:00-03:00'),
+      identityVerificationStatus: IdentityVerificationStatus.NOT_STARTED,
+      workerCategories: [],
+      workerHourlyRateCents: null,
       addressText: 'San Martín de los Andes, Neuquén, Argentina'
     }
   });
 
   const hernan = await upsertSeedUser({
-    email: 'hernan.boan@yavaa.showcase',
+    email: 'boanhernan53@gmail.com',
     displayName: 'Hernán Esteban Boan',
     profile: {
       firstName: 'Hernán Esteban',
@@ -269,28 +260,19 @@ async function main() {
         'Constructor y carpintero showcase de Yavaa. Trabajos reales realizados: barandas, bajo mesada, muebles a medida, placards, contramarcos, revestimientos y aislación de ventanas. Alias de pago usado en el caso: Canelaboan.',
       onboardingRole: OnboardingRole.TRABAJADOR,
       workerOnboardingCompletedAt: new Date('2026-04-08T09:00:00-03:00'),
+      jefeOnboardingCompletedAt: null,
       identityVerificationStatus: IdentityVerificationStatus.VERIFIED,
-      workerCategories: [
-        'Carpintería',
-        'Construcción',
-        'Remodelaciones',
-        'Placards',
-        'Bajo mesada',
-        'Aislación',
-        'Terminaciones interiores'
-      ],
+      workerCategories: ['carpinteria', 'zingueria', 'electricidad', 'herreria'],
       workerHourlyRateCents: 1500000,
       addressText: 'San Martín de los Andes, Neuquén, Argentina'
     }
   });
 
   for (const [user, slug] of [
-    [jefe, 'jefe'],
-    [trabajador, 'trabajador'],
     [ivan, 'jefe'],
     [hernan, 'trabajador']
   ]) {
-    await assignRole(user, slug, roles);
+    await setOnlyRole(user, slug, roles);
   }
 
   await seedHernanShowcase({ client: ivan, contractor: hernan });

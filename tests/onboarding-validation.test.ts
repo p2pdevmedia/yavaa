@@ -27,6 +27,30 @@ describe('onboarding field validation', () => {
     });
   });
 
+  it('accepts the showcase trade categories', () => {
+    const result = validateWorkerOnboardingInput({
+      firstName: 'Hernan',
+      lastName: 'Boan',
+      dniNumber: '30123456',
+      addressText: 'San Martin de los Andes',
+      workerCategories: ['carpinteria', 'zingueria', 'electricidad', 'herreria'],
+      hourlyRatePesos: '15000'
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      data: {
+        firstName: 'Hernan',
+        lastName: 'Boan',
+        dniNumber: '30123456',
+        addressText: 'San Martin de los Andes',
+        workerCategories: ['carpinteria', 'zingueria', 'electricidad', 'herreria'],
+        hourlyRatePesos: 15000
+      },
+      fieldErrors: {}
+    });
+  });
+
   it('returns worker required-field errors next to the failing fields', () => {
     const result = validateWorkerOnboardingInput({
       firstName: '',

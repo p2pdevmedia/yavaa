@@ -8,6 +8,10 @@ export const onboardingModes = ['jefe', 'trabajador'] as const;
 export type OnboardingMode = (typeof onboardingModes)[number];
 
 export const workerCategorySlugs = [
+  'carpinteria',
+  'zingueria',
+  'electricidad',
+  'herreria',
   'construction',
   'cleaning',
   'classes',
@@ -20,6 +24,10 @@ export const workerCategorySlugs = [
 export type WorkerCategorySlug = (typeof workerCategorySlugs)[number];
 
 export const workerCategoryLabels: Record<WorkerCategorySlug, string> = {
+  carpinteria: 'Carpintería',
+  zingueria: 'Zinguería',
+  electricidad: 'Electricidad',
+  herreria: 'Herrería',
   construction: 'Construcción',
   cleaning: 'Limpieza',
   classes: 'Clases',
