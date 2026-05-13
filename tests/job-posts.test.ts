@@ -7,6 +7,7 @@ import {
   getActiveClientJobPost,
   getClientJobPostForDetail,
   listActiveClientJobPosts,
+  listAcceptedWorkerJobPosts,
   listClientJobPosts,
   listPublishedWorkerJobPosts,
   updateAuthenticatedClientJobPost,
@@ -347,6 +348,69 @@ describe('job post helpers', () => {
     expect(findMany).toHaveBeenCalledWith({
       where: {
         status: JobPostStatus.PUBLISHED
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        addressText: true,
+        desiredTime: true,
+        photoPathnames: true,
+        status: true,
+        createdAt: true
+      }
+    });
+  });
+
+  it('lists accepted worker job posts by active and finished states', async () => {
+    const jobPosts: JobPostSummary[] = [
+      {
+        id: 'job_ready',
+        title: 'Arreglo listo',
+        category: 'construction',
+        description: 'Trabajo esperando revision.',
+        addressText: 'Salta Capital',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.READY_FOR_REVIEW,
+        createdAt: new Date('2026-05-14T00:00:00.000Z')
+      },
+      {
+        id: 'job_closed',
+        title: 'Trabajo cerrado',
+        category: 'painting',
+        description: 'Trabajo terminado.',
+        addressText: 'Salta Capital',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.CLOSED,
+        createdAt: new Date('2026-05-13T00:00:00.000Z')
+      }
+    ];
+    const findMany = vi.fn().mockResolvedValue(jobPosts);
+
+    getPrismaClientMock.mockReturnValue({
+      jobPost: {
+        findMany
+      }
+    } as never);
+
+    await expect(listAcceptedWorkerJobPosts('worker_001')).resolves.toEqual(jobPosts);
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        status: {
+          in: [JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW, JobPostStatus.CLOSED]
+        },
+        acceptedOffer: {
+          is: {
+            workerId: 'worker_001',
+            status: 'ACCEPTED'
+          }
+        }
       },
       orderBy: {
         createdAt: 'desc'

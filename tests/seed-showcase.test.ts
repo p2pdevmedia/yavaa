@@ -69,4 +69,20 @@ describe('showcase seed', () => {
     expect(seed).toContain('payments: [');
     expect(seed).not.toContain("title: 'Zingueria kaleuche'");
   });
+
+  it('seeds Juanka with curated Kaleuche work and peso-converted dollar payments', () => {
+    const seed = readProjectFile('prisma/seed.mjs');
+
+    expect(seed).toContain("email: 'Gaticajuancarlos17@gmail.com'");
+    expect(seed).toContain("displayName: 'Juan Carlos Gatica'");
+    expect(seed).toContain("const juankaShowcaseUsdRatePesos = 1500");
+    expect(seed).toContain("title: 'Showcase: Kaleuche - electricidad, gas y terminaciones'");
+    expect(seed).toContain("title: 'Showcase: Escalera de metal y refuerzos'");
+    expect(seed).toContain("title: 'Showcase: Mampara y vidrios pendientes'");
+    expect(seed).toContain("title: 'Showcase: Termotanque y gabinete'");
+    expect(seed).toContain("amount: 700 * juankaShowcaseUsdRatePesos");
+    expect(seed).toContain("amount: 400 * juankaShowcaseUsdRatePesos");
+    expect(seed).toContain('Equivalente a USD 700 convertido a ARS 1.500 por dolar para el seed.');
+    expect(seed).toContain('Equivalente a USD 400 convertido a ARS 1.500 por dolar para el seed.');
+  });
 });

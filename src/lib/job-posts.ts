@@ -1,4 +1,4 @@
-import { JobPostStatus } from '@prisma/client';
+import { JobOfferStatus, JobPostStatus } from '@prisma/client';
 import { z } from 'zod';
 
 import { isJobPhotoBlobPath, isJobPhotoBlobPathForUser, maxJobPhotos } from '@/lib/job-photos';
@@ -155,6 +155,12 @@ const jobPostSelect = {
 
 const activeEditableJobPostStatuses: JobPostStatus[] = [
   JobPostStatus.PUBLISHED,
+  JobPostStatus.IN_PROGRESS,
+  JobPostStatus.READY_FOR_REVIEW,
+  JobPostStatus.CLOSED
+];
+
+const acceptedWorkerJobPostStatuses: JobPostStatus[] = [
   JobPostStatus.IN_PROGRESS,
   JobPostStatus.READY_FOR_REVIEW,
   JobPostStatus.CLOSED
@@ -336,6 +342,27 @@ export async function listPublishedWorkerJobPosts(workerCategories: readonly str
     }
 
     return firstIsPreferred ? -1 : 1;
+  });
+}
+
+export async function listAcceptedWorkerJobPosts(workerId: string, take?: number): Promise<JobPostSummary[]> {
+  return getPrismaClient().jobPost.findMany({
+    where: {
+      status: {
+        in: acceptedWorkerJobPostStatuses
+      },
+      acceptedOffer: {
+        is: {
+          workerId,
+          status: JobOfferStatus.ACCEPTED
+        }
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: jobPostSelect,
+    ...(take ? { take } : {})
   });
 }
 

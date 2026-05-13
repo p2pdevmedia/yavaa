@@ -1,4 +1,4 @@
-import { IdentityVerificationStatus } from '@prisma/client';
+import { IdentityVerificationStatus, JobPostStatus } from '@prisma/client';
 import Link from 'next/link';
 import type { Route } from 'next';
 
@@ -39,6 +39,72 @@ function formatJobCategory(category: string): string {
   return isWorkerCategorySlug(category) ? workerCategoryLabels[category] : category;
 }
 
+function getJobStatusLabel(status: JobPostStatus): string {
+  const labels: Record<JobPostStatus, string> = {
+    [JobPostStatus.DRAFT]: 'Borrador',
+    [JobPostStatus.PUBLISHED]: 'Publicado',
+    [JobPostStatus.IN_PROGRESS]: 'En curso',
+    [JobPostStatus.READY_FOR_REVIEW]: 'Listo para revisión',
+    [JobPostStatus.CLOSED]: 'Terminado',
+    [JobPostStatus.CANCELLED]: 'Cancelado'
+  };
+
+  return labels[status];
+}
+
+function WorkerJobPostList({
+  emptyCopy,
+  jobPosts,
+  showDescription = false,
+  showStatus = false
+}: {
+  emptyCopy: string;
+  jobPosts: JobPostSummary[];
+  showDescription?: boolean;
+  showStatus?: boolean;
+}) {
+  if (jobPosts.length === 0) {
+    return <p className="mt-3 text-sm leading-6 text-muted-foreground">{emptyCopy}</p>;
+  }
+
+  return (
+    <div className="mt-3 space-y-3">
+      {jobPosts.map((jobPost) => (
+        <div key={jobPost.id} className="space-y-3 rounded-[18px] border border-border bg-background px-4 py-3">
+          <div className="space-y-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <h2 className="text-base font-bold text-foreground">{jobPost.title}</h2>
+              {showStatus ? (
+                <span className="w-fit rounded-full bg-card px-3 py-1 text-xs font-extrabold uppercase tracking-[0.12em] text-primary">
+                  {getJobStatusLabel(jobPost.status)}
+                </span>
+              ) : null}
+            </div>
+            {showDescription ? <p className="text-sm leading-6 text-muted-foreground">{jobPost.description}</p> : null}
+          </div>
+          <div className="grid gap-2 text-sm sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Rubro</p>
+              <p className="mt-1 font-bold text-foreground">{formatJobCategory(jobPost.category)}</p>
+            </div>
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Zona</p>
+              <p className="mt-1 font-bold text-foreground">{jobPost.addressText}</p>
+            </div>
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Cuándo</p>
+              <p className="mt-1 font-bold text-foreground">{formatDesiredTime(jobPost.desiredTime)}</p>
+            </div>
+          </div>
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link href={`/dashboard/trabajador/trabajos/${jobPost.id}` as Route}>Ver trabajo</Link>
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function getVerificationCopy(status: IdentityVerificationStatus): {
   title: string;
   description: string;
@@ -65,16 +131,22 @@ function getVerificationCopy(status: IdentityVerificationStatus): {
 
 export function WorkerHome({
   profile,
-  jobPosts = []
+  jobPosts = [],
+  acceptedJobPosts = []
 }: {
   profile: AppUserProfile | null;
   jobPosts?: JobPostSummary[];
+  acceptedJobPosts?: JobPostSummary[];
 }) {
   const verification = getVerificationCopy(
     profile?.identityVerificationStatus ?? IdentityVerificationStatus.NOT_STARTED
   );
   const categories = (profile?.workerCategories ?? []).filter(isWorkerCategorySlug);
   const firstName = profile?.firstName ?? 'Tu perfil';
+  const activeJobPosts = acceptedJobPosts.filter(
+    (jobPost) => jobPost.status === JobPostStatus.IN_PROGRESS || jobPost.status === JobPostStatus.READY_FOR_REVIEW
+  );
+  const finishedJobPosts = acceptedJobPosts.filter((jobPost) => jobPost.status === JobPostStatus.CLOSED);
 
   return (
     <YavaaPageShell width="md" className="py-5">
@@ -119,33 +191,7 @@ export function WorkerHome({
         <article className="rounded-[24px] border border-dashed border-border bg-card p-5">
           <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos cercanos</p>
           {jobPosts.length > 0 ? (
-            <div className="mt-3 space-y-3">
-              {jobPosts.map((jobPost) => (
-                <div key={jobPost.id} className="space-y-3 rounded-[18px] border border-border bg-background px-4 py-3">
-                  <div className="space-y-1">
-                    <h2 className="text-base font-bold text-foreground">{jobPost.title}</h2>
-                    <p className="text-sm leading-6 text-muted-foreground">{jobPost.description}</p>
-                  </div>
-                  <div className="grid gap-2 text-sm sm:grid-cols-3">
-                    <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Rubro</p>
-                      <p className="mt-1 font-bold text-foreground">{formatJobCategory(jobPost.category)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Zona</p>
-                      <p className="mt-1 font-bold text-foreground">{jobPost.addressText}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Cuándo</p>
-                      <p className="mt-1 font-bold text-foreground">{formatDesiredTime(jobPost.desiredTime)}</p>
-                    </div>
-                  </div>
-                  <Button asChild variant="outline" className="w-full sm:w-auto">
-                    <Link href={`/dashboard/trabajador/trabajos/${jobPost.id}` as Route}>Ver trabajo</Link>
-                  </Button>
-                </div>
-              ))}
-            </div>
+            <WorkerJobPostList emptyCopy="" jobPosts={jobPosts} showDescription />
           ) : (
             <>
               <h2 className="mt-3 text-xl font-bold text-foreground">No hay trabajos cercanos todavía</h2>
@@ -155,6 +201,26 @@ export function WorkerHome({
             </>
           )}
         </article>
+
+        <section className="space-y-4">
+          <article className="rounded-[24px] border border-border bg-card p-5 shadow-soft">
+            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos en curso</p>
+            <WorkerJobPostList
+              emptyCopy="No tenés trabajos en curso todavía."
+              jobPosts={activeJobPosts}
+              showStatus
+            />
+          </article>
+
+          <article className="rounded-[24px] border border-border bg-card p-5 shadow-soft">
+            <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos terminados</p>
+            <WorkerJobPostList
+              emptyCopy="Los trabajos terminados van a aparecer acá."
+              jobPosts={finishedJobPosts}
+              showStatus
+            />
+          </article>
+        </section>
       </section>
     </YavaaPageShell>
   );

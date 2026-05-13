@@ -26,6 +26,7 @@ const seedRoles = [
 ];
 
 const acceptedShowcaseJobTitle = 'Placard / armario grande con cajones y puertas pendientes';
+const juankaShowcaseUsdRatePesos = 1500;
 
 const removableShowcaseJobTitles = [
   'Mural',
@@ -34,7 +35,11 @@ const removableShowcaseJobTitles = [
   'Showcase: Mueble sobre mesada para cocina compacta',
   'Showcase: Revestimiento de pared y contramarcos',
   'Showcase: Aislación de ventanas con poliuretano y contramarcos',
-  'Showcase: Placard / armario grande con cajones y puertas pendientes'
+  'Showcase: Placard / armario grande con cajones y puertas pendientes',
+  'Showcase: Kaleuche - electricidad, gas y terminaciones',
+  'Showcase: Escalera de metal y refuerzos',
+  'Showcase: Mampara y vidrios pendientes',
+  'Showcase: Termotanque y gabinete'
 ];
 
 async function upsertSeedUser(input) {
@@ -397,6 +402,262 @@ async function seedHernanShowcase({ client, contractor }) {
   }
 }
 
+async function seedJuankaShowcase({ client, contractor }) {
+  const showcaseJobs = [
+    {
+      title: 'Showcase: Kaleuche - electricidad, gas y terminaciones',
+      amount: 1000000,
+      status: JobPostStatus.IN_PROGRESS,
+      desiredTime: new Date('2026-04-09T19:52:00-03:00'),
+      category: 'electricidad',
+      description: showcaseDescription({
+        contractor: contractor.displayName ?? 'Juan Carlos Gatica',
+        budget: 1000000,
+        payments: 1000000,
+        source: 'chat de obra Kaleuche, marzo-abril 2026',
+        notes:
+          'Trabajo real de Kaleuche con electricidad, gas, terminaciones, reforma de baño, zanjeo para sintenax, jabalina, rejillas de ventilación y coordinación de artefactos. El chat registra discusiones de alcance, presupuesto y la decisión de avanzar el 09/04/2026 por ARS 1.000.000 para la etapa urgente.'
+      }),
+      messages: [
+        {
+          authorId: client.id,
+          body:
+            'Juanka, necesito cerrar Kaleuche: electricidad, gas, terminaciones y lo urgente para poder meter gente en la casa.'
+        },
+        {
+          authorId: contractor.id,
+          body:
+            'Vamos para adelante. Hago reforma de baño a medias, zanjeo al pilar, jabalina, ventilaciones y gabinete del termotanque; esa etapa te la cobro un millón.'
+        },
+        {
+          authorId: client.id,
+          body: 'Dale, avancemos y dejemos todo más organizado en el sistema.'
+        }
+      ],
+      payments: [
+        {
+          amount: 1000000,
+          paidAt: '2026-04-17T13:40:00-03:00',
+          description: 'Pago etapa Kaleuche registrado en pesos desde transferencia del 17/04/2026.'
+        }
+      ]
+    },
+    {
+      title: 'Showcase: Escalera de metal y refuerzos',
+      amount: 1500000,
+      status: JobPostStatus.CLOSED,
+      desiredTime: new Date('2026-04-23T12:19:00-03:00'),
+      category: 'herreria',
+      description: showcaseDescription({
+        contractor: contractor.displayName ?? 'Juan Carlos Gatica',
+        budget: 1500000,
+        payments: 500000 + 700 * juankaShowcaseUsdRatePesos,
+        source: 'chat de escalera, 20/04/2026 al 13/05/2026',
+        notes:
+          'Reemplazo y armado de escalones metálicos con pintura negra, colocación y dos refuerzos en el medio. El chat registra anticipo de ARS 500.000 y luego pago conversado como USD 700. El 13/05/2026 Juanka aclara que ese millón era de la escalera y que ya quedó paga.'
+      }),
+      messages: [
+        {
+          authorId: contractor.id,
+          body:
+            'La idea es hacer la escalera nueva con todos los escalones, pintarlos de negro y colocarlos. Un millón y medio estaba bien.'
+        },
+        {
+          authorId: client.id,
+          body: 'Vamos con esa escalera de metal.'
+        },
+        {
+          authorId: contractor.id,
+          body: 'Ya cortamos casi todos los escalones. Mañana empezamos a soldar.'
+        },
+        {
+          authorId: client.id,
+          body: 'Yo te mandé 500 de esto. El resto queda convertido y cargado en pesos para tenerlo ordenado.'
+        }
+      ],
+      payments: [
+        {
+          amount: 500000,
+          paidAt: '2026-04-24T18:57:00-03:00',
+          description: 'Anticipo de ARS 500.000 para escalera de metal.'
+        },
+        {
+          amount: 700 * juankaShowcaseUsdRatePesos,
+          paidAt: '2026-04-29T21:24:00-03:00',
+          description: 'Equivalente a USD 700 convertido a ARS 1.500 por dolar para el seed.'
+        }
+      ]
+    },
+    {
+      title: 'Showcase: Mampara y vidrios pendientes',
+      amount: 600000,
+      status: JobPostStatus.IN_PROGRESS,
+      desiredTime: new Date('2026-04-07T18:47:00-03:00'),
+      category: 'terminaciones',
+      description: showcaseDescription({
+        contractor: contractor.displayName ?? 'Juan Carlos Gatica',
+        budget: 600000,
+        payments: 400 * juankaShowcaseUsdRatePesos,
+        source: 'chat de mampara y pendientes, noviembre 2024 a mayo 2026',
+        notes:
+          'Seguimiento de mampara, medidas, vidrios y pendientes de cierre. En el mensaje del 13/05/2026 Juanka enumera Mampara como una de las cosas que todavía debía resolver, por eso queda en curso.'
+      }),
+      messages: [
+        {
+          authorId: client.id,
+          body: 'Mañana vemos lo de la mampara.'
+        },
+        {
+          authorId: contractor.id,
+          body: 'Mampara y vidrios pendientes quedan en la lista para cerrar.'
+        },
+        {
+          authorId: client.id,
+          body: 'Lo cargo acá para que no se pierda entre chats, PDFs y presupuestos.'
+        }
+      ],
+      payments: [
+        {
+          amount: 400 * juankaShowcaseUsdRatePesos,
+          paidAt: '2026-05-13T14:44:00-03:00',
+          description: 'Equivalente a USD 400 convertido a ARS 1.500 por dolar para el seed.'
+        }
+      ]
+    },
+    {
+      title: 'Showcase: Termotanque y gabinete',
+      amount: 1000000,
+      status: JobPostStatus.IN_PROGRESS,
+      desiredTime: new Date('2026-04-09T19:36:00-03:00'),
+      category: 'gas',
+      description: showcaseDescription({
+        contractor: contractor.displayName ?? 'Juan Carlos Gatica',
+        budget: 1000000,
+        payments: null,
+        source: 'chat de termotanque y gabinete, abril-mayo 2026',
+        notes:
+          'Instalación y coordinación del termotanque, gabinete, conexiones de gas, ventilaciones y validación para Camuzzi. El 25/04/2026 Juanka dice que esa semana coloca el termo y el 13/05/2026 lo vuelve a listar como pendiente.'
+      }),
+      messages: [
+        {
+          authorId: contractor.id,
+          body: 'Hablo con el gasista y esta semana le pongo el termo así puede ir a Camuzzi.'
+        },
+        {
+          authorId: client.id,
+          body: 'Che, cómo viene la instalación de los artefactos en Kaleuche?'
+        },
+        {
+          authorId: contractor.id,
+          body: 'Termotanque y gabinete quedan registrados como pendiente principal junto con la mampara.'
+        }
+      ],
+      payments: []
+    }
+  ];
+
+  const seededTitles = showcaseJobs.map((job) => job.title);
+
+  await prisma.jobPost.updateMany({
+    where: {
+      clientId: client.id,
+      title: { in: seededTitles }
+    },
+    data: {
+      acceptedOfferId: null
+    }
+  });
+
+  async function createAcceptedOffer(jobPost, showcaseJob) {
+    await prisma.jobOffer.deleteMany({
+      where: {
+        jobPostId: jobPost.id
+      }
+    });
+
+    const acceptedOffer = await prisma.jobOffer.create({
+      data: {
+        jobPostId: jobPost.id,
+        workerId: contractor.id,
+        amountCents: showcaseJob.amount * 100,
+        status: JobOfferStatus.ACCEPTED
+      }
+    });
+
+    await prisma.jobPost.update({
+      where: {
+        id: jobPost.id
+      },
+      data: {
+        acceptedOfferId: acceptedOffer.id,
+        status: showcaseJob.status
+      }
+    });
+
+    if (showcaseJob.messages.length > 0) {
+      await prisma.jobOfferMessage.createMany({
+        data: showcaseJob.messages.map((message, index) => ({
+          offerId: acceptedOffer.id,
+          authorId: message.authorId,
+          body: message.body,
+          createdAt: new Date(Date.UTC(2026, 4, 13, 15, 0 + index * 10, 0))
+        }))
+      });
+    }
+
+    if (showcaseJob.payments.length > 0) {
+      await prisma.jobPayment.createMany({
+        data: showcaseJob.payments.map((payment) => ({
+          offerId: acceptedOffer.id,
+          createdById: client.id,
+          amountCents: payment.amount * 100,
+          paidAt: new Date(payment.paidAt),
+          description: payment.description
+        }))
+      });
+    }
+  }
+
+  for (const showcaseJob of showcaseJobs) {
+    const existingJob = await prisma.jobPost.findFirst({
+      where: {
+        clientId: client.id,
+        title: showcaseJob.title
+      },
+      select: {
+        id: true
+      }
+    });
+
+    const jobPost = existingJob
+      ? await prisma.jobPost.update({
+          where: {
+            id: existingJob.id
+          },
+          data: {
+            category: showcaseJob.category,
+            description: showcaseJob.description,
+            addressText: 'San Martín de los Andes, Neuquén',
+            desiredTime: showcaseJob.desiredTime,
+            status: JobPostStatus.PUBLISHED
+          }
+        })
+      : await prisma.jobPost.create({
+          data: {
+            clientId: client.id,
+            title: showcaseJob.title,
+            category: showcaseJob.category,
+            description: showcaseJob.description,
+            addressText: 'San Martín de los Andes, Neuquén',
+            desiredTime: showcaseJob.desiredTime,
+            status: JobPostStatus.PUBLISHED
+          }
+        });
+
+    await createAcceptedOffer(jobPost, showcaseJob);
+  }
+}
+
 async function main() {
   const roles = await Promise.all(
     seedRoles.map((role) =>
@@ -447,14 +708,35 @@ async function main() {
     }
   });
 
+  const juanka = await upsertSeedUser({
+    email: 'Gaticajuancarlos17@gmail.com',
+    displayName: 'Juan Carlos Gatica',
+    profile: {
+      firstName: 'Juan Carlos',
+      lastName: 'Gatica',
+      phone: null,
+      bio:
+        'Trabajador showcase de Yavaa conocido como Juanka. Historia real de trabajos en Kaleuche: electricidad, gas, herrería, termotanque, mamparas, escalera de metal y terminaciones. Email compartido por WhatsApp el 13/05/2026.',
+      onboardingRole: OnboardingRole.TRABAJADOR,
+      workerOnboardingCompletedAt: new Date('2026-05-13T12:00:00-03:00'),
+      jefeOnboardingCompletedAt: null,
+      identityVerificationStatus: IdentityVerificationStatus.NOT_STARTED,
+      workerCategories: ['electricidad', 'plomeria', 'gas', 'herreria', 'albanileria', 'terminaciones'],
+      workerHourlyRateCents: 1200000,
+      addressText: 'San Martín de los Andes, Neuquén, Argentina'
+    }
+  });
+
   for (const [user, slug] of [
     [ivan, 'jefe'],
-    [hernan, 'trabajador']
+    [hernan, 'trabajador'],
+    [juanka, 'trabajador']
   ]) {
     await setOnlyRole(user, slug, roles);
   }
 
   await seedHernanShowcase({ client: ivan, contractor: hernan });
+  await seedJuankaShowcase({ client: ivan, contractor: juanka });
 }
 
 main()

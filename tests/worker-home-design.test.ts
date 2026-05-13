@@ -10,14 +10,20 @@ function readProjectFile(path: string): string {
 }
 
 describe('worker post-wizard home design', () => {
-  it('shows verification, hourly rate, categories and nearby job results', () => {
+  it('shows verification, hourly rate, categories, nearby jobs, active work and finished work', () => {
     const workerHome = readProjectFile('src/components/dashboard/worker-home.tsx');
 
     expect(workerHome).toContain('Verificación');
     expect(workerHome).toContain('Precio por hora');
     expect(workerHome).toContain('Rubros');
     expect(workerHome).toContain('Trabajos cercanos');
+    expect(workerHome).toContain('Trabajos en curso');
+    expect(workerHome).toContain('Trabajos terminados');
     expect(workerHome).toContain('jobPosts.length > 0');
+    expect(workerHome).toContain('acceptedJobPosts');
+    expect(workerHome).toContain('JobPostStatus.IN_PROGRESS');
+    expect(workerHome).toContain('JobPostStatus.READY_FOR_REVIEW');
+    expect(workerHome).toContain('JobPostStatus.CLOSED');
     expect(workerHome).toContain('/dashboard/trabajador/trabajos/');
     expect(workerHome).toContain('Ver trabajo');
   });
@@ -27,6 +33,7 @@ describe('worker post-wizard home design', () => {
 
     expect(page).toContain('WorkerHome');
     expect(page).toContain('listPublishedWorkerJobPosts');
+    expect(page).toContain('listAcceptedWorkerJobPosts(context.appUser.user.id)');
     expect(page).toContain("hasCompletedOnboarding(context.appUser.user.profile, 'trabajador')");
   });
 
