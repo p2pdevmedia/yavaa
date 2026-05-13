@@ -105,9 +105,22 @@ export async function completeWorkerOnboarding(
   }
 
   const data = validation.data;
+
+  if (data.avatarBlobPath && !isProfileAvatarBlobPathForUser(data.avatarBlobPath, auth.appUser.id)) {
+    return {
+      ok: false,
+      status: 422,
+      message: 'Revisá los datos del formulario.',
+      fieldErrors: {
+        avatarBlobPath: ['Subí una foto válida.']
+      }
+    };
+  }
+
   const profileData = {
     firstName: data.firstName,
     lastName: data.lastName,
+    avatarUrl: data.avatarBlobPath ?? null,
     onboardingRole: OnboardingRole.TRABAJADOR,
     workerOnboardingCompletedAt: completedAt,
     identityVerificationStatus: IdentityVerificationStatus.PENDING,

@@ -17,7 +17,8 @@ const validPayload = {
   dniNumber: '30123456',
   addressText: 'Salta Capital',
   workerCategories: ['cleaning', 'painting'],
-  hourlyRatePesos: '4500'
+  hourlyRatePesos: '4500',
+  avatarBlobPath: 'profiles/user_001/avatars/avatar.jpg'
 };
 
 const validJefePayload = {
@@ -194,7 +195,24 @@ describe('worker onboarding service', () => {
     expect(getPrismaClientMock).not.toHaveBeenCalled();
   });
 
-  it('updates only the current worker profile and stores the hourly price in cents', async () => {
+  it('rejects worker avatar paths that do not belong to the current user', async () => {
+    const result = await completeWorkerOnboarding(activeWorkerAuth, {
+      ...validPayload,
+      avatarBlobPath: 'profiles/user_999/avatars/avatar.jpg'
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      status: 422,
+      message: 'Revisá los datos del formulario.',
+      fieldErrors: {
+        avatarBlobPath: ['Subí una foto válida.']
+      }
+    });
+    expect(getPrismaClientMock).not.toHaveBeenCalled();
+  });
+
+  it('updates only the current worker profile, avatar and hourly price in cents', async () => {
     const now = new Date('2026-05-12T12:00:00.000Z');
     const upsert = vi.fn().mockResolvedValue({});
 
@@ -219,6 +237,7 @@ describe('worker onboarding service', () => {
         userId: 'user_001',
         firstName: 'Ana',
         lastName: 'Gomez',
+        avatarUrl: 'profiles/user_001/avatars/avatar.jpg',
         onboardingRole: OnboardingRole.TRABAJADOR,
         workerOnboardingCompletedAt: now,
         identityVerificationStatus: IdentityVerificationStatus.PENDING,
@@ -230,6 +249,7 @@ describe('worker onboarding service', () => {
       update: {
         firstName: 'Ana',
         lastName: 'Gomez',
+        avatarUrl: 'profiles/user_001/avatars/avatar.jpg',
         onboardingRole: OnboardingRole.TRABAJADOR,
         workerOnboardingCompletedAt: now,
         identityVerificationStatus: IdentityVerificationStatus.PENDING,

@@ -8,6 +8,7 @@ import {
   createJobOffer,
   createJobPaymentSchema,
   createJobPayment,
+  getWorkerJobPostForDetail,
   listJobPayments,
   listClientJobOffers,
   listOfferMessages,
@@ -1016,6 +1017,94 @@ describe('job offer service', () => {
             },
             select: expect.any(Object),
             take: 25
+          }
+        })
+      })
+    );
+  });
+
+  it('includes the worker accepted offer with messages and payments on worker job detail', async () => {
+    const olderMessage = {
+      id: 'message_001',
+      offerId: 'offer_001',
+      authorId: 'worker_001',
+      body: 'Puedo hacerlo mañana.',
+      createdAt: new Date('2026-05-13T01:00:00.000Z')
+    };
+    const newestMessage = {
+      id: 'message_002',
+      offerId: 'offer_001',
+      authorId: 'client_001',
+      body: 'Dale, avanzamos.',
+      createdAt: new Date('2026-05-13T02:00:00.000Z')
+    };
+    const payment = {
+      id: 'payment_001',
+      offerId: 'offer_001',
+      createdById: 'client_001',
+      amountCents: 500000,
+      paidAt: new Date('2026-05-13T03:00:00.000Z'),
+      description: 'Seña',
+      receiptPathname: null,
+      createdAt: new Date('2026-05-13T03:05:00.000Z')
+    };
+    const jobPost = {
+      ...publishedJobPost,
+      status: JobPostStatus.IN_PROGRESS,
+      acceptedOffer: {
+        id: 'offer_001',
+        jobPostId,
+        workerId: 'worker_001',
+        amountCents: 1250000,
+        status: JobOfferStatus.ACCEPTED,
+        messages: [olderMessage, newestMessage],
+        payments: [payment]
+      }
+    };
+    const findFirst = vi.fn().mockResolvedValue(jobPost);
+
+    getPrismaClientMock.mockReturnValue({
+      jobPost: {
+        findFirst
+      }
+    } as never);
+
+    await expect(getWorkerJobPostForDetail('worker_001', jobPostId)).resolves.toEqual(jobPost);
+    expect(findFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          id: jobPostId,
+          OR: expect.arrayContaining([
+            {
+              status: {
+                in: [JobPostStatus.IN_PROGRESS, JobPostStatus.READY_FOR_REVIEW, JobPostStatus.CLOSED]
+              },
+              acceptedOffer: {
+                is: {
+                  workerId: 'worker_001',
+                  status: JobOfferStatus.ACCEPTED
+                }
+              }
+            }
+          ])
+        }),
+        select: expect.objectContaining({
+          acceptedOffer: {
+            select: expect.objectContaining({
+              messages: {
+                orderBy: {
+                  createdAt: 'asc'
+                },
+                select: expect.any(Object),
+                take: 25
+              },
+              payments: {
+                orderBy: {
+                  paidAt: 'desc'
+                },
+                select: expect.any(Object)
+              }
+            })
           }
         })
       })

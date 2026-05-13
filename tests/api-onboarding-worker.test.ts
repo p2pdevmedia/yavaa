@@ -218,6 +218,32 @@ describe('POST /api/onboarding/trabajador', () => {
     expect(getPrismaClientMock).not.toHaveBeenCalled();
   });
 
+  it('returns avatar errors on avatarBlobPath for photos from another user', async () => {
+    resolveRequestAuthMock.mockResolvedValueOnce(activeWorkerAuth);
+
+    const response = await POST(
+      createRequest({
+        firstName: 'Ana',
+        lastName: 'Gomez',
+        dniNumber: '30123456',
+        addressText: 'Salta Capital',
+        workerCategories: ['cleaning'],
+        hourlyRatePesos: 4500,
+        avatarBlobPath: 'profiles/user_999/avatars/avatar.jpg'
+      })
+    );
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toEqual({
+      ok: false,
+      message: 'Revisá los datos del formulario.',
+      fieldErrors: {
+        avatarBlobPath: ['Subí una foto válida.']
+      }
+    });
+    expect(getPrismaClientMock).not.toHaveBeenCalled();
+  });
+
   it('returns 200 and the next path after a valid worker payload', async () => {
     resolveRequestAuthMock.mockResolvedValueOnce(activeWorkerAuth);
 
@@ -235,7 +261,8 @@ describe('POST /api/onboarding/trabajador', () => {
         dniNumber: '30123456',
         addressText: 'Salta Capital',
         workerCategories: ['cleaning'],
-        hourlyRatePesos: 4500
+        hourlyRatePesos: 4500,
+        avatarBlobPath: 'profiles/user_001/avatars/avatar.jpg'
       })
     );
 

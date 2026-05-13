@@ -85,4 +85,13 @@ describe('showcase seed', () => {
     expect(seed).toContain('Equivalente a USD 700 convertido a ARS 1.500 por dolar para el seed.');
     expect(seed).toContain('Equivalente a USD 400 convertido a ARS 1.500 por dolar para el seed.');
   });
+
+  it('allows running only the Juanka showcase seed', () => {
+    const seed = readProjectFile('prisma/seed.mjs');
+
+    expect(seed).toContain("const seedTarget = process.env.YAVAA_SEED_TARGET ?? 'all'");
+    expect(seed).toContain("if (!['all', 'hernan', 'juanka'].includes(seedTarget))");
+    expect(seed).toContain("if (seedTarget === 'all' || seedTarget === 'hernan')");
+    expect(seed).toContain("if (seedTarget === 'all' || seedTarget === 'juanka')");
+  });
 });

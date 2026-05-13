@@ -45,14 +45,15 @@ describe('onboarding helpers', () => {
     ).toBe(false);
   });
 
-  it('validates worker onboarding payloads with hourly price and categories', () => {
+  it('validates worker onboarding payloads with hourly price, categories and optional private avatar blob path', () => {
     const result = workerOnboardingSchema.safeParse({
       firstName: 'Ana',
       lastName: 'Gomez',
       dniNumber: '30123456',
       addressText: 'Salta Capital',
       workerCategories: ['cleaning', 'painting'],
-      hourlyRatePesos: 4500
+      hourlyRatePesos: 4500,
+      avatarBlobPath: 'profiles/user_001/avatars/avatar.jpg'
     });
 
     expect(result.success).toBe(true);

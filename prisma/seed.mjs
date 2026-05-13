@@ -25,6 +25,7 @@ const seedRoles = [
   { slug: 'trabajador', name: 'Trabajador', description: 'Ofrece trabajo y coordina servicios.' }
 ];
 
+const seedTarget = process.env.YAVAA_SEED_TARGET ?? 'all';
 const acceptedShowcaseJobTitle = 'Placard / armario grande con cajones y puertas pendientes';
 const juankaShowcaseUsdRatePesos = 1500;
 
@@ -659,6 +660,13 @@ async function seedJuankaShowcase({ client, contractor }) {
 }
 
 async function main() {
+  if (!['all', 'hernan', 'juanka'].includes(seedTarget)) {
+    throw new Error(`Invalid YAVAA_SEED_TARGET: ${seedTarget}`);
+  }
+
+  const shouldSeedHernan = seedTarget === 'all' || seedTarget === 'hernan';
+  const shouldSeedJuanka = seedTarget === 'all' || seedTarget === 'juanka';
+
   const roles = await Promise.all(
     seedRoles.map((role) =>
       prisma.role.upsert({
@@ -689,54 +697,72 @@ async function main() {
     }
   });
 
-  const hernan = await upsertSeedUser({
-    email: 'boanhernan53@gmail.com',
-    displayName: 'Hernán Esteban Boan',
-    profile: {
-      firstName: 'Hernán Esteban',
-      lastName: 'Boan',
-      phone: null,
-      bio:
-        'Constructor y carpintero showcase de Yavaa. Trabajos reales realizados: barandas, bajo mesada, muebles a medida, placards, contramarcos, revestimientos y aislación de ventanas. Alias de pago usado en el caso: Canelaboan.',
-      onboardingRole: OnboardingRole.TRABAJADOR,
-      workerOnboardingCompletedAt: new Date('2026-04-08T09:00:00-03:00'),
-      jefeOnboardingCompletedAt: null,
-      identityVerificationStatus: IdentityVerificationStatus.VERIFIED,
-      workerCategories: ['carpinteria', 'zingueria', 'electricidad', 'herreria'],
-      workerHourlyRateCents: 1500000,
-      addressText: 'San Martín de los Andes, Neuquén, Argentina'
-    }
-  });
+  let hernan = null;
+  let juanka = null;
 
-  const juanka = await upsertSeedUser({
-    email: 'Gaticajuancarlos17@gmail.com',
-    displayName: 'Juan Carlos Gatica',
-    profile: {
-      firstName: 'Juan Carlos',
-      lastName: 'Gatica',
-      phone: null,
-      bio:
-        'Trabajador showcase de Yavaa conocido como Juanka. Historia real de trabajos en Kaleuche: electricidad, gas, herrería, termotanque, mamparas, escalera de metal y terminaciones. Email compartido por WhatsApp el 13/05/2026.',
-      onboardingRole: OnboardingRole.TRABAJADOR,
-      workerOnboardingCompletedAt: new Date('2026-05-13T12:00:00-03:00'),
-      jefeOnboardingCompletedAt: null,
-      identityVerificationStatus: IdentityVerificationStatus.NOT_STARTED,
-      workerCategories: ['electricidad', 'plomeria', 'gas', 'herreria', 'albanileria', 'terminaciones'],
-      workerHourlyRateCents: 1200000,
-      addressText: 'San Martín de los Andes, Neuquén, Argentina'
-    }
-  });
+  if (shouldSeedHernan) {
+    hernan = await upsertSeedUser({
+      email: 'boanhernan53@gmail.com',
+      displayName: 'Hernán Esteban Boan',
+      profile: {
+        firstName: 'Hernán Esteban',
+        lastName: 'Boan',
+        phone: null,
+        bio:
+          'Constructor y carpintero showcase de Yavaa. Trabajos reales realizados: barandas, bajo mesada, muebles a medida, placards, contramarcos, revestimientos y aislación de ventanas. Alias de pago usado en el caso: Canelaboan.',
+        onboardingRole: OnboardingRole.TRABAJADOR,
+        workerOnboardingCompletedAt: new Date('2026-04-08T09:00:00-03:00'),
+        jefeOnboardingCompletedAt: null,
+        identityVerificationStatus: IdentityVerificationStatus.VERIFIED,
+        workerCategories: ['carpinteria', 'zingueria', 'electricidad', 'herreria'],
+        workerHourlyRateCents: 1500000,
+        addressText: 'San Martín de los Andes, Neuquén, Argentina'
+      }
+    });
+  }
 
-  for (const [user, slug] of [
-    [ivan, 'jefe'],
-    [hernan, 'trabajador'],
-    [juanka, 'trabajador']
-  ]) {
+  if (shouldSeedJuanka) {
+    juanka = await upsertSeedUser({
+      email: 'Gaticajuancarlos17@gmail.com',
+      displayName: 'Juan Carlos Gatica',
+      profile: {
+        firstName: 'Juan Carlos',
+        lastName: 'Gatica',
+        phone: null,
+        bio:
+          'Trabajador showcase de Yavaa conocido como Juanka. Historia real de trabajos en Kaleuche: electricidad, gas, herrería, termotanque, mamparas, escalera de metal y terminaciones. Email compartido por WhatsApp el 13/05/2026.',
+        onboardingRole: OnboardingRole.TRABAJADOR,
+        workerOnboardingCompletedAt: new Date('2026-05-13T12:00:00-03:00'),
+        jefeOnboardingCompletedAt: null,
+        identityVerificationStatus: IdentityVerificationStatus.NOT_STARTED,
+        workerCategories: ['electricidad', 'plomeria', 'gas', 'herreria', 'albanileria', 'terminaciones'],
+        workerHourlyRateCents: 1200000,
+        addressText: 'San Martín de los Andes, Neuquén, Argentina'
+      }
+    });
+  }
+
+  const userRoles = [[ivan, 'jefe']];
+
+  if (hernan) {
+    userRoles.push([hernan, 'trabajador']);
+  }
+
+  if (juanka) {
+    userRoles.push([juanka, 'trabajador']);
+  }
+
+  for (const [user, slug] of userRoles) {
     await setOnlyRole(user, slug, roles);
   }
 
-  await seedHernanShowcase({ client: ivan, contractor: hernan });
-  await seedJuankaShowcase({ client: ivan, contractor: juanka });
+  if (seedTarget === 'all' || seedTarget === 'hernan') {
+    await seedHernanShowcase({ client: ivan, contractor: hernan });
+  }
+
+  if (seedTarget === 'all' || seedTarget === 'juanka') {
+    await seedJuankaShowcase({ client: ivan, contractor: juanka });
+  }
 }
 
 main()

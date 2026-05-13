@@ -146,7 +146,13 @@ export const workerOnboardingSchema = z.object({
   dniNumber: dniNumberSchema,
   addressText: addressSchema,
   workerCategories: workerCategoriesSchema,
-  hourlyRatePesos: hourlyRatePesosSchema
+  hourlyRatePesos: hourlyRatePesosSchema,
+  avatarBlobPath: z
+    .string()
+    .trim()
+    .refine((value) => isProfileAvatarBlobPath(value), messages.avatarBlobPathInvalid)
+    .nullable()
+    .optional()
 });
 
 export const jefeOnboardingSchema = z.object({

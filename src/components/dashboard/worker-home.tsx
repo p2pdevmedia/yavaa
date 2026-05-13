@@ -7,6 +7,7 @@ import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 import type { AppUserProfile } from '@/lib/app-user';
 import type { JobPostSummary } from '@/lib/job-posts';
 import { workerCategoryLabels, type WorkerCategorySlug, workerCategorySlugs } from '@/lib/onboarding';
+import { getPrivateProfileAvatarSrc } from '@/lib/profile-avatar';
 
 function isWorkerCategorySlug(value: string): value is WorkerCategorySlug {
   return (workerCategorySlugs as ReadonlyArray<string>).includes(value);
@@ -143,6 +144,7 @@ export function WorkerHome({
   );
   const categories = (profile?.workerCategories ?? []).filter(isWorkerCategorySlug);
   const firstName = profile?.firstName ?? 'Tu perfil';
+  const avatarSrc = profile?.avatarUrl ? getPrivateProfileAvatarSrc(profile.avatarUrl) : null;
   const activeJobPosts = acceptedJobPosts.filter(
     (jobPost) => jobPost.status === JobPostStatus.IN_PROGRESS || jobPost.status === JobPostStatus.READY_FOR_REVIEW
   );
@@ -151,10 +153,20 @@ export function WorkerHome({
   return (
     <YavaaPageShell width="md" className="py-5">
       <section className="space-y-6">
-        <div className="rounded-[28px] bg-primary p-6 text-primary-foreground shadow-soft">
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] opacity-80">Trabajador home</p>
-          <h1 className="mt-3 font-display text-3xl font-bold tracking-normal">Tu perfil laboral</h1>
-          <p className="mt-3 text-sm leading-6 opacity-90">{firstName} ya tiene su perfil preparado para trabajar.</p>
+        <div className="flex items-center gap-4 px-1">
+          {avatarSrc ? (
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full border border-border bg-muted">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={avatarSrc} alt={`Foto de perfil de ${firstName}`} className="h-full w-full object-cover" />
+            </div>
+          ) : null}
+          <div className="min-w-0 space-y-2">
+            <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Trabajador home</p>
+            <h1 className="font-display text-3xl font-bold tracking-normal text-foreground">Hola, {firstName}</h1>
+            <p className="text-sm leading-6 text-muted-foreground">
+              Elegí un trabajo cercano y avanzá con tu próxima oportunidad sin vueltas.
+            </p>
+          </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

@@ -7,8 +7,11 @@ import {
   DashboardDatabaseUnavailableState,
   DashboardUnlinkedUserState
 } from '@/components/dashboard/dashboard-states';
+import { WorkerJobPayments } from '@/components/jobs/worker-job-payments';
+import { WorkerOfferChat } from '@/components/jobs/worker-offer-chat';
 import { WorkerReadyAction } from '@/components/jobs/worker-ready-action';
 import { WorkerOfferForm } from '@/components/jobs/worker-offer-form';
+import { WorkerOfferSummary } from '@/components/jobs/worker-offer-summary';
 import { Button } from '@/components/ui/button';
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
 import { getDashboardPageContext } from '@/lib/dashboard-page-data';
@@ -91,6 +94,9 @@ export default async function WorkerJobPostDetailPage({ params }: WorkerJobPostD
   }
 
   const acceptedOffer = jobPost.acceptedOffer;
+  const canUseAcceptedOffer =
+    acceptedOffer &&
+    (jobPost.status === JobPostStatus.IN_PROGRESS || jobPost.status === JobPostStatus.READY_FOR_REVIEW);
 
   return (
     <YavaaPageShell width="sm" className="py-5">
@@ -145,12 +151,33 @@ export default async function WorkerJobPostDetailPage({ params }: WorkerJobPostD
 
         {jobPost.status === JobPostStatus.PUBLISHED ? (
           <WorkerOfferForm jobPost={{ id: jobPost.id, title: jobPost.title }} />
-        ) : acceptedOffer && jobPost.status === JobPostStatus.IN_PROGRESS ? (
-          <WorkerReadyAction offerId={acceptedOffer.id} />
-        ) : acceptedOffer && jobPost.status === JobPostStatus.READY_FOR_REVIEW ? (
-          <p className="rounded-[22px] border border-border bg-card p-4 text-sm font-semibold text-muted-foreground shadow-soft">
-            Marcaste este trabajo como listo. El cliente lo está revisando.
-          </p>
+        ) : acceptedOffer ? (
+          <>
+            <WorkerOfferSummary amountCents={acceptedOffer.amountCents} status={acceptedOffer.status} />
+
+            {jobPost.status === JobPostStatus.IN_PROGRESS ? (
+              <WorkerReadyAction offerId={acceptedOffer.id} />
+            ) : jobPost.status === JobPostStatus.READY_FOR_REVIEW ? (
+              <p className="rounded-[22px] border border-border bg-card p-4 text-sm font-semibold text-muted-foreground shadow-soft">
+                Marcaste este trabajo como listo. El cliente lo está revisando.
+              </p>
+            ) : null}
+
+            <WorkerOfferChat
+              offerId={acceptedOffer.id}
+              initialMessages={acceptedOffer.messages}
+              currentUserId={context.appUser.user.id}
+              clientId={jobPost.clientId}
+              canSendMessages={Boolean(canUseAcceptedOffer)}
+            />
+
+            <WorkerJobPayments
+              offerId={acceptedOffer.id}
+              initialPayments={acceptedOffer.payments}
+              currentUserId={context.appUser.user.id}
+              canRegisterPayments={Boolean(canUseAcceptedOffer)}
+            />
+          </>
         ) : null}
       </section>
     </YavaaPageShell>

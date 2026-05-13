@@ -19,6 +19,7 @@ describe('worker wizard mobile design', () => {
     expect(wizard).toContain('¿Dónde trabajás?');
     expect(wizard).toContain('¿Qué trabajos hacés?');
     expect(wizard).toContain('¿Cuánto cobrás por hora?');
+    expect(wizard).toContain('Agregá una foto');
     expect(wizard).toContain('Tu perfil está listo');
   });
 
@@ -26,8 +27,19 @@ describe('worker wizard mobile design', () => {
     const wizard = readProjectFile('src/components/onboarding/worker-wizard.tsx');
 
     expect(wizard).toContain("fetch('/api/onboarding/trabajador'");
+    expect(wizard).toContain("fetch('/api/profile/avatar'");
     expect(wizard).toContain("'/dashboard/trabajador'");
     expect(wizard).toContain('router.push');
+  });
+
+  it('uses private blob photo controls instead of a manual avatar URL', () => {
+    const wizard = readProjectFile('src/components/onboarding/worker-wizard.tsx');
+
+    expect(wizard).toContain('Subir foto');
+    expect(wizard).toContain('Tomar foto');
+    expect(wizard).toContain('capture="environment"');
+    expect(wizard).toContain('accept="image/jpeg,image/png,image/webp"');
+    expect(wizard).not.toContain('URL de foto opcional');
   });
 
   it('uses shared wizard shell, progress and map preview components', () => {

@@ -28,6 +28,14 @@ describe('worker post-wizard home design', () => {
     expect(workerHome).toContain('Ver trabajo');
   });
 
+  it('renders private profile photos through the authenticated avatar API', () => {
+    const workerHome = readProjectFile('src/components/dashboard/worker-home.tsx');
+
+    expect(workerHome).toContain('getPrivateProfileAvatarSrc');
+    expect(workerHome).toContain('profile?.avatarUrl');
+    expect(workerHome).toContain('Foto de perfil de');
+  });
+
   it('uses the worker home component from the protected trabajador route', () => {
     const page = readProjectFile('src/app/dashboard/trabajador/page.tsx');
 
@@ -41,12 +49,20 @@ describe('worker post-wizard home design', () => {
     const page = readProjectFile('src/app/dashboard/trabajador/trabajos/[jobPostId]/page.tsx');
     const form = readProjectFile('src/components/jobs/worker-offer-form.tsx');
     const readyAction = readProjectFile('src/components/jobs/worker-ready-action.tsx');
+    const offerSummary = readProjectFile('src/components/jobs/worker-offer-summary.tsx');
+    const offerChat = readProjectFile('src/components/jobs/worker-offer-chat.tsx');
+    const jobPayments = readProjectFile('src/components/jobs/worker-job-payments.tsx');
 
     expect(page).toContain('getDashboardPageContext(`/dashboard/trabajador/trabajos/${jobPostId}`)');
     expect(page).toContain('getWorkerJobPostForDetail(context.appUser.user.id, jobPostId)');
     expect(page).toContain('notFound()');
     expect(page).toContain('WorkerOfferForm');
     expect(page).toContain('WorkerReadyAction');
+    expect(page).toContain('WorkerOfferSummary');
+    expect(page).toContain('WorkerOfferChat');
+    expect(page).toContain('WorkerJobPayments');
+    expect(page).toContain('initialMessages={acceptedOffer.messages}');
+    expect(page).toContain('initialPayments={acceptedOffer.payments}');
     expect(page).toContain('jobPost.status === JobPostStatus.PUBLISHED');
     expect(page).toContain('jobPost.status === JobPostStatus.IN_PROGRESS');
     expect(form).toContain('/api/job-offers');
@@ -62,5 +78,15 @@ describe('worker post-wizard home design', () => {
     expect(form).toContain('aria-live="polite"');
     expect(readyAction).toContain("fetch(`/api/job-offers/${offerId}/ready`");
     expect(readyAction).toContain('Marcar trabajo listo');
+    expect(offerSummary).toContain('Tu oferta');
+    expect(offerSummary).toContain('formatAmountCents');
+    expect(offerChat).toContain('Chat con el cliente');
+    expect(offerChat).toContain("fetch(`/api/job-offers/${offerId}/messages`");
+    expect(offerChat).toContain('aria-busy={isSubmitting}');
+    expect(jobPayments).toContain('Pagos del trabajo');
+    expect(jobPayments).toContain("fetch(`/api/job-offers/${offerId}/payments/receipts`");
+    expect(jobPayments).toContain("fetch(`/api/job-offers/${offerId}/payments`");
+    expect(jobPayments).toContain('Registrar pago');
+    expect(jobPayments).toContain('serializePaidAtForPayload');
   });
 });

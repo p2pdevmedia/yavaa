@@ -125,6 +125,7 @@ export type JobPaymentSummary = {
 
 export type WorkerJobPostDetail = {
   id: string;
+  clientId: string;
   title: string;
   category: string;
   description: string;
@@ -133,7 +134,10 @@ export type WorkerJobPostDetail = {
   photoPathnames: string[];
   status: JobPostStatus;
   createdAt: Date;
-  acceptedOffer: JobOfferSummary | null;
+  acceptedOffer: (JobOfferSummary & {
+    messages: JobOfferMessageSummary[];
+    payments: JobPaymentSummary[];
+  }) | null;
 };
 
 export type ClientJobOfferListItem = JobOfferSummary & {
@@ -556,7 +560,22 @@ export async function getWorkerJobPostForDetail(workerId: string, jobPostId: str
     select: {
       ...jobPostSelect,
       acceptedOffer: {
-        select: offerSummarySelect
+        select: {
+          ...offerSummarySelect,
+          messages: {
+            orderBy: {
+              createdAt: 'asc'
+            },
+            select: offerMessageSelect,
+            take: 25
+          },
+          payments: {
+            orderBy: {
+              paidAt: 'desc'
+            },
+            select: jobPaymentSelect
+          }
+        }
       }
     }
   });
