@@ -8,6 +8,7 @@ import {
   getClientJobPostForDetail,
   listActiveClientJobPosts,
   listAcceptedWorkerJobPosts,
+  listClientDashboardJobPosts,
   listClientJobPosts,
   listPublishedWorkerJobPosts,
   updateAuthenticatedClientJobPost,
@@ -242,6 +243,69 @@ describe('job post helpers', () => {
     });
   });
 
+  it('lists dashboard client job posts with accepted offer payment progress data', async () => {
+    const jobPosts: JobPostSummary[] = [
+      {
+        id: 'job_accepted',
+        title: 'Placard en curso',
+        category: 'carpinteria',
+        description: 'Placard con oferta aceptada.',
+        addressText: 'San Martin de los Andes',
+        desiredTime: null,
+        photoPathnames: [],
+        status: JobPostStatus.IN_PROGRESS,
+        createdAt: new Date('2026-05-13T00:00:00.000Z'),
+        acceptedOffer: {
+          amountCents: 1250000,
+          payments: [
+            {
+              amountCents: 500000
+            }
+          ]
+        }
+      }
+    ];
+    const findMany = vi.fn().mockResolvedValue(jobPosts);
+
+    getPrismaClientMock.mockReturnValue({
+      jobPost: {
+        findMany
+      }
+    } as never);
+
+    await expect(listClientDashboardJobPosts('user_001')).resolves.toEqual(jobPosts);
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        clientId: 'user_001'
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      select: {
+        id: true,
+        title: true,
+        category: true,
+        description: true,
+        addressText: true,
+        desiredTime: true,
+        photoPathnames: true,
+        status: true,
+        createdAt: true,
+        acceptedOffer: {
+          select: {
+            amountCents: true,
+            payments: {
+              select: {
+                amountCents: true
+              }
+            }
+          }
+        }
+      },
+      take: 10
+    });
+  });
+
   it('lists every editable client job post across published, accepted, and closed states', async () => {
     const jobPosts: JobPostSummary[] = [
       {
@@ -424,7 +488,17 @@ describe('job post helpers', () => {
         desiredTime: true,
         photoPathnames: true,
         status: true,
-        createdAt: true
+        createdAt: true,
+        acceptedOffer: {
+          select: {
+            amountCents: true,
+            payments: {
+              select: {
+                amountCents: true
+              }
+            }
+          }
+        }
       }
     });
   });

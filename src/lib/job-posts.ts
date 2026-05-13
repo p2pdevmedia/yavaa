@@ -75,6 +75,12 @@ export type JobPostSummary = {
   photoPathnames: string[];
   status: JobPostStatus;
   createdAt: Date;
+  acceptedOffer?: {
+    amountCents: number;
+    payments: {
+      amountCents: number;
+    }[];
+  } | null;
 };
 
 export type JobPostApiSummary = Omit<JobPostSummary, 'desiredTime' | 'createdAt'> & {
@@ -151,6 +157,20 @@ const jobPostSelect = {
   photoPathnames: true,
   status: true,
   createdAt: true
+} as const;
+
+const jobPostPaymentProgressSelect = {
+  ...jobPostSelect,
+  acceptedOffer: {
+    select: {
+      amountCents: true,
+      payments: {
+        select: {
+          amountCents: true
+        }
+      }
+    }
+  }
 } as const;
 
 const activeEditableJobPostStatuses: JobPostStatus[] = [
@@ -303,6 +323,19 @@ export async function listClientJobPosts(clientId: string, take = 10): Promise<J
   });
 }
 
+export async function listClientDashboardJobPosts(clientId: string, take = 10): Promise<JobPostSummary[]> {
+  return getPrismaClient().jobPost.findMany({
+    where: {
+      clientId
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: jobPostPaymentProgressSelect,
+    take
+  });
+}
+
 export async function listActiveClientJobPosts(clientId: string, take?: number): Promise<JobPostSummary[]> {
   return getPrismaClient().jobPost.findMany({
     where: {
@@ -361,7 +394,7 @@ export async function listAcceptedWorkerJobPosts(workerId: string, take?: number
     orderBy: {
       createdAt: 'desc'
     },
-    select: jobPostSelect,
+    select: jobPostPaymentProgressSelect,
     ...(take ? { take } : {})
   });
 }

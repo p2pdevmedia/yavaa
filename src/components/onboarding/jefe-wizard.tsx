@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import type { Route } from 'next';
 import { useRouter } from 'next/navigation';
 
-import { MobileMapPreview } from '@/components/onboarding/mobile-map-preview';
+import { LocationMapPicker, type LocationCoordinate } from '@/components/onboarding/location-map-picker';
 import { OnboardingShell } from '@/components/onboarding/onboarding-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +20,8 @@ type JefeWizardInitialProfile = {
   firstName?: string | null;
   lastName?: string | null;
   addressText?: string | null;
+  locationLatitude?: string | null;
+  locationLongitude?: string | null;
   avatarUrl?: string | null;
 };
 
@@ -27,6 +29,7 @@ type JefeWizardState = {
   firstName: string;
   lastName: string;
   addressText: string;
+  location: LocationCoordinate | null;
   avatarBlobPath: string;
 };
 
@@ -80,15 +83,30 @@ const steps = [
 
 const fieldByStep: Record<number, JefeOnboardingField[]> = {
   0: ['firstName', 'lastName'],
-  1: ['addressText'],
+  1: ['addressText', 'locationLatitude', 'locationLongitude'],
   2: ['avatarBlobPath']
 };
+
+function getInitialLocation(profile?: JefeWizardInitialProfile | null): LocationCoordinate | null {
+  const latitude = Number(profile?.locationLatitude);
+  const longitude = Number(profile?.locationLongitude);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  return {
+    latitude,
+    longitude
+  };
+}
 
 function getInitialState(profile?: JefeWizardInitialProfile | null): JefeWizardState {
   return {
     firstName: profile?.firstName ?? '',
     lastName: profile?.lastName ?? '',
     addressText: profile?.addressText ?? '',
+    location: getInitialLocation(profile),
     avatarBlobPath: profile?.avatarUrl ?? ''
   };
 }
@@ -121,7 +139,7 @@ function getFirstErrorStep(fieldErrors: OnboardingFieldErrors<JefeOnboardingFiel
     return 0;
   }
 
-  if (fieldErrors.addressText) {
+  if (fieldErrors.addressText || fieldErrors.locationLatitude || fieldErrors.locationLongitude) {
     return 1;
   }
 
@@ -146,9 +164,18 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
       firstName: formState.firstName,
       lastName: formState.lastName,
       addressText: formState.addressText,
+      locationLatitude: formState.location?.latitude,
+      locationLongitude: formState.location?.longitude,
       avatarBlobPath: formState.avatarBlobPath.trim() ? formState.avatarBlobPath : null
     }),
-    [formState.addressText, formState.avatarBlobPath, formState.firstName, formState.lastName]
+    [
+      formState.addressText,
+      formState.avatarBlobPath,
+      formState.firstName,
+      formState.lastName,
+      formState.location?.latitude,
+      formState.location?.longitude
+    ]
   );
 
   useEffect(() => {
@@ -170,6 +197,31 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
       form: undefined
     }));
   }
+
+  const updateAddress = useCallback((value: string) => {
+    setFormState((current) => ({
+      ...current,
+      addressText: value
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      addressText: undefined,
+      form: undefined
+    }));
+  }, []);
+
+  const updateLocation = useCallback((location: LocationCoordinate) => {
+    setFormState((current) => ({
+      ...current,
+      location
+    }));
+    setFieldErrors((current) => ({
+      ...current,
+      locationLatitude: undefined,
+      locationLongitude: undefined,
+      form: undefined
+    }));
+  }, []);
 
   function handleAvatarChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0] ?? null;
@@ -380,21 +432,14 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
 
     if (step.id === 'address') {
       return (
-        <div className="grid gap-4">
-          <MobileMapPreview address={formState.addressText} />
-          <div className="space-y-2">
-            <Label htmlFor="addressText">Zona donde necesitás ayuda</Label>
-            <Input
-              id="addressText"
-              name="addressText"
-              placeholder="Salta Capital"
-              autoComplete="street-address"
-              value={formState.addressText}
-              onChange={(event) => updateField('addressText', event.target.value)}
-            />
-            <FieldError messages={fieldErrors.addressText} />
-          </div>
-        </div>
+        <LocationMapPicker
+          address={formState.addressText}
+          location={formState.location}
+          addressError={fieldErrors.addressText?.[0]}
+          locationError={fieldErrors.locationLatitude?.[0] ?? fieldErrors.locationLongitude?.[0]}
+          onAddressChange={updateAddress}
+          onLocationChange={updateLocation}
+        />
       );
     }
 
@@ -464,6 +509,10 @@ export function JefeWizard({ initialProfile }: { initialProfile?: JefeWizardInit
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Zona principal</dt>
               <dd className="font-bold text-foreground">{formState.addressText || 'Sin zona'}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-muted-foreground">Punto del mapa</dt>
+              <dd className="font-bold text-foreground">{formState.location ? 'Seleccionado' : 'Pendiente'}</dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-muted-foreground">Foto</dt>

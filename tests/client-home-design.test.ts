@@ -51,7 +51,7 @@ describe('client post-wizard home design', () => {
     const page = readProjectFile('src/app/dashboard/jefe/page.tsx');
 
     expect(page).toContain('ClientHome');
-    expect(page).toContain('listClientJobPosts');
+    expect(page).toContain('listClientDashboardJobPosts');
     expect(page).toContain("hasCompletedOnboarding(context.appUser.user.profile, 'jefe')");
     expect(page).not.toContain('listActiveClientJobPosts(context.appUser.user.id, 3)');
   });
@@ -61,7 +61,9 @@ describe('client post-wizard home design', () => {
     const detailPage = readProjectFile('src/app/dashboard/jefe/trabajos/[jobPostId]/page.tsx');
     const editPage = readProjectFile('src/app/dashboard/jefe/trabajos/[jobPostId]/editar/page.tsx');
 
-    expect(clientHome).toContain('Ver');
+    expect(clientHome).toContain('aria-label={`Abrir trabajo ${jobPost.title}`}');
+    expect(clientHome).toContain('absolute inset-0');
+    expect(clientHome).not.toContain('>Ver</Link>');
     expect(clientHome).toContain('Editar');
     expect(clientHome).toContain('/dashboard/jefe/trabajos/');
     expect(clientHome).not.toContain('jobPosts.slice(0, 3)');
@@ -70,5 +72,21 @@ describe('client post-wizard home design', () => {
     expect(editPage).toContain("hasRole(context.appUser.permissionContext, 'jefe')");
     expect(editPage).toContain('getActiveClientJobPost');
     expect(editPage).toContain('EditJobForm');
+  });
+
+  it('shows active work payment progress with budget paid and remaining colors', () => {
+    const clientHome = readProjectFile('src/components/dashboard/client-home.tsx');
+    const page = readProjectFile('src/app/dashboard/jefe/page.tsx');
+    const paymentProgress = readProjectFile('src/components/dashboard/job-payment-progress.tsx');
+
+    expect(page).toContain('listClientDashboardJobPosts');
+    expect(clientHome).toContain('JobPaymentProgress');
+    expect(paymentProgress).toContain('Presupuesto');
+    expect(paymentProgress).toContain('Pagado');
+    expect(paymentProgress).toContain('Falta pagar');
+    expect(paymentProgress).toContain('text-green-700');
+    expect(paymentProgress).toContain('text-yellow-700');
+    expect(paymentProgress).toContain('text-red-700');
+    expect(paymentProgress).toContain('getPaymentProgress');
   });
 });

@@ -4,6 +4,7 @@ import { JobPostStatus } from '@prisma/client';
 
 import { Button } from '@/components/ui/button';
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
+import { JobPaymentProgress } from '@/components/dashboard/job-payment-progress';
 import type { AppUserProfile } from '@/lib/app-user';
 import type { JobPostSummary } from '@/lib/job-posts';
 import { getPrivateProfileAvatarSrc } from '@/lib/profile-avatar';
@@ -37,7 +38,15 @@ function JobPostList({
   return (
     <div className="mt-3 space-y-3">
       {jobPosts.map((jobPost) => (
-        <div key={jobPost.id} className="space-y-3 rounded-[18px] border border-border bg-background px-4 py-3">
+        <div
+          key={jobPost.id}
+          className="group relative space-y-3 rounded-[18px] border border-border bg-background px-4 py-3 transition hover:border-primary hover:bg-card focus-within:border-primary"
+        >
+          <Link
+            href={`/dashboard/jefe/trabajos/${jobPost.id}` as Route}
+            aria-label={`Abrir trabajo ${jobPost.title}`}
+            className="absolute inset-0 z-10 rounded-[18px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          />
           <div className="space-y-1">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <h2 className="text-base font-bold text-foreground">{jobPost.title}</h2>
@@ -47,16 +56,14 @@ function JobPostList({
             </div>
             <p className="text-sm text-muted-foreground">{jobPost.addressText}</p>
           </div>
-          <div className={showEdit ? 'grid grid-cols-2 gap-2' : 'grid gap-2'}>
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/dashboard/jefe/trabajos/${jobPost.id}` as Route}>Ver</Link>
-            </Button>
-            {showEdit ? (
+          <JobPaymentProgress acceptedOffer={jobPost.acceptedOffer} />
+          {showEdit ? (
+            <div className="relative z-20 grid gap-2">
               <Button asChild size="sm">
                 <Link href={`/dashboard/jefe/trabajos/${jobPost.id}/editar` as Route}>Editar</Link>
               </Button>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       ))}
     </div>

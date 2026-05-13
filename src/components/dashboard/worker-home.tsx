@@ -2,8 +2,8 @@ import { IdentityVerificationStatus, JobPostStatus } from '@prisma/client';
 import Link from 'next/link';
 import type { Route } from 'next';
 
-import { Button } from '@/components/ui/button';
 import { YavaaPageShell } from '@/components/ui/yavaa-layout';
+import { JobPaymentProgress } from '@/components/dashboard/job-payment-progress';
 import type { AppUserProfile } from '@/lib/app-user';
 import type { JobPostSummary } from '@/lib/job-posts';
 import { workerCategoryLabels, type WorkerCategorySlug, workerCategorySlugs } from '@/lib/onboarding';
@@ -71,7 +71,15 @@ function WorkerJobPostList({
   return (
     <div className="mt-3 space-y-3">
       {jobPosts.map((jobPost) => (
-        <div key={jobPost.id} className="space-y-3 rounded-[18px] border border-border bg-background px-4 py-3">
+        <div
+          key={jobPost.id}
+          className="group relative space-y-3 rounded-[18px] border border-border bg-background px-4 py-3 transition hover:border-primary hover:bg-card focus-within:border-primary"
+        >
+          <Link
+            href={`/dashboard/trabajador/trabajos/${jobPost.id}` as Route}
+            aria-label={`Abrir trabajo ${jobPost.title}`}
+            className="absolute inset-0 z-10 rounded-[18px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          />
           <div className="space-y-1">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
               <h2 className="text-base font-bold text-foreground">{jobPost.title}</h2>
@@ -83,6 +91,7 @@ function WorkerJobPostList({
             </div>
             {showDescription ? <p className="text-sm leading-6 text-muted-foreground">{jobPost.description}</p> : null}
           </div>
+          <JobPaymentProgress acceptedOffer={jobPost.acceptedOffer} />
           <div className="grid gap-2 text-sm sm:grid-cols-3">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[0.12em] text-primary">Rubro</p>
@@ -97,9 +106,6 @@ function WorkerJobPostList({
               <p className="mt-1 font-bold text-foreground">{formatDesiredTime(jobPost.desiredTime)}</p>
             </div>
           </div>
-          <Button asChild variant="outline" className="w-full sm:w-auto">
-            <Link href={`/dashboard/trabajador/trabajos/${jobPost.id}` as Route}>Ver trabajo</Link>
-          </Button>
         </div>
       ))}
     </div>

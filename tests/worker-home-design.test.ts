@@ -25,7 +25,9 @@ describe('worker post-wizard home design', () => {
     expect(workerHome).toContain('JobPostStatus.READY_FOR_REVIEW');
     expect(workerHome).toContain('JobPostStatus.CLOSED');
     expect(workerHome).toContain('/dashboard/trabajador/trabajos/');
-    expect(workerHome).toContain('Ver trabajo');
+    expect(workerHome).toContain('aria-label={`Abrir trabajo ${jobPost.title}`}');
+    expect(workerHome).toContain('absolute inset-0');
+    expect(workerHome).not.toContain('>Ver trabajo</Link>');
   });
 
   it('renders private profile photos through the authenticated avatar API', () => {
@@ -88,5 +90,19 @@ describe('worker post-wizard home design', () => {
     expect(jobPayments).toContain("fetch(`/api/job-offers/${offerId}/payments`");
     expect(jobPayments).toContain('Registrar pago');
     expect(jobPayments).toContain('serializePaidAtForPayload');
+  });
+
+  it('shows active work payment progress with budget paid and remaining colors', () => {
+    const workerHome = readProjectFile('src/components/dashboard/worker-home.tsx');
+    const paymentProgress = readProjectFile('src/components/dashboard/job-payment-progress.tsx');
+
+    expect(workerHome).toContain('JobPaymentProgress');
+    expect(paymentProgress).toContain('Presupuesto');
+    expect(paymentProgress).toContain('Pagado');
+    expect(paymentProgress).toContain('Falta pagar');
+    expect(paymentProgress).toContain('text-green-700');
+    expect(paymentProgress).toContain('text-yellow-700');
+    expect(paymentProgress).toContain('text-red-700');
+    expect(paymentProgress).toContain('getPaymentProgress');
   });
 });

@@ -77,6 +77,8 @@ describe('onboarding helpers', () => {
       firstName: 'Martin',
       lastName: 'Ruiz',
       addressText: 'Salta Capital',
+      locationLatitude: -24.782127,
+      locationLongitude: -65.423197,
       avatarBlobPath: 'profiles/user_001/avatars/avatar.jpg'
     });
 

@@ -25,6 +25,8 @@ const validJefePayload = {
   firstName: '  Martin ',
   lastName: ' Ruiz ',
   addressText: 'Salta Capital',
+  locationLatitude: -24.782127,
+  locationLongitude: -65.423197,
   avatarBlobPath: 'profiles/user_002/avatars/avatar.jpg'
 };
 
@@ -354,7 +356,9 @@ describe('jefe onboarding service', () => {
         avatarUrl: 'profiles/user_002/avatars/avatar.jpg',
         onboardingRole: OnboardingRole.JEFE,
         jefeOnboardingCompletedAt: now,
-        addressText: 'Salta Capital'
+        addressText: 'Salta Capital',
+        locationLatitude: -24.782127,
+        locationLongitude: -65.423197
       },
       update: {
         firstName: 'Martin',
@@ -362,7 +366,9 @@ describe('jefe onboarding service', () => {
         avatarUrl: 'profiles/user_002/avatars/avatar.jpg',
         onboardingRole: OnboardingRole.JEFE,
         jefeOnboardingCompletedAt: now,
-        addressText: 'Salta Capital'
+        addressText: 'Salta Capital',
+        locationLatitude: -24.782127,
+        locationLongitude: -65.423197
       }
     });
   });

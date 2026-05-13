@@ -75,6 +75,9 @@ const messages = {
   hourlyRateInteger: 'El precio por hora debe ser un número entero.',
   hourlyRatePositive: 'El precio por hora tiene que ser mayor a 0.',
   hourlyRateMax: 'El precio por hora es demasiado alto.',
+  locationRequired: 'Seleccioná un punto en el mapa.',
+  latitudeInvalid: 'Seleccioná una latitud válida.',
+  longitudeInvalid: 'Seleccioná una longitud válida.',
   avatarBlobPathInvalid: 'Subí una foto válida.'
 } as const;
 
@@ -140,6 +143,30 @@ const hourlyRatePesosSchema = z.preprocess(
     .max(10_000_000, messages.hourlyRateMax)
 );
 
+const latitudeSchema = z.preprocess(
+  (value) => (value === '' || value === null ? Number.NaN : value),
+  z.coerce
+    .number({
+      required_error: messages.locationRequired,
+      invalid_type_error: messages.locationRequired
+    })
+    .finite(messages.latitudeInvalid)
+    .min(-90, messages.latitudeInvalid)
+    .max(90, messages.latitudeInvalid)
+);
+
+const longitudeSchema = z.preprocess(
+  (value) => (value === '' || value === null ? Number.NaN : value),
+  z.coerce
+    .number({
+      required_error: messages.locationRequired,
+      invalid_type_error: messages.locationRequired
+    })
+    .finite(messages.longitudeInvalid)
+    .min(-180, messages.longitudeInvalid)
+    .max(180, messages.longitudeInvalid)
+);
+
 export const workerOnboardingSchema = z.object({
   firstName: firstNameSchema,
   lastName: lastNameSchema,
@@ -159,6 +186,8 @@ export const jefeOnboardingSchema = z.object({
   firstName: firstNameSchema,
   lastName: lastNameSchema,
   addressText: addressSchema,
+  locationLatitude: latitudeSchema,
+  locationLongitude: longitudeSchema,
   avatarBlobPath: z
     .string()
     .trim()

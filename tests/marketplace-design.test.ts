@@ -65,7 +65,7 @@ describe('stage 5 marketplace screens', () => {
     const page = readProjectFile('src/app/dashboard/jefe/page.tsx');
     const home = readProjectFile('src/components/dashboard/client-home.tsx');
 
-    expect(page).toContain('listClientJobPosts');
+    expect(page).toContain('listClientDashboardJobPosts');
     expect(home).toContain('jobPosts');
     expect(home).toContain('Trabajos activos');
     expect(home).toContain('Trabajos en progreso');

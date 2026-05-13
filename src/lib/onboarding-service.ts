@@ -215,7 +215,9 @@ export async function completeJefeOnboarding(
     avatarUrl: data.avatarBlobPath ?? null,
     onboardingRole: OnboardingRole.JEFE,
     jefeOnboardingCompletedAt: completedAt,
-    addressText: data.addressText
+    addressText: data.addressText,
+    locationLatitude: data.locationLatitude,
+    locationLongitude: data.locationLongitude
   };
 
   await getPrismaClient().profile.upsert({

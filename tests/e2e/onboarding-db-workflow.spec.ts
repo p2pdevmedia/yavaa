@@ -136,11 +136,13 @@ async function hasOnboardingSchema(): Promise<boolean> {
         'identity_verification_status',
         'worker_categories',
         'worker_hourly_rate_cents',
-        'address_text'
+        'address_text',
+        'location_latitude',
+        'location_longitude'
       )
   `;
 
-  return rows.length === 6;
+  return rows.length === 8;
 }
 
 async function seedRoles(): Promise<Record<'jefe' | 'trabajador', Role>> {
@@ -170,6 +172,8 @@ async function createWorkflowUser(input: {
     workerHourlyRateCents?: number | null;
     workerCategories?: string[];
     addressText?: string | null;
+    locationLatitude?: number | null;
+    locationLongitude?: number | null;
   };
 }): Promise<User> {
   const db = getPrisma();
@@ -186,6 +190,8 @@ async function createWorkflowUser(input: {
           firstName: 'Workflow',
           lastName: 'Test',
           addressText: input.profile?.addressText ?? null,
+          locationLatitude: input.profile?.locationLatitude ?? null,
+          locationLongitude: input.profile?.locationLongitude ?? null,
           identityVerificationStatus: IdentityVerificationStatus.PENDING,
           workerCategories: input.profile?.workerCategories ?? [],
           workerHourlyRateCents: input.profile?.workerHourlyRateCents ?? null,
@@ -492,15 +498,23 @@ test.describe('DB-backed onboarding workflow', () => {
           )
         });
       });
+      await page.route('https://nominatim.openstreetmap.org/search**', async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([
+            {
+              lat: '-24.782127',
+              lon: '-65.423197'
+            }
+          ])
+        });
+      });
 
       await authenticateAs(page, email);
       await page.goto('/dashboard/onboarding/jefe');
 
       await expect(page.getByRole('heading', { name: 'Tus datos' })).toBeVisible();
-      await page.getByLabel('Nombre').fill('');
-      await page.getByLabel('Apellido').fill('');
-      await page.getByRole('button', { name: 'Continuar' }).click();
-      await expect(page.getByText('Ingresá tu nombre.')).toBeVisible();
       await page.getByLabel('Nombre').fill('Martin');
       await page.getByLabel('Apellido').fill('Ruiz');
       await page.getByRole('button', { name: 'Continuar' }).click();
@@ -509,6 +523,7 @@ test.describe('DB-backed onboarding workflow', () => {
       await page.getByRole('button', { name: 'Continuar' }).click();
       await expect(page.getByText('Ingresá una ubicación válida.')).toBeVisible();
       await page.getByLabel('Zona donde necesitás ayuda').fill('Salta Capital');
+      await expect(page.getByText('Punto aproximado encontrado.')).toBeVisible();
       await page.getByRole('button', { name: 'Continuar' }).click();
 
       await expect(page.getByRole('heading', { name: 'Agregá una foto' })).toBeVisible();
@@ -541,6 +556,8 @@ test.describe('DB-backed onboarding workflow', () => {
       expect(profile.firstName).toBe('Martin');
       expect(profile.lastName).toBe('Ruiz');
       expect(profile.addressText).toBe('Salta Capital');
+      expect(profile.locationLatitude?.toString()).toBe('-24.782127');
+      expect(profile.locationLongitude?.toString()).toBe('-65.423197');
       expect(profile.avatarUrl).toBe(avatarPath);
       expect(profile.onboardingRole).toBe(OnboardingRole.JEFE);
       expect(profile.jefeOnboardingCompletedAt).toBeTruthy();

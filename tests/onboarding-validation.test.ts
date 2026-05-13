@@ -146,6 +146,8 @@ describe('onboarding field validation', () => {
       firstName: '  Martin ',
       lastName: ' Ruiz  ',
       addressText: '  Salta Capital ',
+      locationLatitude: ' -24.782127 ',
+      locationLongitude: ' -65.423197 ',
       avatarBlobPath: null
     });
 
@@ -155,6 +157,8 @@ describe('onboarding field validation', () => {
         firstName: 'Martin',
         lastName: 'Ruiz',
         addressText: 'Salta Capital',
+        locationLatitude: -24.782127,
+        locationLongitude: -65.423197,
         avatarBlobPath: null
       },
       fieldErrors: {}
@@ -166,6 +170,8 @@ describe('onboarding field validation', () => {
       firstName: '',
       lastName: '',
       addressText: 'x',
+      locationLatitude: undefined,
+      locationLongitude: undefined,
       avatarBlobPath: undefined
     });
 
@@ -177,9 +183,32 @@ describe('onboarding field validation', () => {
     expect(result.fieldErrors).toEqual({
       firstName: ['Ingresá tu nombre.'],
       lastName: ['Ingresá tu apellido.'],
-      addressText: ['Ingresá una ubicación válida.']
+      addressText: ['Ingresá una ubicación válida.'],
+      locationLatitude: ['Seleccioná un punto en el mapa.'],
+      locationLongitude: ['Seleccioná un punto en el mapa.']
     });
     expect(result.fieldErrors).not.toHaveProperty('_form');
+  });
+
+  it('returns jefe coordinate range errors on map fields only', () => {
+    const result = validateJefeOnboardingInput({
+      firstName: 'Martin',
+      lastName: 'Ruiz',
+      addressText: 'Salta Capital',
+      locationLatitude: -91,
+      locationLongitude: 181,
+      avatarBlobPath: null
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) {
+      throw new Error('Expected jefe validation to fail');
+    }
+
+    expect(result.fieldErrors).toEqual({
+      locationLatitude: ['Seleccioná una latitud válida.'],
+      locationLongitude: ['Seleccioná una longitud válida.']
+    });
   });
 
   it('returns jefe avatar blob path errors on avatarBlobPath only', () => {
@@ -187,6 +216,8 @@ describe('onboarding field validation', () => {
       firstName: 'Martin',
       lastName: 'Ruiz',
       addressText: 'Salta Capital',
+      locationLatitude: -24.782127,
+      locationLongitude: -65.423197,
       avatarBlobPath: 'https://example.com/avatar.png'
     });
 

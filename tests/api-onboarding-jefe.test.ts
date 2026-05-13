@@ -152,6 +152,8 @@ describe('POST /api/onboarding/jefe', () => {
         firstName: '',
         lastName: 'Ruiz',
         addressText: 'Salta Capital',
+        locationLatitude: -24.782127,
+        locationLongitude: -65.423197,
         avatarBlobPath: 'https://example.com/avatar.png'
       })
     );
@@ -183,6 +185,8 @@ describe('POST /api/onboarding/jefe', () => {
         firstName: 'Martin',
         lastName: 'Ruiz',
         addressText: 'Salta Capital',
+        locationLatitude: -24.782127,
+        locationLongitude: -65.423197,
         avatarBlobPath: null
       })
     );
