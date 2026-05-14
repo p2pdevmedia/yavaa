@@ -1,5 +1,21 @@
 # Agent API
 
+## Public Security Review
+
+This document is safe to publish because it contains only API contract information and placeholder examples.
+
+It must never contain:
+
+- real user emails or passwords
+- real access tokens or refresh tokens
+- real `.env` values
+- cookies
+- Supabase service role keys or secret keys
+- database credentials
+- private file paths that belong to a user
+
+The public documentation does not grant access by itself. Every protected request still needs a valid Supabase bearer token and must pass Yavaa's server-side user, status, role, and onboarding checks.
+
 ## Overview
 
 Agents use the same Yavaa HTTP API that the web UI uses.
