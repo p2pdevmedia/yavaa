@@ -47,6 +47,17 @@ describe('worker post-wizard home design', () => {
     expect(page).toContain("hasCompletedOnboarding(context.appUser.user.profile, 'trabajador')");
   });
 
+  it('keeps every worker jobs tab section collapsed by default', () => {
+    const page = readProjectFile('src/app/dashboard/trabajador/trabajos/page.tsx');
+
+    expect(page).toContain('<details');
+    expect(page).toContain('<summary');
+    expect(page).toContain('Trabajos cercanos');
+    expect(page).toContain('Trabajos en curso');
+    expect(page).toContain('Trabajos terminados');
+    expect(page).not.toContain('<details open');
+  });
+
   it('has a protected worker job detail page with the offer form', () => {
     const page = readProjectFile('src/app/dashboard/trabajador/trabajos/[jobPostId]/page.tsx');
     const form = readProjectFile('src/components/jobs/worker-offer-form.tsx');

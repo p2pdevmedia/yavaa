@@ -380,7 +380,7 @@ test.describe('DB-backed onboarding workflow', () => {
       await page.goto('/dashboard/seleccionar-modo?perfil=trabajador');
 
       await expect(page).toHaveURL(/\/dashboard\/trabajador$/);
-      await expect(page.getByRole('heading', { name: 'Tu perfil laboral' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Hola, Workflow' })).toBeVisible();
     } finally {
       await cleanupWorkflowUsers([email]);
     }
@@ -450,11 +450,14 @@ test.describe('DB-backed onboarding workflow', () => {
       await page.getByLabel('Precio por hora').fill('4500');
       await page.getByRole('button', { name: 'Continuar' }).click();
 
+      await expect(page.getByRole('heading', { name: 'Agregá una foto' })).toBeVisible();
+      await page.getByRole('button', { name: 'Continuar' }).click();
+
       await expect(page.getByRole('heading', { name: 'Tu perfil está listo' })).toBeVisible();
       await page.getByRole('button', { name: 'Finalizar perfil' }).click();
 
       await expect(page).toHaveURL(/\/dashboard\/trabajador$/);
-      await expect(page.getByRole('heading', { name: 'Tu perfil laboral' })).toBeVisible();
+      await expect(page.getByRole('heading', { name: 'Hola, Ana' })).toBeVisible();
       await expect(page.getByText('Verificación en revisión')).toBeVisible();
       await expect(page.getByText('Precio por hora')).toBeVisible();
 

@@ -113,6 +113,41 @@ function WorkerJobsList({
   );
 }
 
+function CollapsedWorkerJobsSection({
+  emptyCopy,
+  jobPosts,
+  showDescription = false,
+  showStatus = false,
+  title,
+  variant = 'solid'
+}: {
+  emptyCopy: string;
+  jobPosts: JobPostSummary[];
+  showDescription?: boolean;
+  showStatus?: boolean;
+  title: string;
+  variant?: 'dashed' | 'solid';
+}) {
+  const className =
+    variant === 'dashed'
+      ? 'rounded-[24px] border border-dashed border-border bg-card p-5'
+      : 'rounded-[24px] border border-border bg-card p-5 shadow-soft';
+
+  return (
+    <details className={className}>
+      <summary className="cursor-pointer text-xs font-extrabold uppercase tracking-[0.14em] text-primary">
+        {title}
+      </summary>
+      <WorkerJobsList
+        emptyCopy={emptyCopy}
+        jobPosts={jobPosts}
+        showDescription={showDescription}
+        showStatus={showStatus}
+      />
+    </details>
+  );
+}
+
 export default async function TrabajadorJobsPage() {
   const context = await getDashboardPageContext('/dashboard/trabajador/trabajos');
 
@@ -150,32 +185,27 @@ export default async function TrabajadorJobsPage() {
           </p>
         </div>
 
-        <article className="rounded-[24px] border border-dashed border-border bg-card p-5">
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos cercanos</p>
-          <WorkerJobsList
-            emptyCopy="No hay trabajos cercanos todavía."
-            jobPosts={jobPosts}
-            showDescription
-          />
-        </article>
+        <CollapsedWorkerJobsSection
+          emptyCopy="No hay trabajos cercanos todavía."
+          jobPosts={jobPosts}
+          showDescription
+          title="Trabajos cercanos"
+          variant="dashed"
+        />
 
-        <article className="rounded-[24px] border border-border bg-card p-5 shadow-soft">
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos en curso</p>
-          <WorkerJobsList
-            emptyCopy="No tenés trabajos en curso todavía."
-            jobPosts={activeJobPosts}
-            showStatus
-          />
-        </article>
+        <CollapsedWorkerJobsSection
+          emptyCopy="No tenés trabajos en curso todavía."
+          jobPosts={activeJobPosts}
+          showStatus
+          title="Trabajos en curso"
+        />
 
-        <article className="rounded-[24px] border border-border bg-card p-5 shadow-soft">
-          <p className="text-xs font-extrabold uppercase tracking-[0.14em] text-primary">Trabajos terminados</p>
-          <WorkerJobsList
-            emptyCopy="Los trabajos terminados van a aparecer acá."
-            jobPosts={finishedJobPosts}
-            showStatus
-          />
-        </article>
+        <CollapsedWorkerJobsSection
+          emptyCopy="Los trabajos terminados van a aparecer acá."
+          jobPosts={finishedJobPosts}
+          showStatus
+          title="Trabajos terminados"
+        />
       </section>
     </YavaaPageShell>
   );
